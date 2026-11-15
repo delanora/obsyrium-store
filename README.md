@@ -267,7 +267,8 @@ Regras mínimas:
 - O diretório `database/migrations/` guarda um arquivo por mudança de schema, nomeado `AAAA_MM_DD_NNNNNN_descricao.php`. Cada arquivo devolve um `callable(PDO)` que executa o DDL.
 - `php database/migrate.php` aplica as pendentes e registra o nome na tabela `migrations`; `php database/migrate.php --status` mostra o estado de cada arquivo. Atalhos: `composer db:migrate` e `composer db:seed`.
 - `php database/seed.php` popula dados de demonstração (2 categorias, 8 estampas, 5 tamanhos por peça, estoque e imagem). Ele limpa as tabelas da vitrine antes de inserir e recusa rodar com `APP_ENV=production`.
-- Tabelas atuais: `categories`, `products`, `product_variants`, `stock`, `product_images` e `migrations`.
+- Tabelas atuais: `categories`, `products`, `product_variants`, `stock`, `product_images`, `users` e `migrations`.
+- Em `users` o CPF fica só com os 11 dígitos (conferidos no app e por um `CHECK` no banco) e `password` guarda apenas o hash de `password_hash()` com Argon2id. O e-mail é único e comparado sem diferenciar maiúsculas de minúsculas.
 - Preços ficam em centavos (`price_cents`, `compare_price_cents`) para não depender de arredondamento de `float`. O estoque é por variação de tamanho e `stock.reserved` guarda unidades presas em carrinho/checkout.
 
 ## 12. Testes e validação
