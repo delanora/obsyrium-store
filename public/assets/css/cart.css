@@ -313,6 +313,60 @@
     border-bottom: 1px solid var(--color-border);
 }
 
+/*
+ * Remoção pelo painel: o item encolhe e some (o "pop" vem do conteúdo) e os
+ * itens de baixo sobem junto, porque a altura animada devolve o espaço.
+ */
+.cart-drawer__item {
+    transition:
+        height 240ms var(--ease-standard),
+        opacity 160ms linear,
+        padding-block 240ms var(--ease-standard),
+        border-bottom-width 240ms var(--ease-standard);
+}
+
+/*
+ * Ao remover, o próprio item vira o aviso: faixa dourada com texto escuro, no
+ * lugar exato de onde o produto saiu. Meio segundo depois ele encolhe.
+ */
+.cart-drawer__item--aviso {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 72px;
+    border-bottom-color: transparent;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-accent);
+    color: var(--color-accent-contrast);
+}
+
+.cart-drawer__item-aviso {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: inherit;
+}
+
+.cart-drawer__item.is-removendo {
+    min-height: 0;
+    padding-block: 0;
+    border-bottom-width: 0;
+    overflow: hidden;
+    opacity: 0;
+}
+
+.cart-drawer__item.is-removendo .cart-drawer__image,
+.cart-drawer__item.is-removendo .cart-drawer__info,
+.cart-drawer__item.is-removendo form {
+    transform: scale(0.9);
+    transition: transform 160ms var(--ease-standard);
+}
+
+/* Depois de remover, a gaveta entra direto: o cliente já estava com ela aberta. */
+.cart-drawer--sem-entrada .cart-drawer__panel {
+    animation: none;
+}
+
 .cart-drawer__image {
     width: 56px;
     height: 70px;

@@ -62,7 +62,7 @@ final class CartController
         if ($erro !== null) {
             Session::flash('error', $erro);
         } else {
-            Session::flash('cart', 'Item removido do carrinho :/');
+            Session::flash('cart', 'Item removido do carrinho :/', 'removido');
         }
 
         $this->redirect($this->back());

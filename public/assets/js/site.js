@@ -109,9 +109,10 @@
             }
         };
 
-        var abrirGaveta = function (comFoco) {
+        var abrirGaveta = function (comFoco, semEntrada) {
             focoAnterior = document.activeElement;
             aberturaEm = Date.now();
+            gaveta.classList.toggle('cart-drawer--sem-entrada', semEntrada === true);
             gaveta.hidden = false;
             document.body.classList.add('cart-drawer-open');
             abridor.setAttribute('aria-expanded', 'true');
@@ -205,10 +206,131 @@
                     painelDaGaveta.insertBefore(avisoAdicionado, destinoDoAviso);
                 }
 
-                abrirGaveta(false);
+                // Depois de remover, a gaveta já estava à vista: entra direto,
+                // sem repetir a animação de abertura.
+                abrirGaveta(false, avisoAdicionado.getAttribute('data-toast-tone') === 'removido');
                 agendarFechamento();
             }
         }
+
+        // Remover pelo painel não recarrega a página: o próprio item vira o
+        // aviso dourado, some depois de meio segundo e os de baixo sobem. Os
+        // números do cabeçalho e do rodapé vêm da resposta do servidor, então
+        // continuam certos sem refresh.
+        var atualizarSinais = function (doc) {
+            var contadorAtual = document.querySelector('.icon-button__count');
+            var contadorNovo = doc.querySelector('.icon-button__count');
+
+            if (contadorAtual && contadorNovo) {
+                contadorAtual.textContent = contadorNovo.textContent;
+            } else if (contadorAtual && !contadorNovo) {
+                contadorAtual.remove();
+            }
+
+            var abridorNovo = doc.querySelector('[data-cart-open]');
+            var rotuloNovo = abridorNovo ? abridorNovo.getAttribute('aria-label') : null;
+
+            if (rotuloNovo) {
+                abridor.setAttribute('aria-label', rotuloNovo);
+            }
+
+            var totalAtual = gaveta.querySelector('.cart-drawer__count');
+            var totalNovo = doc.querySelector('.cart-drawer__count');
+
+            if (totalAtual && totalNovo) {
+                totalAtual.textContent = totalNovo.textContent;
+            }
+        };
+
+        var mostrarCarrinhoVazio = function (doc) {
+            var vazio = doc.querySelector('.cart-drawer__empty');
+            var lista = gaveta.querySelector('.cart-drawer__list');
+            var rodape = gaveta.querySelector('.cart-drawer__footer');
+
+            if (!vazio || !lista) {
+                return;
+            }
+
+            if (rodape) {
+                rodape.remove();
+            }
+
+            lista.replaceWith(document.importNode(vazio, true));
+        };
+
+        var sumirComItem = function (item, doc) {
+            item.style.height = item.offsetHeight + 'px';
+
+            // Força o navegador a registrar a altura antes de animá-la a zero.
+            void item.offsetHeight;
+
+            item.classList.add('is-removendo');
+            item.style.height = '0px';
+
+            window.setTimeout(function () {
+                item.remove();
+                mostrarCarrinhoVazio(doc);
+            }, 260);
+        };
+
+        gaveta.addEventListener('submit', function (evento) {
+            var formulario = evento.target;
+
+            if (!formulario || !formulario.closest) {
+                return;
+            }
+
+            // Na própria /carrinho a lista da página também precisa acompanhar,
+            // então ali o envio segue o caminho de sempre.
+            if (window.location.pathname.replace(/\/+$/, '') === '/carrinho') {
+                return;
+            }
+
+            var item = formulario.closest('.cart-drawer__item');
+
+            if (!item || item.classList.contains('is-removendo') || item.classList.contains('cart-drawer__item--aviso')) {
+                return;
+            }
+
+            if (typeof window.fetch !== 'function' || typeof window.FormData !== 'function' || typeof window.DOMParser !== 'function') {
+                return;
+            }
+
+            evento.preventDefault();
+
+            var botao = formulario.querySelector('button');
+
+            if (botao) {
+                botao.disabled = true;
+            }
+
+            fetch(formulario.action, {
+                method: 'POST',
+                body: new FormData(formulario),
+                credentials: 'same-origin',
+                redirect: 'follow'
+            }).then(function (resposta) {
+                if (!resposta.ok) {
+                    throw new Error('remocao falhou');
+                }
+
+                return resposta.text();
+            }).then(function (html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+
+                item.classList.add('cart-drawer__item--aviso');
+                item.innerHTML = '<p class="cart-drawer__item-aviso">Item removido do carrinho :/</p>';
+
+                atualizarSinais(doc);
+
+                window.setTimeout(function () {
+                    sumirComItem(item, doc);
+                }, 500);
+            }).catch(function () {
+                // Sem rede ou resposta ruim: manda o formulário do jeito tradicional.
+                formulario.submit();
+            });
+        });
 
         abridor.addEventListener('click', function (evento) {
             if (!telaGrande.matches) {
