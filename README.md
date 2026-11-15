@@ -172,6 +172,9 @@ APP_ENV=local
 APP_DEBUG=true
 APP_URL=http://localhost
 
+# Chave de cifra dos dados sensíveis: 32 bytes em base64.
+APP_KEY=
+
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=
@@ -195,6 +198,16 @@ MAIL_FROM_ADDRESS=
 ### 6.1 Leitura do `.env`
 
 O `.env` é lido por `Config\Env::load()`, chamado no bootstrap de `public/index.php`: leitura única por requisição, linhas em branco e comentários com `#` ignorados, valores entre aspas e comentário no fim da linha suportados. O arquivo não é obrigatório — chaves ausentes caem nos valores padrão de `config/`. Valores do `.env` nunca são enviados ao navegador nem gravados em log.
+
+### 6.2 Chave de cifra (APP_KEY)
+
+`App\Support\Crypto` exige `APP_KEY` com 32 bytes em base64. Para gerar uma:
+
+```bash
+php -r 'echo "base64:", base64_encode(random_bytes(32)), PHP_EOL;'
+```
+
+Trocar a chave invalida todo dado já cifrado (CPF, telefone e endereços): guarde-a em local seguro e copie para o servidor na publicação. Sem `APP_KEY` válida, qualquer gravação de dado sensível falha em vez de gravar em texto puro.
 
 Chaves ausentes no `.env` — ou presentes com valor vazio — são buscadas nas variáveis de ambiente reais do processo, nesta ordem: `getenv()`, `$_ENV` e `$_SERVER`. Isso permite definir credenciais e parâmetros direto no servidor, sem `.env`, como previsto na seção 6. **O `.env` tem precedência** sobre a variável de ambiente de mesmo nome. Os mesmos nomes valem para `Env::int()` e `Env::bool()`.
 
@@ -231,6 +244,9 @@ Controllers devem permanecer pequenos. Regras de negócio não devem ser duplica
 ## 9. Segurança
 
 - Senhas devem ser armazenadas com `password_hash()` e verificadas com `password_verify()`.
+- Dados pessoais sensíveis (CPF, telefone e endereço) ficam cifrados em repouso com AES-256-GCM em `App\Support\Crypto`. A chave vive em `APP_KEY`, nunca no repositório.
+- Campos cifrados que precisam de unicidade ou busca (o CPF) recebem um índice cego (HMAC-SHA256) no lugar do valor em texto puro.
+- Hash de senha não é cifra: uma vez gravado, não existe caminho de volta para a senha original.
 - Proteger formulários e operações de alteração com tokens CSRF.
 - Aplicar autorização no servidor em todas as rotas restritas.
 - Não confiar em valores enviados pelo navegador, incluindo preço, desconto, estoque ou status de pagamento.
@@ -267,8 +283,9 @@ Regras mínimas:
 - O diretório `database/migrations/` guarda um arquivo por mudança de schema, nomeado `AAAA_MM_DD_NNNNNN_descricao.php`. Cada arquivo devolve um `callable(PDO)` que executa o DDL.
 - `php database/migrate.php` aplica as pendentes e registra o nome na tabela `migrations`; `php database/migrate.php --status` mostra o estado de cada arquivo. Atalhos: `composer db:migrate` e `composer db:seed`.
 - `php database/seed.php` popula dados de demonstração (2 categorias, 8 estampas, 5 tamanhos por peça, estoque e imagem). Ele limpa as tabelas da vitrine antes de inserir e recusa rodar com `APP_ENV=production`.
-- Tabelas atuais: `categories`, `products`, `product_variants`, `stock`, `product_images`, `users` e `migrations`.
-- Em `users` o CPF fica só com os 11 dígitos (conferidos no app e por um `CHECK` no banco) e `password` guarda apenas o hash de `password_hash()` com Argon2id. O e-mail é único e comparado sem diferenciar maiúsculas de minúsculas.
+- Tabelas atuais: `categories`, `products`, `product_variants`, `stock`, `product_images`, `users`, `addresses` e `migrations`.
+- Em `users`, o CPF e o telefone são gravados cifrados (`cpf_encrypted`, `phone_encrypted`) e o CPF tem um índice cego único (`cpf_index`) para a regra de unicidade e para busca. `password` guarda apenas o hash de `password_hash()` com Argon2id. O e-mail é único e comparado sem diferenciar maiúsculas.
+- `addresses` guarda os endereços de entrega do cliente para reuso: rua, número, complemento, bairro, cidade e destinatário cifrados; CEP e UF em texto puro porque alimentam o cálculo de frete; `is_default` marca o endereço preferido e `deleted_at` permite remover sem perder histórico.
 - Preços ficam em centavos (`price_cents`, `compare_price_cents`) para não depender de arredondamento de `float`. O estoque é por variação de tamanho e `stock.reserved` guarda unidades presas em carrinho/checkout.
 
 ## 12. Testes e validação
