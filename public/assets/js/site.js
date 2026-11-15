@@ -231,11 +231,12 @@
                 abridor.setAttribute('aria-label', rotuloNovo);
             }
 
-            var totalAtual = gaveta.querySelector('.cart-drawer__count');
-            var totalNovo = doc.querySelector('.cart-drawer__count');
+            // O rodapé inteiro (total e quantidade de itens) vem da resposta.
+            var rodapeAtual = gaveta.querySelector('.cart-drawer__footer');
+            var rodapeNovo = doc.querySelector('.cart-drawer__footer');
 
-            if (totalAtual && totalNovo) {
-                totalAtual.textContent = totalNovo.textContent;
+            if (rodapeAtual && rodapeNovo) {
+                rodapeAtual.replaceWith(document.importNode(rodapeNovo, true));
             }
         };
 

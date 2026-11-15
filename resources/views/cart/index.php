@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Support\Csrf;
+use App\Support\Price;
 
 /*
  * Página do carrinho. Recebe do CartController os itens já formatados e o
@@ -16,6 +17,11 @@ use App\Support\Csrf;
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+// Total do carrinho: preço unitário vezes a quantidade de cada linha.
+$totalCentavos = array_sum(array_map(
+    static fn (array $item): int => (int) $item['price_cents'] * (int) $item['quantity'],
+    $itens
+));
 ?>
 <section class="cart-page">
 	<div class="container">
@@ -79,6 +85,11 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 			</ul>
 
 			<div class="cart-page__footer">
+				<p class="cart-page__total">
+					<span class="cart-page__total-label">Total</span>
+					<strong class="cart-page__total-value"><?= $escape(Price::format($totalCentavos)) ?></strong>
+				</p>
+
 				<a class="button cart-page__checkout" href="/checkout">Finalizar compra</a>
 			</div>
 		<?php endif; ?>

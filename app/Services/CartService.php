@@ -295,6 +295,7 @@ final class CartService
                 'available' => (int) $linha['available'],
                 'active' => (int) $linha['is_active'] === 1,
                 'price' => Price::format((int) $linha['price_cents']),
+                'price_cents' => (int) $linha['price_cents'],
                 'image' => $imagem !== '' ? $imagem : self::FALLBACK_IMAGE,
                 'alt' => (string) ($linha['image_alt'] ?? ''),
             ];

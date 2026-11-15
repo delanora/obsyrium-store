@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Support\Csrf;
+use App\Support\Price;
 
 /*
  * Gaveta lateral do carrinho, aberta pelo ícone do cabeçalho no computador.
@@ -17,6 +18,10 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 $voltar = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
 $voltar = is_string($voltar) && $voltar !== '' ? $voltar : '/';
 $quantidadeTotal = array_sum(array_column($itensDoCarrinho, 'quantity'));
+$totalCentavos = array_sum(array_map(
+    static fn (array $item): int => (int) $item['price_cents'] * (int) $item['quantity'],
+    $itensDoCarrinho
+));
 ?>
 <div class="cart-drawer" id="cart-drawer" data-cart-drawer hidden>
 	<div class="cart-drawer__backdrop" data-cart-close></div>
@@ -62,6 +67,10 @@ $quantidadeTotal = array_sum(array_column($itensDoCarrinho, 'quantity'));
 			</ul>
 
 			<div class="cart-drawer__footer">
+				<p class="cart-drawer__total">
+					<span>Total</span>
+					<strong><?= $escape(Price::format($totalCentavos)) ?></strong>
+				</p>
 				<p class="cart-drawer__count"><?= $quantidadeTotal ?> <?= $quantidadeTotal === 1 ? 'item' : 'itens' ?></p>
 				<a class="button cart-drawer__checkout" href="/checkout">Finalizar compra</a>
 				<a class="cart-drawer__link" href="/carrinho">Ver carrinho completo</a>
