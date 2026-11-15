@@ -2,9 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Support\Csrf;
+
 /*
  * Página individual do produto. Recebe de ProductController a galeria, os
  * tamanhos com disponibilidade e os textos de preço já formatados.
+ *
+ * O botão de compra envia variant_id (o tamanho escolhido) e o slug para
+ * voltar para esta mesma página depois de gravar no carrinho.
  *
  * @var array<string, mixed> $product
  */
@@ -64,29 +69,36 @@ $principal = $product['images'][0];
 				<p class="product-info__pix"><?= $escape($product['pix']) ?> no pix <span class="product-info__pix-off">(-5%)</span></p>
 				<p class="product-info__installments"><?= $escape($product['installments']) ?></p>
 
-				<fieldset class="size-picker product-info__sizes">
-					<legend class="size-picker__legend">Tamanho</legend>
-					<div class="size-picker__options">
-						<?php foreach ($product['sizes'] as $tamanho): ?>
-							<?php $id = 'tamanho-' . strtolower($tamanho['size']); ?>
-							<input
-								class="size-option__input"
-								type="radio"
-								name="size"
-								id="<?= $escape($id) ?>"
-								value="<?= $escape($tamanho['size']) ?>"
-								<?= $tamanho['available'] ? '' : 'disabled' ?>
-							>
-							<label class="size-option" for="<?= $escape($id) ?>"><?= $escape($tamanho['size']) ?></label>
-						<?php endforeach; ?>
-					</div>
-				</fieldset>
+				<form class="product-form" action="/carrinho/adicionar" method="post">
+					<?= Csrf::field() ?>
+					<input type="hidden" name="slug" value="<?= $escape($product['slug']) ?>">
 
-				<p class="product-info__stock product-info__stock--<?= $escape($product['stock']['state']) ?>"><?= $escape($product['stock']['label']) ?></p>
+					<fieldset class="size-picker product-info__sizes">
+						<legend class="size-picker__legend">Tamanho</legend>
+						<div class="size-picker__options">
+							<?php foreach ($product['sizes'] as $tamanho): ?>
+								<?php $id = 'tamanho-' . strtolower($tamanho['size']); ?>
+								<input
+									class="size-option__input"
+									type="radio"
+									name="variant_id"
+									id="<?= $escape($id) ?>"
+									value="<?= $tamanho['id'] ?>"
+									required
+									<?= $tamanho['available'] ? '' : 'disabled' ?>
+								>
+								<label class="size-option" for="<?= $escape($id) ?>"><?= $escape($tamanho['size']) ?></label>
+							<?php endforeach; ?>
+						</div>
+					</fieldset>
 
-				<button class="button product-info__buy" type="button" disabled<?= $product['soldOut'] ? ' aria-describedby="tamanho-ajuda"' : '' ?>>Adicionar ao carrinho</button>
+					<p class="product-info__stock product-info__stock--<?= $escape($product['stock']['state']) ?>"><?= $escape($product['stock']['label']) ?></p>
+
+					<button class="button product-info__buy" type="submit"<?= $product['soldOut'] ? ' disabled aria-describedby="tamanho-ajuda"' : '' ?>>Adicionar ao carrinho</button>
+				</form>
+
 				<p class="product-info__hint" id="tamanho-ajuda">
-					<?= $product['soldOut'] ? 'Todas as numerações estão esgotadas.' : 'Tamanhos riscados estão esgotados. Carrinho e pagamento chegam na próxima fase.' ?>
+					<?= $product['soldOut'] ? 'Todas as numerações estão esgotadas.' : 'Tamanhos riscados estão esgotados. Escolha um disponível para adicionar ao carrinho.' ?>
 				</p>
 
 				<?php if ($product['description'] !== ''): ?>

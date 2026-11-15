@@ -113,7 +113,8 @@ final class ProductRepository
      */
     public function variantsWithStock(int $productId): array
     {
-        $sql = "SELECT v.size,
+        $sql = "SELECT v.id,
+                       v.size,
                        v.sku,
                        COALESCE(s.quantity, 0) AS quantity
                   FROM product_variants v

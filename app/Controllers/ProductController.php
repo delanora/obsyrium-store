@@ -71,6 +71,7 @@ final class ProductController
             $estoqueTotal += $quantidade;
 
             $tamanhos[] = [
+                'id' => (int) $variacao['id'],
                 'size' => (string) $variacao['size'],
                 'available' => $quantidade > 0,
             ];
@@ -78,6 +79,7 @@ final class ProductController
 
         $product = [
             'name' => $nome,
+            'slug' => (string) $linha['slug'],
             'category' => (string) $linha['category_name'],
             'color' => $cor,
             'material' => (string) $linha['material'],

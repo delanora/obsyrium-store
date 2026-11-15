@@ -478,3 +478,19 @@ Rota `GET /produto/{slug}`, atendida por `App\Controllers\ProductController::sho
 - `App\Services\LoginThrottle` aplica o bloqueio: 5 falhas por conta, 20 por IP, janela de 15 minutos, chaveada pelo índice cego do e-mail e pelo IP de origem.
 - O cabeçalho mostra "entrar" para visitante e um botão de sair (POST com CSRF) para quem está conectado. Mensagens de retorno usam flash e aparecem no topo do conteúdo.
 - Estilo em `public/assets/css/auth.css` (card, campos, erros) e a mensagem flash em `layout.css`.
+
+## 20. Carrinho
+
+O carrinho é persistido no banco, um por cliente (`carts`, chave única em `user_id`), com um item por variação em `cart_items`. O visitante ainda não tem carrinho: as rotas mandam para `/login`.
+
+| Rota | Ação |
+| --- | --- |
+| `POST /carrinho/adicionar` | soma a quantidade ao item (`variant_id`, `quantity`, com `slug` opcional) |
+| `POST /carrinho/atualizar` | define a quantidade absoluta do item |
+| `POST /carrinho/remover` | apaga o item |
+
+- Toda escrita exige token CSRF, responde `303` e volta para `/produto/{slug}` quando o formulário manda o slug (sem slug, vai para a home). O cabeçalho `Referer` não é usado.
+- Regras em `App\Services\CartService`: no máximo **5 unidades** do mesmo item e nunca acima do estoque disponível (`stock.quantity - stock.reserved`).
+- A conferência do estoque roda dentro de uma transação, com a linha do estoque travada por `SELECT ... FOR UPDATE`, para que dois envios simultâneos não passem os dois pela mesma validação.
+- O preço não é guardado no carrinho: o total continua sendo lido de `products.price_cents` (item “cálculo do valor total” do roadmap). A página do carrinho ainda não existe; o botão da página do produto apenas grava o item e confirma com uma mensagem.
+- Produto inativo, variação inexistente, quantidade zero, item fora do carrinho e estoque insuficiente são recusados com mensagem, sem gravar nada.
