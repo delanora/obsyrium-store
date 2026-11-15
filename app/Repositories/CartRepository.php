@@ -96,6 +96,62 @@ final class CartRepository
     }
 
     /**
+     * Itens do carrinho com os dados de exibição da página.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function itemsForUser(int $userId): array
+    {
+        $consulta = $this->pdo->prepare(
+            'SELECT ci.variant_id,
+                    ci.quantity,
+                    v.size,
+                    p.name,
+                    p.slug,
+                    p.price_cents,
+                    p.is_active,
+                    COALESCE(s.quantity, 0) - COALESCE(s.reserved, 0) AS available,
+                    (SELECT i.path FROM product_images i
+                      WHERE i.product_id = p.id
+                      ORDER BY i.position, i.id
+                      LIMIT 1) AS image_path,
+                    (SELECT i.alt FROM product_images i
+                      WHERE i.product_id = p.id
+                      ORDER BY i.position, i.id
+                      LIMIT 1) AS image_alt
+               FROM cart_items ci
+               INNER JOIN carts c ON c.id = ci.cart_id
+               INNER JOIN product_variants v ON v.id = ci.variant_id
+               INNER JOIN products p ON p.id = v.product_id
+               LEFT JOIN stock s ON s.variant_id = v.id
+              WHERE c.user_id = :user_id
+              ORDER BY ci.created_at, ci.id'
+        );
+
+        $consulta->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $consulta->execute();
+
+        return $consulta->fetchAll();
+    }
+
+    /**
+     * Soma das quantidades no carrinho, para o contador do cabeçalho.
+     */
+    public function quantityForUser(int $userId): int
+    {
+        $consulta = $this->pdo->prepare(
+            'SELECT COALESCE(SUM(ci.quantity), 0)
+               FROM cart_items ci
+               INNER JOIN carts c ON c.id = ci.cart_id
+              WHERE c.user_id = :user_id'
+        );
+
+        $consulta->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $consulta->execute();
+
+        return (int) $consulta->fetchColumn();
+    }
+    /**
      * Variação com o estoque travado para conferência.
      *
      * Precisa ser chamada dentro de uma transação: o FOR UPDATE impede que

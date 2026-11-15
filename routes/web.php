@@ -19,6 +19,8 @@ return static function (Router $router): void {
     $router->get('/', [HomeController::class, 'index']);
     $router->get('/produto/{slug}', [ProductController::class, 'show']);
 
+    $router->get('/carrinho', [CartController::class, 'show']);
+
     $router->post('/carrinho/adicionar', [CartController::class, 'add']);
     $router->post('/carrinho/atualizar', [CartController::class, 'update']);
     $router->post('/carrinho/remover', [CartController::class, 'remove']);

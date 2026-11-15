@@ -485,12 +485,15 @@ O carrinho é persistido no banco, um por cliente (`carts`, chave única em `use
 
 | Rota | Ação |
 | --- | --- |
+| `GET /carrinho` | página do carrinho com os itens, quantidade editável e remoção |
 | `POST /carrinho/adicionar` | soma a quantidade ao item (`variant_id`, `quantity`, com `slug` opcional) |
 | `POST /carrinho/atualizar` | define a quantidade absoluta do item |
 | `POST /carrinho/remover` | apaga o item |
 
-- Toda escrita exige token CSRF, responde `303` e volta para `/produto/{slug}` quando o formulário manda o slug (sem slug, vai para a home). O cabeçalho `Referer` não é usado.
+- Toda escrita exige token CSRF, responde `303` e volta para `/produto/{slug}` quando o formulário manda o slug (sem slug, vai para `/carrinho`). O cabeçalho `Referer` não é usado.
 - Regras em `App\Services\CartService`: no máximo **5 unidades** do mesmo item e nunca acima do estoque disponível (`stock.quantity - stock.reserved`).
 - A conferência do estoque roda dentro de uma transação, com a linha do estoque travada por `SELECT ... FOR UPDATE`, para que dois envios simultâneos não passem os dois pela mesma validação.
-- O preço não é guardado no carrinho: o total continua sendo lido de `products.price_cents` (item “cálculo do valor total” do roadmap). A página do carrinho ainda não existe; o botão da página do produto apenas grava o item e confirma com uma mensagem.
+- O preço não é guardado no carrinho: cada item mostra o preço atual de `products.price_cents` e **o total da compra ainda não é calculado** (item “cálculo do valor total” do roadmap). Frete e checkout também são itens futuros.
+- `resources/views/cart/index.php` monta a página com imagem, tamanho, preço, campo de quantidade (máximo `CartService::MAX_PER_ITEM`) e botão de remover — cada ação tem o próprio formulário e token CSRF. Sem itens, mostra o estado vazio com link para a vitrine. O estilo fica em `public/assets/css/cart.css`.
+- O ícone do carrinho no cabeçalho virou link para `/carrinho` e mostra a soma das quantidades do cliente, vinda de `CartRepository::quantityForUser` (zero para visitante).
 - Produto inativo, variação inexistente, quantidade zero, item fora do carrinho e estoque insuficiente são recusados com mensagem, sem gravar nada.
