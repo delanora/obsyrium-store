@@ -487,3 +487,10 @@ body.cart-drawer-open {
 .cart-toast__close:hover {
     color: var(--color-text);
 }
+
+/* O aviso, quando a gaveta abre no computador, passa para dentro do painel. */
+.cart-drawer__panel .cart-toast {
+    position: static;
+    width: auto;
+    margin: var(--space-3) var(--space-5) 0;
+}

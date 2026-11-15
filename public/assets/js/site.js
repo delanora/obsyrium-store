@@ -112,6 +112,28 @@
             }
         };
 
+        // Item recém-adicionado: no computador a gaveta abre sozinha e o aviso
+        // passa para dentro dela. O atalho "Ver carrinho" sai, porque a lista
+        // já está à vista.
+        var avisoAdicionado = document.querySelector('[data-toast]');
+
+        if (avisoAdicionado && telaGrande.matches) {
+            var atalhoDoAviso = avisoAdicionado.querySelector('.cart-toast__link');
+
+            if (atalhoDoAviso) {
+                atalhoDoAviso.remove();
+            }
+
+            var painelDaGaveta = gaveta.querySelector('.cart-drawer__panel');
+            var destinoDoAviso = gaveta.querySelector('.cart-drawer__list, .cart-drawer__empty');
+
+            if (painelDaGaveta && destinoDoAviso) {
+                painelDaGaveta.insertBefore(avisoAdicionado, destinoDoAviso);
+            }
+
+            abrirGaveta();
+        }
+
         var fecharGaveta = function () {
             gaveta.hidden = true;
             document.body.classList.remove('cart-drawer-open');
