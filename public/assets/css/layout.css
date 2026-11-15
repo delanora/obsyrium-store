@@ -835,3 +835,33 @@ html {
         gap: 0;
     }
 }
+
+/* ============ Mensagem de retorno ============ */
+
+.flash {
+    margin: var(--space-4) 0 0;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface-raised);
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+}
+
+.flash--success {
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.flash--error {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.site-header__account-form {
+    display: contents;
+}
+
+.icon-button--active {
+    color: var(--color-accent);
+}

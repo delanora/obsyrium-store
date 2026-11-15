@@ -22,6 +22,14 @@ final class Router
     }
 
     /**
+     * @param array{class-string, string} $handler
+     */
+    public function post(string $path, array $handler): void
+    {
+        $this->add('POST', $path, $handler);
+    }
+
+    /**
      * Registra a rota. Segmentos entre chaves, como `/produto/{slug}`, viram
      * parâmetros capturados do caminho e chegam ao handler num array nomeado.
      *

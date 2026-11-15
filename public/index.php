@@ -12,6 +12,7 @@ declare(strict_types=1);
  */
 
 use App\Routing\Router;
+use App\Support\Session;
 use Config\Env;
 
 $basePath = dirname(__DIR__);
@@ -85,6 +86,9 @@ register_shutdown_function(static function () use ($renderError): void {
 require $basePath . '/vendor/autoload.php';
 
 Env::load($basePath . '/.env');
+
+// A sessão começa aqui: cabeçalho, CSRF e mensagens dependem dela.
+Session::start();
 
 $router = new Router();
 

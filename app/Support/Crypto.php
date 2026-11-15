@@ -10,13 +10,14 @@ use RuntimeException;
 /**
  * Cifra de dados sensíveis em repouso.
  *
- * Usa AES-256-GCM via OpenSSL: o valor é gravado como base64 de nonce + tag +
- * ciphertext. Além de ilegível, o dado é autenticado — qualquer alteração no
- * banco faz a decifragem falhar em vez de devolver lixo.
+ * AES-256-GCM via OpenSSL, com a versão da chave carimbada no payload:
+ * "v2:" + base64(nonce + tag + ciphertext). A versão permite rotacionar a
+ * APP_KEY sem perder o que já foi gravado — a chave antiga continua em
+ * APP_KEY_PREVIOUS só para decifrar.
  *
- * A chave vem de APP_KEY (.env, fora do controle de versão). Para campos que
- * precisam de unicidade ou busca (CPF), grava-se junto um índice cego:
- * HMAC-SHA256 determinístico, que compara valores sem revelá-los.
+ * Campos que precisam de unicidade ou busca (CPF) usam um índice cego
+ * (HMAC-SHA256) derivado de APP_INDEX_KEY, que é independente da rotação para
+ * não invalidar as buscas.
  */
 final class Crypto
 {
@@ -25,7 +26,14 @@ final class Crypto
     private const TAG_BYTES = 16;
     private const KEY_BYTES = 32;
 
-    private static ?string $key = null;
+    /**
+     * @var array<int, string>|null chaves por versão
+     */
+    private static ?array $keys = null;
+
+    private static ?int $currentVersion = null;
+
+    private static ?string $indexKey = null;
 
     public static function encrypt(string $plainText): string
     {
@@ -35,7 +43,7 @@ final class Crypto
         $cipherText = openssl_encrypt(
             $plainText,
             self::CIPHER,
-            self::key(),
+            self::keyFor(self::currentVersion()),
             OPENSSL_RAW_DATA,
             $nonce,
             $tag,
@@ -47,12 +55,17 @@ final class Crypto
             throw new RuntimeException('Falha ao cifrar o dado.');
         }
 
-        return base64_encode($nonce . $tag . $cipherText);
+        return 'v' . self::currentVersion() . ':' . base64_encode($nonce . $tag . $cipherText);
     }
 
     public static function decrypt(string $payload): string
     {
-        $raw = base64_decode($payload, true);
+        if (preg_match('/^v(\d+):(.+)$/s', $payload, $partes) !== 1) {
+            throw new RuntimeException('Dado cifrado sem versão de chave.');
+        }
+
+        $version = (int) $partes[1];
+        $raw = base64_decode($partes[2], true);
 
         if ($raw === false || strlen($raw) <= self::NONCE_BYTES + self::TAG_BYTES) {
             throw new RuntimeException('Dado cifrado em formato inválido.');
@@ -62,13 +75,32 @@ final class Crypto
         $tag = substr($raw, self::NONCE_BYTES, self::TAG_BYTES);
         $cipherText = substr($raw, self::NONCE_BYTES + self::TAG_BYTES);
 
-        $plainText = openssl_decrypt($cipherText, self::CIPHER, self::key(), OPENSSL_RAW_DATA, $nonce, $tag);
+        $plainText = openssl_decrypt(
+            $cipherText,
+            self::CIPHER,
+            self::keyFor($version),
+            OPENSSL_RAW_DATA,
+            $nonce,
+            $tag
+        );
 
         if ($plainText === false) {
-            throw new RuntimeException('Não foi possível decifrar o dado.');
+            throw new RuntimeException(sprintf('Não foi possível decifrar o dado (chave v%d).', $version));
         }
 
         return $plainText;
+    }
+
+    /**
+     * Versão usada nas novas gravações.
+     */
+    public static function currentVersion(): int
+    {
+        if (self::$currentVersion === null) {
+            self::$currentVersion = max(1, Env::int('APP_KEY_VERSION', 1));
+        }
+
+        return self::$currentVersion;
     }
 
     /**
@@ -90,36 +122,94 @@ final class Crypto
         return preg_replace('/\D+/', '', $phone) ?? '';
     }
 
+    /**
+     * Converte uma chave "base64:..." em 32 bytes, ou null se inválida.
+     */
+    public static function decodeKey(string $configured): ?string
+    {
+        if (!str_starts_with($configured, 'base64:')) {
+            return null;
+        }
+
+        $raw = base64_decode(substr($configured, strlen('base64:')), true);
+
+        return $raw !== false && strlen($raw) === self::KEY_BYTES ? $raw : null;
+    }
+
     public static function generateKey(): string
     {
         return 'base64:' . base64_encode(random_bytes(self::KEY_BYTES));
     }
 
-    private static function key(): string
+    /**
+     * @return array<int, string>
+     */
+    private static function keys(): array
     {
-        if (self::$key !== null) {
-            return self::$key;
+        if (self::$keys !== null) {
+            return self::$keys;
         }
 
-        $configured = Env::get('APP_KEY');
+        $current = Env::get('APP_KEY');
+        $raw = $current !== null && $current !== '' ? self::decodeKey($current) : null;
 
-        if ($configured === null || $configured === '') {
-            throw new RuntimeException('APP_KEY não configurada: os dados sensíveis não podem ser cifrados.');
+        if ($raw === null) {
+            throw new RuntimeException('APP_KEY ausente ou inválida: esperado base64: com 32 bytes.');
         }
 
-        $raw = str_starts_with($configured, 'base64:')
-            ? base64_decode(substr($configured, strlen('base64:')), true)
-            : false;
+        $keys = [self::currentVersion() => $raw];
 
-        if ($raw === false || strlen($raw) !== self::KEY_BYTES) {
-            throw new RuntimeException('APP_KEY inválida: esperado base64: com 32 bytes.');
+        $anteriores = Env::get('APP_KEY_PREVIOUS', '');
+
+        if ($anteriores !== null && $anteriores !== '') {
+            foreach (explode(',', $anteriores) as $entrada) {
+                $partes = explode(':', trim($entrada), 2);
+
+                if (count($partes) !== 2) {
+                    continue;
+                }
+
+                $version = (int) $partes[0];
+                $chave = self::decodeKey($partes[1]);
+
+                if ($version > 0 && $chave !== null) {
+                    $keys[$version] = $chave;
+                }
+            }
         }
 
-        return self::$key = $raw;
+        return self::$keys = $keys;
+    }
+
+    private static function keyFor(int $version): string
+    {
+        $keys = self::keys();
+
+        if (!isset($keys[$version])) {
+            throw new RuntimeException(sprintf('Não há chave configurada para a versão v%d.', $version));
+        }
+
+        return $keys[$version];
     }
 
     private static function indexKey(): string
     {
-        return hash_hmac('sha256', 'obsyrium:blind-index', self::key(), true);
+        if (self::$indexKey !== null) {
+            return self::$indexKey;
+        }
+
+        $configurada = Env::get('APP_INDEX_KEY');
+
+        if ($configurada !== null && $configurada !== '') {
+            $raw = self::decodeKey($configurada);
+
+            if ($raw === null) {
+                throw new RuntimeException('APP_INDEX_KEY inválida: esperado base64: com 32 bytes.');
+            }
+
+            return self::$indexKey = $raw;
+        }
+
+        return self::$indexKey = hash_hmac('sha256', 'obsyrium:blind-index', self::keyFor(self::currentVersion()), true);
     }
 }

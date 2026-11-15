@@ -21,6 +21,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 	<link rel="stylesheet" href="/assets/css/components.css">
 	<link rel="stylesheet" href="/assets/css/layout.css">
 	<link rel="stylesheet" href="/assets/css/product.css">
+	<link rel="stylesheet" href="/assets/css/auth.css">
 	<link rel="stylesheet" href="/assets/css/animations.css">
 	<script>
 		document.documentElement.classList.add("js");
@@ -33,6 +34,13 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 </head>
 <body>
 	<?php require __DIR__ . '/../partials/header.php'; ?>
+
+	<?php $flash = App\Support\Session::takeFlash(); ?>
+	<?php if ($flash !== null): ?>
+		<div class="container">
+			<p class="flash flash--<?= $escape($flash['type']) ?>" role="status"><?= $escape($flash['message']) ?></p>
+		</div>
+	<?php endif; ?>
 
 	<main id="conteudo">
 		<?php require $content; ?>

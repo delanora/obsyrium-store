@@ -174,6 +174,9 @@ APP_URL=http://localhost
 
 # Chave de cifra dos dados sensíveis: 32 bytes em base64.
 APP_KEY=
+APP_KEY_VERSION=1
+APP_KEY_PREVIOUS=
+APP_INDEX_KEY=
 
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -207,7 +210,28 @@ O `.env` é lido por `Config\Env::load()`, chamado no bootstrap de `public/index
 php -r 'echo "base64:", base64_encode(random_bytes(32)), PHP_EOL;'
 ```
 
-Trocar a chave invalida todo dado já cifrado (CPF, telefone e endereços): guarde-a em local seguro e copie para o servidor na publicação. Sem `APP_KEY` válida, qualquer gravação de dado sensível falha em vez de gravar em texto puro.
+Sempre que possível, faça backup da chave junto do backup do banco: sem ela os dados cifrados ficam irrecuperáveis.
+
+### 6.3 Rotação de chave
+
+O payload cifrado carrega a versão da chave (`v1:`, `v2:`...), então a `APP_KEY` pode ser trocada sem perder o que já está gravado.
+
+| Variável | Para que serve |
+|---|---|
+| `APP_KEY` | Chave atual, 32 bytes em base64. |
+| `APP_KEY_VERSION` | Versão da chave atual (padrão `1`). |
+| `APP_KEY_PREVIOUS` | Chaves antigas, apenas para decifrar: `1:base64:...,2:base64:...`. |
+| `APP_INDEX_KEY` | Chave do índice cego (CPF), independente da rotação para não invalidar buscas. |
+
+Para rotacionar:
+
+1. Gere uma chave nova e coloque em `APP_KEY`.
+2. Suba `APP_KEY_VERSION`.
+3. Mova a chave antiga para `APP_KEY_PREVIOUS` com a versão dela (`1:base64:...`).
+4. As leituras antigas continuam funcionando; as gravações novas saem com a versão nova.
+5. Quando nenhum registro antigo restar, remova a entrada de `APP_KEY_PREVIOUS`.
+
+Sem `APP_KEY` válida, qualquer gravação de dado sensível falha em vez de gravar em texto puro.
 
 Chaves ausentes no `.env` — ou presentes com valor vazio — são buscadas nas variáveis de ambiente reais do processo, nesta ordem: `getenv()`, `$_ENV` e `$_SERVER`. Isso permite definir credenciais e parâmetros direto no servidor, sem `.env`, como previsto na seção 6. **O `.env` tem precedência** sobre a variável de ambiente de mesmo nome. Os mesmos nomes valem para `Env::int()` e `Env::bool()`.
 
@@ -245,6 +269,9 @@ Controllers devem permanecer pequenos. Regras de negócio não devem ser duplica
 
 - Senhas devem ser armazenadas com `password_hash()` e verificadas com `password_verify()`.
 - Dados pessoais sensíveis (CPF, telefone e endereço) ficam cifrados em repouso com AES-256-GCM em `App\Support\Crypto`. A chave vive em `APP_KEY`, nunca no repositório.
+- O CPF é conferido (11 dígitos e dígitos verificadores) em `App\Support\Cpf` **antes** de ser cifrado: como o banco só guarda o texto cifrado, não existe validação de formato por `CHECK` na coluna.
+- Formulários de escrita usam token CSRF por sessão (`App\Support\Csrf`), comparado com `hash_equals`; envio sem token recebe 403.
+- A sessão usa cookie `HttpOnly` e `SameSite=Lax` (`Secure` sob HTTPS) e o identificador é regenerado no login com `session_regenerate_id(true)`.
 - Campos cifrados que precisam de unicidade ou busca (o CPF) recebem um índice cego (HMAC-SHA256) no lugar do valor em texto puro.
 - Hash de senha não é cifra: uma vez gravado, não existe caminho de volta para a senha original.
 - Proteger formulários e operações de alteração com tokens CSRF.
@@ -284,7 +311,7 @@ Regras mínimas:
 - `php database/migrate.php` aplica as pendentes e registra o nome na tabela `migrations`; `php database/migrate.php --status` mostra o estado de cada arquivo. Atalhos: `composer db:migrate` e `composer db:seed`.
 - `php database/seed.php` popula dados de demonstração (2 categorias, 8 estampas, 5 tamanhos por peça, estoque e imagem). Ele limpa as tabelas da vitrine antes de inserir e recusa rodar com `APP_ENV=production`.
 - Tabelas atuais: `categories`, `products`, `product_variants`, `stock`, `product_images`, `users`, `addresses` e `migrations`.
-- Em `users`, o CPF e o telefone são gravados cifrados (`cpf_encrypted`, `phone_encrypted`) e o CPF tem um índice cego único (`cpf_index`) para a regra de unicidade e para busca. `password` guarda apenas o hash de `password_hash()` com Argon2id. O e-mail é único e comparado sem diferenciar maiúsculas.
+- Em `users`, o CPF e o telefone são gravados cifrados (`cpf_encrypted`, `phone_encrypted`) e o CPF tem um índice cego único (`cpf_index`) para a regra de unicidade e para busca. A conferência dos dígitos verificadores é feita em `App\Support\Cpf`, antes de cifrar — o banco não tem como validar o formato. `password` guarda apenas o hash de `password_hash()` com Argon2id. O e-mail é único e comparado sem diferenciar maiúsculas.
 - `addresses` guarda os endereços de entrega do cliente para reuso: rua, número, complemento, bairro, cidade e destinatário cifrados; CEP e UF em texto puro porque alimentam o cálculo de frete; `is_default` marca o endereço preferido e `deleted_at` permite remover sem perder histórico.
 - Preços ficam em centavos (`price_cents`, `compare_price_cents`) para não depender de arredondamento de `float`. O estoque é por variação de tamanho e `stock.reserved` guarda unidades presas em carrinho/checkout.
 
@@ -429,3 +456,21 @@ Rota `GET /produto/{slug}`, atendida por `App\Controllers\ProductController::sho
 - O estilo fica em `public/assets/css/product.css`, carregado junto das demais folhas no layout.
 - O botão de compra segue desabilitado até o carrinho existir; a dica abaixo dele informa isso ao visitante.
 - Os cards da vitrine (`HomeController::toCard`) apontam para `/produto/{slug}`.
+
+## 19. Cadastro e login
+
+| Rota | Método | Ação |
+|---|---|---|
+| `/cadastro` | GET | Formulário de cadastro |
+| `/cadastro` | POST | Cria a conta e já abre a sessão |
+| `/login` | GET | Formulário de login |
+| `/login` | POST | Autentica e abre a sessão |
+| `/logout` | POST | Encerra a sessão |
+
+- `App\Controllers\AuthController` é fino: valida CSRF, chama `App\Services\AuthService` e renderiza. A regra fica no serviço, o acesso ao banco em `App\Repositories\UserRepository`.
+- Cadastro exige nome, CPF válido, telefone com DDD, e-mail, senha de 8+ caracteres, confirmação e aceite dos termos. O aceite é gravado em `terms_accepted_at`.
+- CPF e telefone são normalizados (só dígitos) e cifrados antes de ir para o banco; o CPF ganha um índice cego para a regra de unicidade.
+- Login compara a senha com `password_verify` e reaproveita `password_needs_rehash` para atualizar o hash Argon2id quando necessário. Mensagem de erro é sempre "E-mail ou senha inválidos." — não revela se o e-mail existe.
+- `App\Support\Session` cuida do cookie (`HttpOnly`, `SameSite=Lax`, `Secure` sob HTTPS) e regenera o identificador no login. Contas com `is_active = 0` ou `deleted_at` preenchido não entram.
+- O cabeçalho mostra "entrar" para visitante e um botão de sair (POST com CSRF) para quem está conectado. Mensagens de retorno usam flash e aparecem no topo do conteúdo.
+- Estilo em `public/assets/css/auth.css` (card, campos, erros) e a mensagem flash em `layout.css`.
