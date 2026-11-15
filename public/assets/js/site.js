@@ -187,6 +187,10 @@
         // já está à vista. Depois de 3 segundos ela se recolhe sozinha.
         var avisoAdicionado = document.querySelector('[data-toast]');
 
+        // Na página do carrinho o aviso fica só no cabeçalho: a lista já está à
+        // vista, então abrir a gaveta por cima dela seria redundante.
+        var paginaDoCarrinho = window.location.pathname.replace(/\/+$/, '') === '/carrinho';
+
         if (avisoAdicionado && telaGrande.matches) {
             var atalhoDoAviso = avisoAdicionado.querySelector('.cart-toast__link');
 
@@ -194,14 +198,16 @@
                 atalhoDoAviso.remove();
             }
 
-            var destinoDoAviso = gaveta.querySelector('.cart-drawer__list, .cart-drawer__empty');
+            if (!paginaDoCarrinho) {
+                var destinoDoAviso = gaveta.querySelector('.cart-drawer__list, .cart-drawer__empty');
 
-            if (painelDaGaveta && destinoDoAviso) {
-                painelDaGaveta.insertBefore(avisoAdicionado, destinoDoAviso);
+                if (painelDaGaveta && destinoDoAviso) {
+                    painelDaGaveta.insertBefore(avisoAdicionado, destinoDoAviso);
+                }
+
+                abrirGaveta(false);
+                agendarFechamento();
             }
-
-            abrirGaveta(false);
-            agendarFechamento();
         }
 
         abridor.addEventListener('click', function (evento) {
