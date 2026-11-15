@@ -67,10 +67,35 @@ final class Env
         $value = self::$values[$key] ?? null;
 
         if ($value === null || $value === '') {
+            $value = self::fromEnvironment($key);
+        }
+
+        if ($value === null || $value === '') {
             return $default;
         }
 
         return $value;
+    }
+
+    /**
+     * Consulta as variáveis de ambiente reais do processo, usadas quando a
+     * chave não existe no .env (ou existe vazia). O .env tem precedência.
+     */
+    private static function fromEnvironment(string $key): ?string
+    {
+        $value = getenv($key);
+
+        if ($value !== false) {
+            return $value;
+        }
+
+        foreach ([$_ENV, $_SERVER] as $source) {
+            if (array_key_exists($key, $source) && is_scalar($source[$key])) {
+                return (string) $source[$key];
+            }
+        }
+
+        return null;
     }
 
     public static function int(string $key, int $default = 0): int
