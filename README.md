@@ -207,6 +207,8 @@ Chaves ausentes no `.env` — ou presentes com valor vazio — são buscadas nas
 - **Config:** centraliza configurações não secretas e leitura das variáveis de ambiente (`Config\Env`, `Config\Database`).
 - **Env:** `Config\Env` expõe os valores do `.env` de forma tipada (`get`, `int`, `bool`); `Config\Database` monta DSN e opções de conexão.
 - **Database:** `App\Database\Connection` fornece a conexão PDO (`mysql`, `utf8mb4`) sob demanda, reaproveitada na mesma requisição.
+- **Repositories:** `App\Repositories\ProductRepository` concentra as consultas da vitrine (produto, categoria, estoque somado e imagem principal).
+- **Support:** `App\Support\Price` converte centavos em reais e monta o texto de parcela e do valor no Pix.
 
 Controllers devem permanecer pequenos. Regras de negócio não devem ser duplicadas entre controllers.
 
@@ -259,7 +261,11 @@ Regras mínimas:
 - Definir restrições para campos obrigatórios e valores únicos.
 - Evitar exclusão física de registros que precisem permanecer para histórico ou auditoria.
 - Não executar alterações manuais em produção sem registrar a migration correspondente.
-- O diretório `database/migrations/` está criado e versionado (`.gitkeep`). Nenhuma migration foi escrita ainda e não existe ferramenta de execução implementada; os comandos devem ser documentados aqui quando existirem.
+- O diretório `database/migrations/` guarda um arquivo por mudança de schema, nomeado `AAAA_MM_DD_NNNNNN_descricao.php`. Cada arquivo devolve um `callable(PDO)` que executa o DDL.
+- `php database/migrate.php` aplica as pendentes e registra o nome na tabela `migrations`; `php database/migrate.php --status` mostra o estado de cada arquivo. Atalhos: `composer db:migrate` e `composer db:seed`.
+- `php database/seed.php` popula dados de demonstração (2 categorias, 8 estampas, 5 tamanhos por peça, estoque e imagem). Ele limpa as tabelas da vitrine antes de inserir e recusa rodar com `APP_ENV=production`.
+- Tabelas atuais: `categories`, `products`, `product_variants`, `stock`, `product_images` e `migrations`.
+- Preços ficam em centavos (`price_cents`, `compare_price_cents`) para não depender de arredondamento de `float`. O estoque é por variação de tamanho e `stock.reserved` guarda unidades presas em carrinho/checkout.
 
 ## 12. Testes e validação
 
@@ -355,7 +361,7 @@ A estrutura da página inicial segue a da referência Crown Training — a refer
 - `resources/views/layouts/site.php`: documento HTML e `<head>` com os quatro CSS na ordem `tokens` → `base` → `components` → `layout`; inclui o cabeçalho, o `<main id="conteudo">` com a view de conteúdo e o rodapé.
 - `resources/views/partials/header.php`: cabeçalho com marca, menu e ações. Links de categoria e botões de ação ainda apontam para `#`.
 - `resources/views/partials/footer.php`: colunas do rodapé e linha legal.
-- `resources/views/home/index.php`: hero, vitrine, bloco de conteúdo e newsletter. Os oito produtos são de demonstração, definidos em um array na própria view.
+- `resources/views/home/index.php`: hero, vitrine, bloco de conteúdo e newsletter. A vitrine recebe do `HomeController` os cards já formatados; os produtos saem do banco por `App\Repositories\ProductRepository` (o seed cria 8 de demonstração).
 - `public/assets/css/layout.css`: cabeçalho, navegação, hero, seções, paginação, newsletter, rodapé e `.skip-link`.
 - `public/assets/css/animations.css`: camada de movimento (entradas ao rolar, hover e transições).
 - `public/assets/js/site.js`: menu do celular, sombra do cabeçalho e entradas ao rolar, sem dependências.

@@ -3,21 +3,11 @@
 declare(strict_types=1);
 
 /*
- * Vitrine da página inicial.
+ * Vitrine da página inicial. Recebe de HomeController a lista de cards já
+ * formatada (nome, cor, preço, imagem e selo), montada a partir do banco.
  *
- * Os produtos são de demonstração e serão carregados do banco na fase 5.
+ * @var list<array<string, mixed>> $products
  */
-
-$products = [
-    ['name' => 'Camiseta Estampa 01', 'color' => 'Preta', 'price' => 'R$ 129,90', 'pix' => 'R$ 123,41', 'installments' => '3x de R$ 43,30 sem juros', 'badge' => 'Novo', 'old' => null, 'soldOut' => false],
-    ['name' => 'Camiseta Estampa 02', 'color' => 'Off white', 'price' => 'R$ 127,90', 'pix' => 'R$ 121,51', 'installments' => '3x de R$ 42,63 sem juros', 'badge' => 'Drop 01', 'old' => 'R$ 149,90', 'soldOut' => false],
-    ['name' => 'Camiseta Estampa 03', 'color' => 'Grafite', 'price' => 'R$ 129,90', 'pix' => 'R$ 123,41', 'installments' => '3x de R$ 43,30 sem juros', 'badge' => 'Esgotado', 'old' => null, 'soldOut' => true],
-    ['name' => 'Camiseta Estampa 04', 'color' => 'Preta', 'price' => 'R$ 139,90', 'pix' => 'R$ 132,91', 'installments' => '3x de R$ 46,63 sem juros', 'badge' => null, 'old' => null, 'soldOut' => false],
-    ['name' => 'Camiseta Estampa 05', 'color' => 'Marrom', 'price' => 'R$ 139,90', 'pix' => 'R$ 132,91', 'installments' => '3x de R$ 46,63 sem juros', 'badge' => null, 'old' => null, 'soldOut' => false],
-    ['name' => 'Camiseta Estampa 06', 'color' => 'Off white', 'price' => 'R$ 129,90', 'pix' => 'R$ 123,41', 'installments' => '3x de R$ 43,30 sem juros', 'badge' => null, 'old' => null, 'soldOut' => false],
-    ['name' => 'Camiseta Estampa 07', 'color' => 'Verde musgo', 'price' => 'R$ 149,90', 'pix' => 'R$ 142,41', 'installments' => '3x de R$ 49,97 sem juros', 'badge' => 'Novo', 'old' => null, 'soldOut' => false],
-    ['name' => 'Camiseta Estampa 08', 'color' => 'Bordô', 'price' => 'R$ 129,90', 'pix' => 'R$ 123,41', 'installments' => '3x de R$ 43,30 sem juros', 'badge' => 'Esgotado', 'old' => null, 'soldOut' => true],
-];
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 ?>
@@ -65,6 +55,10 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 			<a class="section__link" href="#">Ver todos</a>
 		</div>
 
+		<?php if ($products === []): ?>
+			<p class="product-card__meta">Nenhum produto publicado ainda.</p>
+		<?php endif; ?>
+
 		<ul class="product-grid">
 			<?php foreach ($products as $product): ?>
 				<li data-reveal>
@@ -72,25 +66,25 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 						<figure class="product-card__media">
 							<img
 								class="product-card__image"
-								src="/assets/images/placeholder.svg"
-								alt="Camiseta <?= $escape($product['name']) ?>, modelagem oversized, na cor <?= $escape($product['color']) ?>"
+								src="<?= $escape($product['image']) ?>"
+								alt="<?= $escape($product['imageAlt']) ?>"
 								width="300"
 								height="400"
 								loading="lazy"
 							>
 							<?php if ($product['badge'] !== null): ?>
 								<div class="product-card__badges">
-									<span class="product-card__badge<?= $product['badge'] === 'Novo' || $product['badge'] === 'Drop 01' ? ' product-card__badge--accent' : '' ?>"><?= $escape($product['badge']) ?></span>
+									<span class="product-card__badge<?= $product['badgeAccent'] ? ' product-card__badge--accent' : '' ?>"><?= $escape($product['badge']) ?></span>
 								</div>
 							<?php endif; ?>
 						</figure>
 
 						<div class="product-card__body">
-							<h3 class="product-card__title"><a href="#"><?= $escape($product['name']) ?></a></h3>
-							<p class="product-card__meta"><?= $escape($product['color']) ?> · algodão 100%</p>
+							<h3 class="product-card__title"><a href="<?= $escape($product['href']) ?>"><?= $escape($product['name']) ?></a></h3>
+							<p class="product-card__meta"><?= $escape($product['color']) ?> · <?= $escape($product['material']) ?></p>
 							<p class="product-card__price">
-								<?php if ($product['old'] !== null): ?>
-									<span class="product-card__price-old"><?= $escape($product['old']) ?></span>
+								<?php if ($product['oldPrice'] !== null): ?>
+									<span class="product-card__price-old"><?= $escape($product['oldPrice']) ?></span>
 								<?php endif; ?>
 								<span class="product-card__price-current"><?= $escape($product['price']) ?></span>
 								<span class="product-card__price-note">ou <strong><?= $escape($product['pix']) ?> no pix</strong></span>

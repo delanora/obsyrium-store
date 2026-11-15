@@ -18,6 +18,10 @@
             "Config\\": "config/"
         }
     },
+    "scripts": {
+        "db:migrate": "php database/migrate.php",
+        "db:seed": "php database/seed.php"
+    },
     "config": {
         "sort-packages": true
     },
