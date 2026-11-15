@@ -22,6 +22,11 @@ $principal = $product['images'][0];
 		</nav>
 
 		<div class="product-page__grid">
+			<div class="product-heading" data-reveal>
+				<p class="product-info__eyebrow"><?= $escape($product['category']) ?></p>
+				<h1 class="product-info__title"><?= $escape($product['name']) ?></h1>
+			</div>
+
 			<div class="product-gallery" data-reveal>
 				<figure class="product-gallery__main">
 					<img
@@ -48,8 +53,6 @@ $principal = $product['images'][0];
 			</div>
 
 			<div class="product-info" data-reveal>
-				<p class="product-info__eyebrow"><?= $escape($product['category']) ?></p>
-				<h1 class="product-info__title"><?= $escape($product['name']) ?></h1>
 				<p class="product-info__meta"><?= $escape($product['color']) ?> · <?= $escape($product['material']) ?></p>
 
 				<p class="product-info__price">
