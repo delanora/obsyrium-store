@@ -54,6 +54,7 @@ Extensões adicionais devem ser documentadas quando forem introduzidas pelo proj
 .
 ├── app/
 │   ├── Controllers/
+│   ├── Database/
 │   ├── Middleware/
 │   ├── Models/
 │   ├── Routing/
@@ -127,6 +128,7 @@ O document root aponta para `public/`, nunca para a raiz do repositório, confor
 - O site padrão `000-default` (`DocumentRoot /var/www/html`) está desabilitado, para que a porta 80 sirva somente o projeto.
 - `mod_rewrite` habilitado. PHP executa como módulo do Apache (`libapache2-mod-php8.2`); PHP-FPM não é utilizado.
 - `public/.htaccess` reescreve para `index.php` as requisições que não correspondem a arquivos ou diretórios existentes, entregando tudo ao front controller.
+- `storage/logs/` é o diretório de escrita da aplicação (dono `www-data`, permissão `750`); o log fica em `storage/logs/app.log`, criado em tempo de execução e não versionado.
 - Composer instalado via pacote Debian. Ao ser executado como `root`, ele avisa sobre uso de superusuário e desabilita plugins; para permitir plugins, definir `COMPOSER_ALLOW_SUPERUSER=1`.
 - A raiz é atendida pelo front controller `public/index.php` e responde **200**. Caminhos sem rota registrada respondem **404** pela view `resources/views/errors/404.php`.
 
@@ -149,7 +151,8 @@ Rollback do virtual host: `a2dissite obsyrium-store && a2ensite 000-default && a
 - Escuta somente em `127.0.0.1:3306` (`bind-address = 127.0.0.1`), sem exposição na rede.
 - `datadir` em `/var/lib/mysql/`.
 - Autenticação do usuário `root` do SGBD via soquete Unix (`unix_socket`), sem senha em texto plano.
-- Nenhum banco de dados ou usuário da aplicação foi criado ainda. A criação deve acontecer junto das migrations, com usuário de privilégios restritos (seção 11).
+- Banco `obsyrium_store` criado com `utf8mb4` / `utf8mb4_unicode_ci` e usuário dedicado `obsyrium`@`localhost`, com privilégios restritos ao próprio banco (`SELECT`, `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `ALTER`, `INDEX`, `DROP`, `REFERENCES`, `CREATE TEMPORARY TABLES`, `LOCK TABLES`). A senha existe apenas no `.env` da VM (permissão `640`, dono `www-data`) e nunca deve ser versionada ou exibida.
+- A conexão usa PDO com `utf8mb4`, `ERRMODE_EXCEPTION`, `FETCH_ASSOC` e `EMULATE_PREPARES` desligado, montada por `config/Database.php` e entregue por `app/Database/Connection.php`.
 
 ### 5.3 Proxy
 
@@ -186,6 +189,10 @@ MAIL_FROM_ADDRESS=
 
 `.env` não deve ser versionado. O arquivo `.env.example` deve conter apenas nomes de variáveis e valores fictícios ou vazios.
 
+### 6.1 Leitura do `.env`
+
+O `.env` é lido por `Config\Env::load()`, chamado no bootstrap de `public/index.php`: leitura única por requisição, linhas em branco e comentários com `#` ignorados, valores entre aspas e comentário no fim da linha suportados. O arquivo não é obrigatório — chaves ausentes caem nos valores padrão de `config/`. Valores do `.env` nunca são enviados ao navegador nem gravados em log.
+
 ## 7. Arquitetura e responsabilidades
 
 - **Controllers:** recebem requisições, validam a entrada básica e coordenam a resposta.
@@ -195,7 +202,9 @@ MAIL_FROM_ADDRESS=
 - **Views:** renderizam a interface; não devem conter regras de negócio ou consultas SQL.
 - **Routes:** definem os caminhos HTTP e seus respectivos handlers.
 - **Routing:** `routes/web.php` registra as rotas e `App\Routing\Router` casa método e caminho, instancia o controller e executa a ação; o despacho parte de `public/index.php`.
-- **Config:** centraliza configurações não secretas e leitura das variáveis de ambiente.
+- **Config:** centraliza configurações não secretas e leitura das variáveis de ambiente (`Config\Env`, `Config\Database`).
+- **Env:** `Config\Env` expõe os valores do `.env` de forma tipada (`get`, `int`, `bool`); `Config\Database` monta DSN e opções de conexão.
+- **Database:** `App\Database\Connection` fornece a conexão PDO (`mysql`, `utf8mb4`) sob demanda, reaproveitada na mesma requisição.
 
 Controllers devem permanecer pequenos. Regras de negócio não devem ser duplicadas entre controllers.
 
@@ -223,6 +232,7 @@ Controllers devem permanecer pequenos. Regras de negócio não devem ser duplica
 - Configurar cookies de sessão com `HttpOnly`, `Secure` em HTTPS e `SameSite` apropriado.
 - Utilizar HTTPS em produção.
 - Não registrar senhas, tokens ou dados sensíveis nos logs.
+- Nenhum erro pode expor stack trace, caminho interno, SQL ou credencial ao usuário: `display_errors` fica desligado e exceções e erros fatais são registrados em `storage/logs/app.log`, com resposta apenas das páginas genéricas de `resources/views/errors/`.
 - Validar a autenticidade de notificações recebidas de serviços externos.
 - Aplicar rate limiting onde houver risco de abuso, como login e recuperação de senha.
 
@@ -247,6 +257,7 @@ Regras mínimas:
 - Definir restrições para campos obrigatórios e valores únicos.
 - Evitar exclusão física de registros que precisem permanecer para histórico ou auditoria.
 - Não executar alterações manuais em produção sem registrar a migration correspondente.
+- O diretório `database/migrations/` está criado e versionado (`.gitkeep`). Nenhuma migration foi escrita ainda e não existe ferramenta de execução implementada; os comandos devem ser documentados aqui quando existirem.
 
 ## 12. Testes e validação
 

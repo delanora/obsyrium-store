@@ -8,6 +8,7 @@
 
 # Conteúdo gerado em tempo de execução
 /storage/logs/*
+!/storage/logs/.gitkeep
 /storage/uploads/*
 /storage/cache/
 
