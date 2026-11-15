@@ -26,6 +26,8 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 				<p class="auth__alert" role="alert"><?= $escape($errors['credentials']) ?></p>
 			<?php endif; ?>
 
+			<?php require __DIR__ . '/../partials/social-login.php'; ?>
+
 			<form class="auth__form" method="post" action="/login" novalidate>
 				<?= Csrf::field() ?>
 

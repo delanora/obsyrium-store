@@ -13,7 +13,6 @@ use App\Support\Csrf;
  *
  * @var list<array<string, mixed>> $itens
  * @var int $limite
- * @var bool $visitante
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -22,12 +21,6 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 	<div class="container">
 		<h1 class="cart-page__title">Seu carrinho</h1>
 
-		<?php if ($visitante && $itens !== []): ?>
-			<p class="cart-note">
-				Você está sem conta: o carrinho fica guardado neste navegador.
-				<a class="cart-note__link" href="/login">Entre</a> para finalizar a compra.
-			</p>
-		<?php endif; ?>
 
 		<?php if ($itens === []): ?>			<div class="cart-empty">
 				<p class="cart-empty__text">Seu carrinho está vazio.</p>
@@ -84,6 +77,10 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 					</li>
 				<?php endforeach; ?>
 			</ul>
+
+			<div class="cart-page__footer">
+				<a class="button cart-page__checkout" href="/checkout">Finalizar compra</a>
+			</div>
 		<?php endif; ?>
 	</div>
 </section>

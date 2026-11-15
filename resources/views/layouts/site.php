@@ -36,6 +36,8 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 <body>
 	<?php require __DIR__ . '/../partials/header.php'; ?>
 
+	<?php require __DIR__ . '/../partials/cart-drawer.php'; ?>
+
 	<?php $flash = App\Support\Session::takeFlash(); ?>
 	<?php if ($flash !== null): ?>
 		<div class="container">

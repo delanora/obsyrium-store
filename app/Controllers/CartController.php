@@ -7,7 +7,6 @@ namespace App\Controllers;
 use App\Database\Connection;
 use App\Services\CartService;
 use App\Support\Csrf;
-use App\Support\Price;
 use App\Support\Session;
 
 /**
@@ -20,8 +19,6 @@ use App\Support\Session;
  */
 final class CartController
 {
-    private const FALLBACK_IMAGE = '/assets/images/placeholder.svg';
-
     public function add(): void
     {
         $this->requireCsrf();
@@ -63,24 +60,7 @@ final class CartController
      */
     public function show(): void
     {
-        $itens = [];
-
-        foreach ($this->service()->items() as $linha) {
-            $imagem = (string) ($linha['image_path'] ?? '');
-
-            $itens[] = [
-                'variant_id' => (int) $linha['variant_id'],
-                'name' => (string) $linha['name'],
-                'slug' => (string) $linha['slug'],
-                'size' => (string) $linha['size'],
-                'quantity' => (int) $linha['quantity'],
-                'available' => (int) $linha['available'],
-                'active' => (int) $linha['is_active'] === 1,
-                'price' => Price::format((int) $linha['price_cents']),
-                'image' => $imagem !== '' ? $imagem : self::FALLBACK_IMAGE,
-                'alt' => (string) ($linha['image_alt'] ?? ''),
-            ];
-        }
+        $itens = $this->service()->itemsForDisplay();
 
         http_response_code(200);
         header('Content-Type: text/html; charset=UTF-8');
@@ -88,7 +68,6 @@ final class CartController
         $basePath = dirname(__DIR__, 2);
         $title = 'Carrinho — Obsyrium Store';
         $limite = CartService::MAX_PER_ITEM;
-        $visitante = Session::userId() === null;
         $content = $basePath . '/resources/views/cart/index.php';
 
         require $basePath . '/resources/views/layouts/site.php';
@@ -131,6 +110,12 @@ final class CartController
      */
     private function back(): string
     {
+        $voltar = preg_replace('#[^a-z0-9/-]#', '', strtolower((string) ($_POST['voltar'] ?? '')));
+
+        if ($voltar !== '' && preg_match('#^/(carrinho|produto/[a-z0-9-]+)?$#', $voltar) === 1) {
+            return $voltar;
+        }
+
         $slug = preg_replace('/[^a-z0-9-]/', '', strtolower((string) ($_POST['slug'] ?? '')));
 
         return is_string($slug) && $slug !== '' ? '/produto/' . $slug : '/carrinho';

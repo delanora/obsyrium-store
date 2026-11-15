@@ -479,6 +479,8 @@ Rota `GET /produto/{slug}`, atendida por `App\Controllers\ProductController::sho
 - O cabeçalho mostra "entrar" para visitante e um botão de sair (POST com CSRF) para quem está conectado. Mensagens de retorno usam flash e aparecem no topo do conteúdo.
 - Estilo em `public/assets/css/auth.css` (card, campos, erros) e a mensagem flash em `layout.css`.
 
+- As telas de login e cadastro mostram os botões “Continuar com Google” e “Continuar com Apple” (`resources/views/partials/social-login.php`). Eles são apenas visuais: ficam desabilitados e com o aviso “Login social em breve”, porque o OAuth ainda não foi implementado.
+
 ## 20. Carrinho
 
 O login só é exigido na hora da compra: o visitante monta o carrinho sem conta. Para ele o carrinho fica na sessão do navegador (`$_SESSION['guest_cart']`, `SessionCartStorage`); para o cliente autenticado fica no banco (`carts`, chave única em `user_id`, e um item por variação em `cart_items`, `DatabaseCartStorage`). As duas implementações seguem a interface `App\Services\CartStorage`; as regras ficam em `CartService` e valem para as duas.
@@ -489,13 +491,15 @@ O login só é exigido na hora da compra: o visitante monta o carrinho sem conta
 | `POST /carrinho/adicionar` | soma a quantidade ao item (`variant_id`, `quantity`, com `slug` opcional) |
 | `POST /carrinho/atualizar` | define a quantidade absoluta do item |
 | `POST /carrinho/remover` | apaga o item |
+| `GET /checkout` | inicia a finalização da compra (visitante vai para `/login`) |
 
 - Toda escrita exige token CSRF, responde `303` e volta para `/produto/{slug}` quando o formulário manda o slug (sem slug, vai para `/carrinho`). O cabeçalho `Referer` não é usado.
 - Regras em `App\Services\CartService`: no máximo **5 unidades** do mesmo item e nunca acima do estoque disponível (`stock.quantity - stock.reserved`).
 - A conferência do estoque roda dentro de uma transação, com a linha do estoque travada por `SELECT ... FOR UPDATE`, para que dois envios simultâneos não passem os dois pela mesma validação.
 - O preço não é guardado no carrinho: cada item mostra o preço atual de `products.price_cents` e **o total da compra ainda não é calculado** (item “cálculo do valor total” do roadmap). Frete e checkout também são itens futuros.
 - `resources/views/cart/index.php` monta a página com imagem, tamanho, preço, campo de quantidade (máximo `CartService::MAX_PER_ITEM`) e botão de remover — cada ação tem o próprio formulário e token CSRF. Sem itens, mostra o estado vazio com link para a vitrine. O estilo fica em `public/assets/css/cart.css`.
-- O ícone do carrinho no cabeçalho é link para `/carrinho` e mostra a soma das quantidades de quem está navegando, vinda de `CartService::forCurrentUser(...)->total()` — sessão para visitante, banco para cliente — sem nenhuma consulta extra quando o carrinho está vazio.
+- O ícone do carrinho no cabeçalho mostra a soma das quantidades de quem está navegando, vinda de `CartService::itemsForDisplay()` (sessão para visitante, banco para cliente). No computador ele abre a gaveta lateral (`resources/views/partials/cart-drawer.php`, estilo em `cart.css`, comportamento em `site.js`); no celular o mesmo link navega para `/carrinho`. A gaveta lista os itens, permite remover (o formulário manda `voltar` com o caminho atual, aceito só se for `/`, `/carrinho` ou `/produto/{slug}`) e traz “Finalizar compra” e “Ver carrinho completo”. Sem JavaScript a gaveta não aparece e o link continua funcionando.
 - Ao entrar ou se cadastrar, `CartService::mergeGuestCart()` soma o carrinho da sessão ao do banco (respeitando o limite de 5 e o estoque disponível) e esvazia a sessão; quem já tinha itens no banco recebe a soma. O logout limpa a sessão e preserva o carrinho do banco.
 - Produto inativo, variação inexistente, quantidade zero, item fora do carrinho e estoque insuficiente são recusados com mensagem, sem gravar nada.
-- Visitante com itens vê na página do carrinho o aviso “Você está sem conta: o carrinho fica guardado neste navegador”, com link para `/login`. O carrinho de visitante dura o tempo da sessão do navegador; o do banco fica gravado.
+- A página `/carrinho` e a gaveta têm o botão “Finalizar compra”, que aponta para `GET /checkout`: carrinho vazio volta para `/carrinho` com aviso; visitante vai para `/login` com a mensagem “Entre na sua conta para finalizar a compra.”; cliente autenticado volta ao carrinho com o aviso de que o pagamento será liberado em breve. A lógica de pagamento é uma fase futura.
+- O carrinho de visitante dura o tempo da sessão do navegador; o do banco fica gravado.

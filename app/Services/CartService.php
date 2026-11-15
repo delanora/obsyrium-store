@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\CartRepository;
+use App\Support\Price;
 use App\Support\Session;
 use PDO;
 use Throwable;
@@ -23,6 +24,8 @@ use Throwable;
 final class CartService
 {
     public const MAX_PER_ITEM = 5;
+
+    private const FALLBACK_IMAGE = '/assets/images/placeholder.svg';
 
     public function __construct(
         private readonly PDO $pdo,
@@ -270,6 +273,35 @@ final class CartService
         return $mesclados;
     }
 
+    /**
+     * Itens prontos para a interface: preço em reais, imagem padrão quando o
+     * produto não tem foto e a quantidade que está no carrinho.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function itemsForDisplay(): array
+    {
+        $itens = [];
+
+        foreach ($this->items() as $linha) {
+            $imagem = (string) ($linha['image_path'] ?? '');
+
+            $itens[] = [
+                'variant_id' => (int) $linha['variant_id'],
+                'name' => (string) $linha['name'],
+                'slug' => (string) $linha['slug'],
+                'size' => (string) $linha['size'],
+                'quantity' => (int) $linha['quantity'],
+                'available' => (int) $linha['available'],
+                'active' => (int) $linha['is_active'] === 1,
+                'price' => Price::format((int) $linha['price_cents']),
+                'image' => $imagem !== '' ? $imagem : self::FALLBACK_IMAGE,
+                'alt' => (string) ($linha['image_alt'] ?? ''),
+            ];
+        }
+
+        return $itens;
+    }
     /**
      * @return array<string, mixed>|null
      */

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\AuthController;
 use App\Controllers\CartController;
+use App\Controllers\CheckoutController;
 use App\Controllers\HomeController;
 use App\Controllers\ProductController;
 use App\Routing\Router;
@@ -24,6 +25,8 @@ return static function (Router $router): void {
     $router->post('/carrinho/adicionar', [CartController::class, 'add']);
     $router->post('/carrinho/atualizar', [CartController::class, 'update']);
     $router->post('/carrinho/remover', [CartController::class, 'remove']);
+
+    $router->get('/checkout', [CheckoutController::class, 'start']);
 
     $router->get('/cadastro', [AuthController::class, 'showRegister']);
     $router->post('/cadastro', [AuthController::class, 'register']);

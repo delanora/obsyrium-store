@@ -22,6 +22,8 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 			<h1 class="auth__title">Criar conta</h1>
 			<p class="auth__text">Seus dados ficam guardados para as próximas compras. CPF e telefone são cifrados.</p>
 
+			<?php require __DIR__ . '/../partials/social-login.php'; ?>
+
 			<form class="auth__form" method="post" action="/cadastro" novalidate>
 				<?= Csrf::field() ?>
 

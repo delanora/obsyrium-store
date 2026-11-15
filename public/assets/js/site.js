@@ -1,8 +1,9 @@
 /*
  * Comportamento do site.
  *
- * Menu do celular (hamburger, com foco, Escape e clique fora), sombra do
- * cabeçalho ao rolar e entrada dos blocos marcados com [data-reveal].
+ * Menu do celular (hamburger, com foco, Escape e clique fora), gaveta do
+ * carrinho no computador, sombra do cabeçalho ao rolar e entrada dos blocos
+ * marcados com [data-reveal].
  * Sem este arquivo o site continua inteiro: o menu fica em duas linhas e
  * nada é escondido, porque os estados iniciais dependem de html.js.
  */
@@ -88,6 +89,65 @@
         }
     }
 
+    // Gaveta do carrinho: no computador o ícone do cabeçalho abre a lateral com
+    // os itens; no celular o mesmo link segue para /carrinho. Sem JavaScript a
+    // gaveta nunca aparece e o link funciona como sempre.
+    var gaveta = document.querySelector('[data-cart-drawer]');
+    var abridor = document.querySelector('[data-cart-open]');
+
+    if (gaveta && abridor) {
+        var telaGrande = window.matchMedia('(min-width: 64rem)');
+        var focoAnterior = null;
+
+        var abrirGaveta = function () {
+            focoAnterior = document.activeElement;
+            gaveta.hidden = false;
+            document.body.classList.add('cart-drawer-open');
+            abridor.setAttribute('aria-expanded', 'true');
+
+            var fechar = gaveta.querySelector('.cart-drawer__close');
+
+            if (fechar) {
+                fechar.focus();
+            }
+        };
+
+        var fecharGaveta = function () {
+            gaveta.hidden = true;
+            document.body.classList.remove('cart-drawer-open');
+            abridor.setAttribute('aria-expanded', 'false');
+
+            if (focoAnterior && typeof focoAnterior.focus === 'function') {
+                focoAnterior.focus();
+            }
+        };
+
+        abridor.addEventListener('click', function (evento) {
+            if (!telaGrande.matches) {
+                return;
+            }
+
+            evento.preventDefault();
+
+            if (gaveta.hidden) {
+                abrirGaveta();
+            } else {
+                fecharGaveta();
+            }
+        });
+
+        gaveta.addEventListener('click', function (evento) {
+            if (evento.target.closest('[data-cart-close]')) {
+                fecharGaveta();
+            }
+        });
+
+        document.addEventListener('keydown', function (evento) {
+            if (evento.key === 'Escape' && !gaveta.hidden) {
+                fecharGaveta();
+            }
+        });
+    }
     // Marca para o script inline que o comportamento carregou.
     window.__obsyriumReady = true;
 })();
