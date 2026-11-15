@@ -304,22 +304,25 @@ Cada integração deve possuir configuração própria, tratamento de falhas, lo
 
 Estilos em `public/assets/css/`, carregados nesta ordem: `tokens.css` (variáveis), `base.css` (reset, tipografia e utilitários) e `components.css` (componentes). Nenhum framework CSS é utilizado.
 
-### 16.1 Paleta
+### 16.1 Emblema e paleta
 
-Tema escuro com **uma única cor de acento**: `--color-accent: #d8ff3e`. O acento é reservado para ação, destaque de preço, foco e estado selecionado — não para decoração.
+A identidade parte do emblema da marca: disco escuro com textura de mármore e uma estrela facetada em dourado bronze. A paleta foi extraída do próprio arquivo do logo.
 
-- Superfícies: `--color-bg`, `--color-bg-alt`, `--color-surface`, `--color-surface-raised`.
-- Bordas: `--color-border`, `--color-border-strong`.
-- Textos: `--color-text`, `--color-text-muted`, `--color-text-subtle`.
+- Acento único: `--color-accent: #c9a063`, com `--color-accent-hover` (#e3bc84), `--color-accent-active` (#a8844c) e `--color-accent-strong` (#8a6a3a) tirados dos realces e sombras do emblema. Gradiente opcional em `--gradient-accent`.
+- O acento é reservado para ação, preço em destaque, foco e estado selecionado — nunca para grandes áreas de fundo.
+- Pretos quentes: `--color-bg` (#080707), `--color-bg-alt` (#0e0c0b), `--color-surface` (#141110), `--color-surface-raised` (#1d1917); bordas `--color-border` e `--color-border-strong`.
+- Textos: `--color-text` (#f2ece3), `--color-text-muted` (#a89b8b) e `--color-text-subtle` (#7a6f63).
 - Semânticas: `--color-danger`, `--color-success`, `--color-warning`.
-- Contraste de texto sobre fundo escuro atende AA (`--color-text-muted` fica acima de 7:1).
+
+Arquivos do logo em `public/assets/images/`: `logo-512.png` e `logo-128.png`, ambos derivados do arquivo original de 1254×1254, que permanece fora do repositório. Cabeçalho usa a versão de 128px; o emblema grande usa a de 512px.
 
 ### 16.2 Tipografia
 
-- `--font-display`: display condensada — `Oswald`, `Archivo Narrow`, `Roboto Condensed`, `Arial Narrow`, `Impact`. Usada em títulos e no seletor de tamanho.
+- `--font-display`: display lapidada em caixa alta com tracking largo — `Cinzel`, `Trajan Pro`, `Cormorant Garamond`, `Playfair Display`, `Bodoni MT`, `Georgia`. Usada em títulos e no seletor de tamanho.
+- `--font-display-condensed`: `Oswald`, `Archivo Narrow`, `Roboto Condensed`, `Arial Narrow`, `Impact` — reservada para manchetes de impacto (drop, campanha).
 - `--font-body`: sans neutra — `Inter`, `Segoe UI`, `system-ui`. Usada em texto corrido, preço e nome do produto.
 - Escala de `--font-size-xs` a `--font-size-3xl`, com `clamp()` nos tamanhos maiores.
-- **Nenhuma fonte web é carregada ainda**: vale a primeira fonte instalada na pilha do sistema. Para garantir a display condensada em qualquer dispositivo, o arquivo da fonte precisa ser hospedado e declarado com `@font-face`.
+- **Nenhuma fonte web é carregada ainda**: vale a primeira fonte instalada na pilha do sistema. Para fixar a display lapidada em qualquer dispositivo, o arquivo da fonte precisa ser hospedado e declarado com `@font-face`.
 
 ### 16.3 Espaçamento, raios e movimento
 

@@ -22,6 +22,20 @@
 			font-size: var(--font-size-sm);
 		}
 
+		.preview__brand {
+			display: flex;
+			align-items: center;
+			gap: var(--space-4);
+		}
+
+		.preview__logo {
+			flex: none;
+			width: 72px;
+			height: 72px;
+			border-radius: var(--radius-circle);
+			box-shadow: var(--shadow-accent);
+		}
+
 		.preview__section {
 			display: flex;
 			flex-direction: column;
@@ -41,12 +55,16 @@
 </head>
 <body>
 	<main class="container preview">
-		<header>
-			<h1>Obsyrium Store</h1>
-			<p class="preview__note">
-				Prévia dos componentes base (seletor de tamanho, card de produto e faixa de confiança)
-				sobre os tokens de identidade visual. A página inicial da loja será construída na fase 4.
-			</p>
+		<header class="preview__brand">
+			<img class="preview__logo" src="/assets/images/logo-128.png" width="72" height="72" alt="Obsyrium Store">
+			<div>
+				<h1>Obsyrium Store</h1>
+				<p class="preview__note">
+					Identidade visual derivada do emblema da marca. Prévia dos componentes base
+					(seletor de tamanho, card de produto e faixa de confiança); a página inicial da loja
+					será construída na fase 4.
+				</p>
+			</div>
 		</header>
 
 		<section class="preview__section">
