@@ -642,6 +642,10 @@ html {
     font-size: var(--font-size-xs);
 }
 
+.site-footer__legal p {
+    margin: 0;
+}
+
 .skip-link {
     position: absolute;
     inset-inline-start: var(--space-4);
@@ -725,9 +729,16 @@ html {
         gap: 0;
     }
 
+    .site-footer__list li {
+        display: flex;
+        align-items: center;
+        min-height: var(--target-min);
+    }
+
     .site-footer__list a {
         display: flex;
         align-items: center;
+        width: 100%;
         min-height: var(--target-min);
     }
 
@@ -777,12 +788,14 @@ html {
 
     .site-footer__grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--space-5) var(--space-4);
+        gap: var(--space-6) var(--space-4);
     }
 
-    .site-footer__brand,
-    .site-footer__grid > :last-child {
+    .site-footer__brand {
         grid-column: 1 / -1;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding-bottom: var(--space-2);
     }
 }
 
