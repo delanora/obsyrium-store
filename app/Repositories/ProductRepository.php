@@ -54,4 +54,77 @@ final class ProductRepository
 
         return $consulta->fetchAll();
     }
+
+    /**
+     * Busca o produto ativo pelo slug, com o nome e o slug da categoria.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findBySlug(string $slug): ?array
+    {
+        $sql = 'SELECT p.id,
+                       p.name,
+                       p.slug,
+                       p.color,
+                       p.material,
+                       p.description,
+                       p.price_cents,
+                       p.compare_price_cents,
+                       c.name AS category_name,
+                       c.slug AS category_slug
+                  FROM products p
+                  INNER JOIN categories c ON c.id = p.category_id
+                 WHERE p.slug = :slug
+                   AND p.is_active = 1
+                 LIMIT 1';
+
+        $consulta = $this->pdo->prepare($sql);
+        $consulta->bindValue(':slug', $slug);
+        $consulta->execute();
+
+        $linha = $consulta->fetch();
+
+        return $linha === false ? null : $linha;
+    }
+
+    /**
+     * Imagens do produto na ordem de exibição.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function images(int $productId): array
+    {
+        $sql = 'SELECT path, alt
+                  FROM product_images
+                 WHERE product_id = :product_id
+                 ORDER BY position, id';
+
+        $consulta = $this->pdo->prepare($sql);
+        $consulta->bindValue(':product_id', $productId, PDO::PARAM_INT);
+        $consulta->execute();
+
+        return $consulta->fetchAll();
+    }
+
+    /**
+     * Tamanhos cadastrados com a quantidade em estoque de cada um.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function variantsWithStock(int $productId): array
+    {
+        $sql = "SELECT v.size,
+                       v.sku,
+                       COALESCE(s.quantity, 0) AS quantity
+                  FROM product_variants v
+                  LEFT JOIN stock s ON s.variant_id = v.id
+                 WHERE v.product_id = :product_id
+                 ORDER BY FIELD(v.size, 'PP', 'P', 'M', 'G', 'GG', 'XG'), v.size";
+
+        $consulta = $this->pdo->prepare($sql);
+        $consulta->bindValue(':product_id', $productId, PDO::PARAM_INT);
+        $consulta->execute();
+
+        return $consulta->fetchAll();
+    }
 }

@@ -60,7 +60,7 @@ final class HomeController
 
         return [
             'name' => (string) $linha['name'],
-            'href' => '#',
+            'href' => '/produto/' . rawurlencode((string) $linha['slug']),
             'color' => (string) $linha['color'],
             'material' => (string) $linha['material'],
             'image' => $imagem !== '' ? $imagem : self::FALLBACK_IMAGE,

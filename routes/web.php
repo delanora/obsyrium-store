@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controllers\HomeController;
+use App\Controllers\ProductController;
 use App\Routing\Router;
 
 /*
@@ -14,4 +15,5 @@ use App\Routing\Router;
 
 return static function (Router $router): void {
     $router->get('/', [HomeController::class, 'index']);
+    $router->get('/produto/{slug}', [ProductController::class, 'show']);
 };

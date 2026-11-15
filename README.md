@@ -396,3 +396,15 @@ A camada de animação fica em `public/assets/css/animations.css`, carregada por
 - **Microinterações**: sublinhado que cresce no menu (desktop), botões com elevação no hover e afundamento no toque, cards com `translateY(-4px)` e sombra (só em `hover: hover`), imagem com zoom de 500ms, foco do campo de newsletter com halo dourado e brilho do hero pulsando em 9s.
 - **Rolagem suave**: `html { scroll-behavior: smooth }` para as âncoras internas.
 - Tudo respeita `prefers-reduced-motion`: o bloco em `base.css` zera as durações e desliga a pulsação do hero.
+
+## 18. Página do produto
+
+Rota `GET /produto/{slug}`, atendida por `App\Controllers\ProductController::show`. Slug inexistente ou produto com `is_active = 0` devolve 404.
+
+- O `Router` entende segmentos entre chaves: o caminho é convertido em regex ancorada e os valores capturados chegam ao handler como array nomeado (`['slug' => '...']`).
+- Os dados vêm de `App\Repositories\ProductRepository`: `findBySlug()` (produto + categoria), `images()` (galeria na ordem de `position`) e `variantsWithStock()` (tamanhos com a quantidade de cada um, de PP a XG).
+- A view `resources/views/product/show.php` apenas apresenta: o controller resolve preço, valor no Pix, parcelas, desconto e o estado do estoque (`in`, `low`, `out`).
+- Tamanho sem estoque é renderizado com `disabled`, e a folha de estilo risca a opção por `.size-option__input:disabled + .size-option`. É o mesmo componente `.size-picker` usado na home.
+- O estilo fica em `public/assets/css/product.css`, carregado junto das demais folhas no layout.
+- O botão de compra segue desabilitado até o carrinho existir; a dica abaixo dele informa isso ao visitante.
+- Os cards da vitrine (`HomeController::toCard`) apontam para `/produto/{slug}`.
