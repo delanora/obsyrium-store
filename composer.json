@@ -1,0 +1,25 @@
+{
+    "name": "delanora/obsyrium-store",
+    "description": "Loja virtual Obsyrium Store: PHP 8.2, arquitetura MVC, PDO e frontend em HTML, CSS e JavaScript.",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "ext-fileinfo": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

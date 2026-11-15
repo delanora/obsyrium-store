@@ -1,0 +1,25 @@
+# Dependências gerenciadas pelo Composer
+/vendor/
+
+# Configuração local e credenciais
+.env
+.env.*
+!.env.example
+
+# Conteúdo gerado em tempo de execução
+/storage/logs/*
+/storage/uploads/*
+/storage/cache/
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+
+# Editores e sistema operacional
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Artefatos de teste
+.phpunit.result.cache
