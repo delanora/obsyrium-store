@@ -584,20 +584,14 @@ html {
 .site-footer__brand {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
-    max-width: 22rem;
+    align-items: center;
+    justify-content: center;
 }
 
 .site-footer__logo {
     width: 3.5rem;
     height: 3.5rem;
     border-radius: var(--radius-circle);
-}
-
-.site-footer__about {
-    margin: 0;
-    color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
 }
 
 .site-footer__title {
