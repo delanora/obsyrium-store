@@ -299,5 +299,40 @@ Cada integração deve possuir configuração própria, tratamento de falhas, lo
 - [`AGENTS.md`](./AGENTS.md): instruções para agentes de desenvolvimento.
 - Seção [2.1](#21-versões-instaladas-no-ambiente-de-desenvolvimento): versões instaladas no ambiente de desenvolvimento.
 - Seções [5.1](#51-servidor-web-neste-ambiente), [5.2](#52-banco-de-dados-neste-ambiente) e [5.3](#53-proxy): configuração atual da VM (servidor web, banco e ausência de proxy).
-- `database/migrations/`: histórico de alterações do banco.
+
+## 16. Identidade visual e componentes base
+
+Estilos em `public/assets/css/`, carregados nesta ordem: `tokens.css` (variáveis), `base.css` (reset, tipografia e utilitários) e `components.css` (componentes). Nenhum framework CSS é utilizado.
+
+### 16.1 Paleta
+
+Tema escuro com **uma única cor de acento**: `--color-accent: #d8ff3e`. O acento é reservado para ação, destaque de preço, foco e estado selecionado — não para decoração.
+
+- Superfícies: `--color-bg`, `--color-bg-alt`, `--color-surface`, `--color-surface-raised`.
+- Bordas: `--color-border`, `--color-border-strong`.
+- Textos: `--color-text`, `--color-text-muted`, `--color-text-subtle`.
+- Semânticas: `--color-danger`, `--color-success`, `--color-warning`.
+- Contraste de texto sobre fundo escuro atende AA (`--color-text-muted` fica acima de 7:1).
+
+### 16.2 Tipografia
+
+- `--font-display`: display condensada — `Oswald`, `Archivo Narrow`, `Roboto Condensed`, `Arial Narrow`, `Impact`. Usada em títulos e no seletor de tamanho.
+- `--font-body`: sans neutra — `Inter`, `Segoe UI`, `system-ui`. Usada em texto corrido, preço e nome do produto.
+- Escala de `--font-size-xs` a `--font-size-3xl`, com `clamp()` nos tamanhos maiores.
+- **Nenhuma fonte web é carregada ainda**: vale a primeira fonte instalada na pilha do sistema. Para garantir a display condensada em qualquer dispositivo, o arquivo da fonte precisa ser hospedado e declarado com `@font-face`.
+
+### 16.3 Espaçamento, raios e movimento
+
+- Escala de espaçamento com base 4px: `--space-1` (0.25rem) a `--space-10` (5rem).
+- Raios: `--radius-xs`, `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-pill`.
+- Movimento: `--duration-fast`, `--duration-base` e `--ease-standard`; `prefers-reduced-motion` desativa transições.
+- Acessibilidade: `--target-min: 44px` para alvos de toque e anel de foco em `--focus-ring-width`, `--focus-ring-offset` e `--focus-ring-color`.
+
+### 16.4 Componentes
+
+- **Seletor de tamanho** (`.size-picker`): `fieldset` + `legend` + `input[type="radio"]` visualmente oculto com `label.size-option` associado. Selecionado usa fundo de acento, esgotado usa `input:disabled` com texto riscado, e o foco aparece em `:focus-visible`. Não usar `<select>` para tamanho.
+- **Card de produto** (`.product-card`, dentro de `.product-grid`): mídia com proporção 3:4, selos em `.product-card__badges`, título, metadados, preço com valor antigo/atual e notas de Pix/parcelas. Variante `.product-card--sold-out`.
+- **Faixa de confiança** (`.trust-bar`): grade responsiva de itens com ícone SVG inline herdando `currentColor`, rótulo e texto de apoio.
+
+A view `resources/views/home/index.php` exibe uma prévia dos três componentes; a página inicial definitiva pertence à fase 4.- `database/migrations/`: histórico de alterações do banco.
 - `tests/`: testes automatizados.
