@@ -130,8 +130,11 @@
             document.body.classList.remove('cart-drawer-open');
             abridor.setAttribute('aria-expanded', 'false');
 
-            if (focoAnterior && typeof focoAnterior.focus === 'function') {
-                focoAnterior.focus();
+            // preventScroll: o ícone do carrinho fica no topo do documento e
+            // focá-lo rolava a página para lá, então o site "subia" no fim do
+            // fechamento. O foco volta sem mexer na rolagem.
+            if (focoAnterior && focoAnterior !== document.body && document.contains(focoAnterior)) {
+                focoAnterior.focus({preventScroll: true});
             }
         };
 
