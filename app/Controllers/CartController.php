@@ -56,7 +56,15 @@ final class CartController
 
         $erro = $this->service()->remove((int) ($_POST['variant_id'] ?? 0));
 
-        $this->flash($erro, 'Item removido do carrinho.');
+        // A remoção usa o mesmo pop-up do cabeçalho que a adição, com uma
+        // carinha triste no fim: sair do carrinho não é motivo de festa. O erro
+        // (item já fora, por exemplo) continua na faixa do topo.
+        if ($erro !== null) {
+            Session::flash('error', $erro);
+        } else {
+            Session::flash('cart', 'Item removido do carrinho :/');
+        }
+
         $this->redirect($this->back());
     }
 
