@@ -355,18 +355,6 @@
     opacity: 0;
 }
 
-.cart-drawer__item.is-removendo .cart-drawer__image,
-.cart-drawer__item.is-removendo .cart-drawer__info,
-.cart-drawer__item.is-removendo form {
-    transform: scale(0.9);
-    transition: transform 160ms var(--ease-standard);
-}
-
-/* Depois de remover, a gaveta entra direto: o cliente já estava com ela aberta. */
-.cart-drawer--sem-entrada .cart-drawer__panel {
-    animation: none;
-}
-
 .cart-drawer__image {
     width: 56px;
     height: 70px;

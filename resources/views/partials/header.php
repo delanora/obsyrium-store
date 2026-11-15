@@ -28,7 +28,6 @@ $itensNoCarrinho = array_sum(array_column($itensDoCarrinho, 'quantity'));
 // A confirmação de item adicionado vira um pop-up junto do ícone do carrinho,
 // não uma faixa no topo: o layout deixa esse tipo de mensagem para cá.
 $avisoDoCarrinho = (($flash ?? [])['type'] ?? null) === 'cart' ? $flash : null;
-$tomDoAviso = $avisoDoCarrinho !== null ? (($avisoDoCarrinho['tone'] ?? null)) : null;
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 ?>
@@ -80,7 +79,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 				</a>
 
 				<?php if ($avisoDoCarrinho !== null): ?>
-					<div class="cart-toast" role="status" data-toast<?= $tomDoAviso !== null ? ' data-toast-tone="' . $escape((string) $tomDoAviso) . '"' : '' ?>>
+					<div class="cart-toast" role="status" data-toast>
 						<span class="cart-toast__check" aria-hidden="true">
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
 						</span>

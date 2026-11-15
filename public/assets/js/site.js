@@ -109,10 +109,9 @@
             }
         };
 
-        var abrirGaveta = function (comFoco, semEntrada) {
+        var abrirGaveta = function (comFoco) {
             focoAnterior = document.activeElement;
             aberturaEm = Date.now();
-            gaveta.classList.toggle('cart-drawer--sem-entrada', semEntrada === true);
             gaveta.hidden = false;
             document.body.classList.add('cart-drawer-open');
             abridor.setAttribute('aria-expanded', 'true');
@@ -206,9 +205,7 @@
                     painelDaGaveta.insertBefore(avisoAdicionado, destinoDoAviso);
                 }
 
-                // Depois de remover, a gaveta já estava à vista: entra direto,
-                // sem repetir a animação de abertura.
-                abrirGaveta(false, avisoAdicionado.getAttribute('data-toast-tone') === 'removido');
+                abrirGaveta(false);
                 agendarFechamento();
             }
         }
@@ -273,16 +270,21 @@
             }, 260);
         };
 
+        // Na /carrinho a lista da própria página também precisa acompanhar, então
+        // ela é trocada pelo que veio na resposta — sem recarregar nada.
+        var atualizarPaginaDoCarrinho = function (doc) {
+            var paginaAtual = document.querySelector('.cart-page');
+            var paginaNova = doc.querySelector('.cart-page');
+
+            if (paginaAtual && paginaNova) {
+                paginaAtual.replaceWith(document.importNode(paginaNova, true));
+            }
+        };
+
         gaveta.addEventListener('submit', function (evento) {
             var formulario = evento.target;
 
             if (!formulario || !formulario.closest) {
-                return;
-            }
-
-            // Na própria /carrinho a lista da página também precisa acompanhar,
-            // então ali o envio segue o caminho de sempre.
-            if (window.location.pathname.replace(/\/+$/, '') === '/carrinho') {
                 return;
             }
 
@@ -322,6 +324,7 @@
                 item.innerHTML = '<p class="cart-drawer__item-aviso">Item removido do carrinho :/</p>';
 
                 atualizarSinais(doc);
+                atualizarPaginaDoCarrinho(doc);
 
                 window.setTimeout(function () {
                     sumirComItem(item, doc);

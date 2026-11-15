@@ -93,19 +93,13 @@ final class Session
         session_destroy();
     }
 
-    public static function flash(string $type, string $message, ?string $tone = null): void
+    public static function flash(string $type, string $message): void
     {
-        $flash = ['type' => $type, 'message' => $message];
-
-        if ($tone !== null) {
-            $flash['tone'] = $tone;
-        }
-
-        self::put(self::FLASH_KEY, $flash);
+        self::put(self::FLASH_KEY, ['type' => $type, 'message' => $message]);
     }
 
     /**
-     * @return array{type: string, message: string, tone?: string}|null
+     * @return array{type: string, message: string}|null
      */
     public static function takeFlash(): ?array
     {
