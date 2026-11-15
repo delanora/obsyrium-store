@@ -98,8 +98,16 @@
     if (gaveta && abridor) {
         var telaGrande = window.matchMedia('(min-width: 64rem)');
         var focoAnterior = null;
+        var fechamentoAutomatico = 0;
 
-        var abrirGaveta = function () {
+        var cancelarFechamentoAutomatico = function () {
+            if (fechamentoAutomatico) {
+                window.clearTimeout(fechamentoAutomatico);
+                fechamentoAutomatico = 0;
+            }
+        };
+
+        var abrirGaveta = function (comFoco) {
             focoAnterior = document.activeElement;
             gaveta.hidden = false;
             document.body.classList.add('cart-drawer-open');
@@ -107,14 +115,71 @@
 
             var fechar = gaveta.querySelector('.cart-drawer__close');
 
-            if (fechar) {
+            if (fechar && comFoco !== false) {
                 fechar.focus();
             }
         };
 
+        var fecharGaveta = function () {
+            cancelarFechamentoAutomatico();
+            gaveta.hidden = true;
+            gaveta.classList.remove('is-collapsing');
+            document.body.classList.remove('cart-drawer-open');
+            abridor.setAttribute('aria-expanded', 'false');
+
+            if (focoAnterior && typeof focoAnterior.focus === 'function') {
+                focoAnterior.focus();
+            }
+        };
+
+        // Fecha encolhendo na direção do ícone do carrinho e pisca o ícone no
+        // fim, para ficar claro que é ali que a gaveta abre de novo.
+        var fecharComAnimacao = function () {
+            if (gaveta.hidden || gaveta.classList.contains('is-collapsing')) {
+                return;
+            }
+
+            var painel = gaveta.querySelector('.cart-drawer__panel');
+            var concluido = false;
+
+            var concluir = function () {
+                if (concluido) {
+                    return;
+                }
+
+                concluido = true;
+                fecharGaveta();
+
+                abridor.classList.add('cart-pulse');
+
+                window.setTimeout(function () {
+                    abridor.classList.remove('cart-pulse');
+                }, 700);
+            };
+
+            gaveta.classList.add('is-collapsing');
+
+            if (painel) {
+                painel.addEventListener('animationend', function (evento) {
+                    if (evento.animationName === 'cart-drawer-collapse') {
+                        concluir();
+                    }
+                });
+            }
+
+            // Rede de segurança: se a animação não rodar (movimento reduzido ou
+            // aba em segundo plano), fecha do mesmo jeito.
+            window.setTimeout(concluir, 420);
+        };
+
+        var agendarFechamento = function () {
+            cancelarFechamentoAutomatico();
+            fechamentoAutomatico = window.setTimeout(fecharComAnimacao, 3000);
+        };
+
         // Item recém-adicionado: no computador a gaveta abre sozinha e o aviso
         // passa para dentro dela. O atalho "Ver carrinho" sai, porque a lista
-        // já está à vista.
+        // já está à vista. Depois de 3 segundos ela se recolhe sozinha.
         var avisoAdicionado = document.querySelector('[data-toast]');
 
         if (avisoAdicionado && telaGrande.matches) {
@@ -131,18 +196,9 @@
                 painelDaGaveta.insertBefore(avisoAdicionado, destinoDoAviso);
             }
 
-            abrirGaveta();
+            abrirGaveta(false);
+            agendarFechamento();
         }
-
-        var fecharGaveta = function () {
-            gaveta.hidden = true;
-            document.body.classList.remove('cart-drawer-open');
-            abridor.setAttribute('aria-expanded', 'false');
-
-            if (focoAnterior && typeof focoAnterior.focus === 'function') {
-                focoAnterior.focus();
-            }
-        };
 
         abridor.addEventListener('click', function (evento) {
             if (!telaGrande.matches) {
@@ -150,23 +206,29 @@
             }
 
             evento.preventDefault();
+            cancelarFechamentoAutomatico();
 
             if (gaveta.hidden) {
                 abrirGaveta();
             } else {
-                fecharGaveta();
+                fecharComAnimacao();
             }
         });
 
         gaveta.addEventListener('click', function (evento) {
             if (evento.target.closest('[data-cart-close]')) {
-                fecharGaveta();
+                fecharComAnimacao();
             }
+        });
+
+        // Se o cliente começa a mexer na gaveta, o fechamento automático espera.
+        ['mouseenter', 'pointerdown', 'keydown', 'focusin'].forEach(function (nome) {
+            gaveta.addEventListener(nome, cancelarFechamentoAutomatico);
         });
 
         document.addEventListener('keydown', function (evento) {
             if (evento.key === 'Escape' && !gaveta.hidden) {
-                fecharGaveta();
+                fecharComAnimacao();
             }
         });
     }
