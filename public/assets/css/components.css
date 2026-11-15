@@ -1,0 +1,281 @@
+/*
+ * Componentes base: seletor de tamanho, card de produto e faixa de confiança.
+ * Todos usam apenas os tokens de tokens.css.
+ */
+
+/* ============ Seletor de tamanho ============ */
+
+.size-picker {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.size-picker__legend {
+    display: block;
+    margin-bottom: var(--space-2);
+    padding: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+}
+
+.size-picker__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.size-option__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
+
+.size-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--target-min);
+    min-height: var(--target-min);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+        border-color var(--duration-fast) var(--ease-standard),
+        background-color var(--duration-fast) var(--ease-standard),
+        color var(--duration-fast) var(--ease-standard);
+}
+
+.size-option:hover {
+    border-color: var(--color-text-muted);
+}
+
+.size-option__input:checked + .size-option {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent);
+    color: var(--color-accent-contrast);
+    font-weight: var(--font-weight-semibold);
+}
+
+.size-option__input:focus-visible + .size-option {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
+.size-option__input:disabled + .size-option {
+    border-color: var(--color-border);
+    background-color: var(--color-surface);
+    color: var(--color-text-subtle);
+    text-decoration: line-through;
+    cursor: not-allowed;
+}
+
+.size-picker__hint {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.size-picker__hint a {
+    color: var(--color-accent);
+}
+
+/* ============ Grade e card de produto ============ */
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+}
+
+@media (min-width: 48em) {
+    .product-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-5);
+    }
+}
+
+.product-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.product-card__media {
+    position: relative;
+    margin: 0;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background-color: var(--color-surface-raised);
+}
+
+.product-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--duration-base) var(--ease-standard);
+}
+
+.product-card:hover .product-card__image,
+.product-card:focus-within .product-card__image {
+    transform: scale(1.03);
+}
+
+.product-card__badges {
+    position: absolute;
+    inset-block-start: var(--space-2);
+    inset-inline-start: var(--space-2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.product-card__badge {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+}
+
+.product-card__badge--accent {
+    background-color: var(--color-accent);
+    color: var(--color-accent-contrast);
+}
+
+.product-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-3) var(--space-4);
+}
+
+.product-card__title {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.product-card__title a {
+    text-decoration: none;
+}
+
+.product-card__title a:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+}
+
+.product-card__meta {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.product-card__price {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-2);
+    margin: auto 0 0;
+    padding-top: var(--space-2);
+}
+
+.product-card__price-current {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+}
+
+.product-card__price-old {
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-sm);
+    text-decoration: line-through;
+}
+
+.product-card__price-note {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.product-card__price-note strong {
+    color: var(--color-accent);
+    font-weight: var(--font-weight-semibold);
+}
+
+.product-card--sold-out .product-card__image {
+    opacity: 0.5;
+}
+
+.product-card--sold-out .product-card__title a {
+    color: var(--color-text-muted);
+}
+
+/* ============ Faixa de confiança ============ */
+
+.trust-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-4);
+    margin: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-alt);
+}
+
+.trust-bar__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.trust-bar__icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--space-6);
+    height: var(--space-6);
+    color: var(--color-accent);
+}
+
+.trust-bar__icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.trust-bar__label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.trust-bar__text {
+    display: block;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}

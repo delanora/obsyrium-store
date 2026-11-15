@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="300" height="400">
+	<rect width="300" height="400" fill="#16161a"/>
+	<rect x="0.5" y="0.5" width="299" height="399" fill="none" stroke="#2b2b31"/>
+	<text x="150" y="205" fill="#7c7b82" font-family="system-ui, sans-serif" font-size="14" text-anchor="middle">imagem em breve</text>
+</svg>
