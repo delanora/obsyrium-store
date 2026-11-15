@@ -72,6 +72,7 @@ $principal = $product['images'][0];
 				<form class="product-form" action="/carrinho/adicionar" method="post">
 					<?= Csrf::field() ?>
 					<input type="hidden" name="slug" value="<?= $escape($product['slug']) ?>">
+					<input type="hidden" name="voltar" value="<?= $escape($product['voltar']) ?>">
 
 					<fieldset class="size-picker product-info__sizes">
 						<legend class="size-picker__legend">Tamanho</legend>

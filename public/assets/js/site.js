@@ -148,6 +148,23 @@
             }
         });
     }
+    // Aviso de item adicionado ao carrinho: fecha sozinho depois de alguns
+    // segundos e também pelo botão, sem depender de recarregar a página.
+    var avisoDoCarrinho = document.querySelector('[data-toast]');
+
+    if (avisoDoCarrinho) {
+        var fecharAviso = function () {
+            avisoDoCarrinho.remove();
+        };
+
+        var botaoAviso = avisoDoCarrinho.querySelector('[data-toast-close]');
+
+        if (botaoAviso) {
+            botaoAviso.addEventListener('click', fecharAviso);
+        }
+
+        window.setTimeout(fecharAviso, 6000);
+    }
     // Marca para o script inline que o comportamento carregou.
     window.__obsyriumReady = true;
 })();

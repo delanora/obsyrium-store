@@ -378,3 +378,112 @@ body.cart-drawer-open {
     text-align: center;
     text-decoration: underline;
 }
+
+/* ============ Pop-up de item adicionado ============ */
+
+/*
+ * Confirmação que aparece colada no ícone do carrinho, no mesmo idioma visual
+ * do site, mas com o dourado da marca em destaque para chamar atenção.
+ */
+.site-header__cart {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.cart-toast {
+    position: absolute;
+    top: calc(100% + 0.85rem);
+    right: 0;
+    z-index: 55;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--space-3);
+    align-items: start;
+    width: min(19rem, 72vw);
+    padding: var(--space-4) var(--space-4) var(--space-4) var(--space-5);
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius-sm);
+    background-image: linear-gradient(180deg, var(--color-surface-raised), var(--color-surface));
+    box-shadow: 0 18px 42px rgb(0 0 0 / 60%), 0 0 0 1px rgb(201 160 99 / 16%);
+    text-align: left;
+    animation: cart-toast-enter 220ms ease-out;
+}
+
+.cart-toast::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 3px;
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    background-image: var(--gradient-accent);
+}
+
+@keyframes cart-toast-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cart-toast {
+        animation: none;
+    }
+}
+
+.cart-toast__check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent-hover);
+}
+
+.cart-toast__check svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.cart-toast__text {
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.cart-toast__link {
+    display: inline-block;
+    margin-top: var(--space-2);
+    color: var(--color-accent-hover);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+    text-decoration: underline;
+}
+
+.cart-toast__close {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-text-subtle);
+    cursor: pointer;
+}
+
+.cart-toast__close svg {
+    width: 0.9rem;
+    height: 0.9rem;
+}
+
+.cart-toast__close:hover {
+    color: var(--color-text);
+}

@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Database\Connection;
 use App\Repositories\ProductRepository;
+use App\Support\Navegacao;
 use App\Support\Price;
 
 final class HomeController
@@ -17,6 +18,8 @@ final class HomeController
 
     public function index(): void
     {
+        Navegacao::registrar('/');
+
         http_response_code(200);
         header('Content-Type: text/html; charset=UTF-8');
 

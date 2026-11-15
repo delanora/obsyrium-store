@@ -25,6 +25,10 @@ $carrinhoDoCliente = App\Services\CartService::forCurrentUser(App\Database\Conne
 $itensDoCarrinho = $carrinhoDoCliente->itemsForDisplay();
 $itensNoCarrinho = array_sum(array_column($itensDoCarrinho, 'quantity'));
 
+// A confirmação de item adicionado vira um pop-up junto do ícone do carrinho,
+// não uma faixa no topo: o layout deixa esse tipo de mensagem para cá.
+$avisoDoCarrinho = (($flash ?? [])['type'] ?? null) === 'cart' ? $flash : null;
+
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 ?>
 <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
@@ -68,10 +72,29 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 				</a>
 			<?php endif; ?>
 
-			<a class="icon-button" href="/carrinho" data-cart-open aria-controls="cart-drawer" aria-expanded="false" aria-label="Carrinho, <?= $itensNoCarrinho ?> <?= $itensNoCarrinho === 1 ? 'item' : 'itens' ?>">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16l-1.5 11h-13z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
-				<span class="icon-button__count" aria-hidden="true"><?= $itensNoCarrinho ?></span>
-			</a>
+			<div class="site-header__cart">
+				<a class="icon-button" href="/carrinho" data-cart-open aria-controls="cart-drawer" aria-expanded="false" aria-label="Carrinho, <?= $itensNoCarrinho ?> <?= $itensNoCarrinho === 1 ? 'item' : 'itens' ?>">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16l-1.5 11h-13z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+					<span class="icon-button__count" aria-hidden="true"><?= $itensNoCarrinho ?></span>
+				</a>
+
+				<?php if ($avisoDoCarrinho !== null): ?>
+					<div class="cart-toast" role="status" data-toast>
+						<span class="cart-toast__check" aria-hidden="true">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+						</span>
+
+						<div class="cart-toast__body">
+							<p class="cart-toast__text"><?= $escape($avisoDoCarrinho['message']) ?></p>
+							<a class="cart-toast__link" href="/carrinho">Ver carrinho</a>
+						</div>
+
+						<button class="cart-toast__close" type="button" data-toast-close aria-label="Fechar aviso">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+						</button>
+					</div>
+				<?php endif; ?>
+			</div>
 		</div>
 	</div>
 </header>

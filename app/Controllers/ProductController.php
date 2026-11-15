@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Database\Connection;
 use App\Repositories\ProductRepository;
+use App\Support\Navegacao;
 use App\Support\Price;
 
 final class ProductController
@@ -41,6 +42,11 @@ final class ProductController
 
         http_response_code(200);
         header('Content-Type: text/html; charset=UTF-8');
+
+        // Guarda de onde o cliente veio antes de abrir o produto: é para lá
+        // que ele volta depois de adicionar ao carrinho.
+        $voltarDoProduto = Navegacao::origemDe('/produto/' . $slug);
+        Navegacao::registrar('/produto/' . $slug);
 
         $id = (int) $linha['id'];
         $nome = (string) $linha['name'];
@@ -93,6 +99,7 @@ final class ProductController
             'discount' => $precoAntigo !== null ? Price::discountPercent($precoAntigo, $preco) : 0,
             'soldOut' => $estoqueTotal === 0,
             'stock' => $this->stock($estoqueTotal),
+            'voltar' => $voltarDoProduto,
         ];
 
         $title = sprintf('%s — Obsyrium Store', $nome);

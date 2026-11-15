@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Database\Connection;
 use App\Services\CartService;
 use App\Support\Csrf;
+use App\Support\Navegacao;
 use App\Support\Session;
 
 /**
@@ -28,7 +29,11 @@ final class CartController
             (int) ($_POST['quantity'] ?? 1)
         );
 
-        $this->flash($erro, 'Item adicionado ao carrinho.');
+        if ($erro === null) {
+            Session::flash('cart', 'Item adicionado ao carrinho.');
+        } else {
+            Session::flash('error', $erro);
+        }
         $this->redirect($this->back());
     }
 
@@ -60,6 +65,8 @@ final class CartController
      */
     public function show(): void
     {
+        Navegacao::registrar('/carrinho');
+
         $itens = $this->service()->itemsForDisplay();
 
         http_response_code(200);
