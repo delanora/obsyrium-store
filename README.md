@@ -57,13 +57,16 @@ Extensões adicionais devem ser documentadas quando forem introduzidas pelo proj
 │   ├── Database/
 │   ├── Middleware/
 │   ├── Models/
+│   ├── Repositories/
 │   ├── Routing/
 │   ├── Services/
+│   ├── Support/
 │   └── Helpers/
 ├── config/
 ├── database/
 │   ├── migrations/
-│   └── seeds/
+│   ├── migrate.php
+│   └── seed.php
 ├── public/
 │   ├── assets/
 │   │   ├── css/
@@ -74,7 +77,7 @@ Extensões adicionais devem ser documentadas quando forem introduzidas pelo proj
 │   └── views/
 │       ├── layouts/
 │       ├── home/
-│       ├── products/
+│       ├── product/
 │       ├── cart/
 │       ├── checkout/
 │       ├── admin/
