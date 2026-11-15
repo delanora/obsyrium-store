@@ -343,7 +343,7 @@ A estrutura da página inicial segue a da referência Crown Training — a refer
 
 ### 17.1 Ordem das seções
 
-1. **Barra de benefícios** (`.topbar`): cinco itens com ícone — parcelamento, frete grátis, atendimento, troca e site seguro.
+1. **Barra de benefícios** (`.topbar`): três itens com ícone — parcelamento, atendimento e site seguro.
 2. **Cabeçalho** (`.site-header`): barra em largura total (sem `.container`), com margem lateral de `--gutter`, em três colunas — emblema e nome "Obsyrium" à esquerda, menu (Lançamentos, Camisetas, Sobre, Contato) centralizado e busca, conta e carrinho à direita.
 3. **Hero** (`.hero`): dois slides em faixa horizontal com `scroll-snap` e marcadores (`.hero__dot`) que ancoram em cada slide. Sem JavaScript.
 4. **Vitrine "Lançamentos"** (`.section` + `.product-grid`): oito cards com selo, cor, preço, valor no Pix e parcelamento, seguidos da `.pagination`.

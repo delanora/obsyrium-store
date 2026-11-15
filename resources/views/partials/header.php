@@ -10,9 +10,7 @@ declare(strict_types=1);
 
 $benefits = [
     ['icon' => 'installments', 'label' => 'Em até 3x sem juros', 'text' => 'No cartão'],
-    ['icon' => 'shipping', 'label' => 'Frete grátis', 'text' => 'Acima de R$ 199'],
     ['icon' => 'service', 'label' => 'Atendimento', 'text' => 'Por WhatsApp'],
-    ['icon' => 'exchange', 'label' => 'Troca', 'text' => 'A 1ª é grátis'],
     ['icon' => 'secure', 'label' => 'Site seguro', 'text' => 'Compra protegida'],
 ];
 
@@ -25,9 +23,7 @@ $menu = [
 
 $icons = [
     'installments' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>',
-    'shipping' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg>',
     'service' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>',
-    'exchange' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg>',
     'secure' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>',
 ];
 

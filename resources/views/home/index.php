@@ -40,10 +40,10 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 
 		<article class="hero__slide" id="slide-2">
 			<div class="container hero__inner">
-				<p class="hero__eyebrow">Frete grátis</p>
-				<h2 class="hero__title">Acima de R$ 199 no Brasil</h2>
+				<p class="hero__eyebrow">Algodão premium</p>
+				<h2 class="hero__title">Gramatura alta, caimento oversized</h2>
 				<p class="hero__text">
-					Primeira troca grátis em até 7 dias e pagamento em até 3x sem juros ou com desconto no Pix.
+					Malha encorpada que não deforma na lavagem, em até 3x sem juros ou com desconto no Pix.
 				</p>
 				<p class="hero__actions">
 					<a class="button" href="#lancamentos">Conhecer as estampas</a>

@@ -11,7 +11,6 @@ declare(strict_types=1);
 $columns = [
     'Políticas' => [
         ['label' => 'Política de entrega', 'href' => '#'],
-        ['label' => 'Trocas e devoluções', 'href' => '#'],
         ['label' => 'Termos de privacidade', 'href' => '#'],
         ['label' => 'Formas de pagamento', 'href' => '#'],
     ],
