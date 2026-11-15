@@ -19,7 +19,6 @@ $benefits = [
 $menu = [
     ['label' => 'Lançamentos', 'href' => '#lancamentos', 'current' => true],
     ['label' => 'Camisetas', 'href' => '#'],
-    ['label' => 'Estampas', 'href' => '#'],
     ['label' => 'Sobre', 'href' => '#'],
     ['label' => 'Contato', 'href' => '#'],
 ];
@@ -53,10 +52,10 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 </div>
 
 <header class="site-header">
-	<div class="container site-header__inner">
+	<div class="site-header__inner">
 		<a class="site-header__brand" href="/">
 			<img class="site-header__logo" src="/assets/images/logo-128.png" width="40" height="40" alt="">
-			<span class="site-header__name">Obsyrium Store</span>
+			<span class="site-header__name">Obsyrium</span>
 		</a>
 
 		<nav class="site-nav" aria-label="Menu principal">
