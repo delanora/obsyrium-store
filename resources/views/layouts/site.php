@@ -20,6 +20,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 	<link rel="stylesheet" href="/assets/css/base.css">
 	<link rel="stylesheet" href="/assets/css/components.css">
 	<link rel="stylesheet" href="/assets/css/layout.css">
+	<script>document.documentElement.classList.add("js");</script>
 </head>
 <body>
 	<?php require __DIR__ . '/../partials/header.php'; ?>
@@ -29,5 +30,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 	</main>
 
 	<?php require __DIR__ . '/../partials/footer.php'; ?>
+
+	<script src="/assets/js/site.js" defer></script>
 </body>
 </html>

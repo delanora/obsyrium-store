@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 /*
  * Cabeçalho: marca, navegação principal e ações.
- * Os links de categoria e os botões de ação ainda não têm rota: ficam em "#"
- * até as páginas correspondentes existirem.
+ * No celular o menu é recolhido no botão .nav-toggle; sem JavaScript ele
+ * aparece em duas linhas. Links e botões sem rota ainda apontam para "#".
  */
 
 $menu = [
@@ -19,14 +19,18 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 ?>
 <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
 
-<header class="site-header">
+<header class="site-header" data-menu="closed">
 	<div class="site-header__inner">
+		<button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu-principal" aria-label="Abrir menu">
+			<span class="nav-toggle__icon" aria-hidden="true"></span>
+		</button>
+
 		<a class="site-header__brand" href="/">
 			<img class="site-header__logo" src="/assets/images/logo-128.png" width="40" height="40" alt="">
 			<span class="site-header__name">Obsyrium</span>
 		</a>
 
-		<nav class="site-nav" aria-label="Menu principal">
+		<nav class="site-nav" id="menu-principal" aria-label="Menu principal">
 			<ul class="site-nav__list">
 				<?php foreach ($menu as $item): ?>
 					<li>

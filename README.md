@@ -357,12 +357,13 @@ A estrutura da página inicial segue a da referência Crown Training — a refer
 - `resources/views/partials/footer.php`: colunas do rodapé e linha legal.
 - `resources/views/home/index.php`: hero, vitrine, bloco de conteúdo e newsletter. Os oito produtos são de demonstração, definidos em um array na própria view.
 - `public/assets/css/layout.css`: cabeçalho, navegação, hero, seções, paginação, newsletter, rodapé e `.skip-link`.
+- `public/assets/js/site.js`: abre e fecha o menu do celular, sem dependências.
 
 Cabeçalho e rodapé são reaproveitados por qualquer página renderizada pelo layout `site`.
 
 ### 17.3 Regras de manutenção
 
-- O layout não carrega JavaScript: hero e estados são resolvidos em CSS. Comportamento interativo (dots sincronizados, carrinho, busca) entra junto com o JavaScript do projeto.
+- O único JavaScript do site é `public/assets/js/site.js`, que abre e fecha o menu no celular. O hero e os demais estados continuam resolvidos em CSS; sem JavaScript o menu aparece em duas linhas.
 - Toda classe nova parte de `tokens.css`; cor e espaçamento fixos não entram nos componentes.
 - `HomeController::index()` define `$title`, `$content` e inclui `layouts/site.php`. Novas páginas repetem esse contrato em vez de duplicar o HTML do documento.
 - Um único `<h1>` por página (o do primeiro slide do hero); as seções usam `<h2>`.
@@ -371,7 +372,7 @@ Cabeçalho e rodapé são reaproveitados por qualquer página renderizada pelo l
 
 O ajuste responsivo vive em `layout.css` e `components.css`, em duas faixas — `max-width: 60em` (tablet e celular) e `max-width: 40em` (celular) — mais um refinamento em `max-width: 26em` para telas estreitas.
 
-- **Cabeçalho**: duas linhas (marca e ações na primeira, menu na segunda). O menu vira uma faixa rolável de borda a borda, com `justify-content: safe center` e itens de 44px de altura; `--header-height` sobe para 6rem e `html { scroll-padding-block-start }` usa o token, então âncoras como `#lancamentos` não ficam sob o cabeçalho fixo.
+- **Cabeçalho**: uma linha com marca, ações e o menu recolhido no hamburger (`.nav-toggle`, 44px, com `aria-expanded` e `aria-controls`). O painel abre logo abaixo do cabeçalho, em lista vertical com 44px por item, e fecha com Escape, clique fora ou escolha de um item — o ícone vira X. Sem JavaScript, o menu volta ao formato de duas linhas em faixa rolável (`justify-content: safe center`). `--header-height` no celular é 4rem e `html { scroll-padding-block-start }` usa o token, então âncoras como `#lancamentos` não ficam sob o cabeçalho fixo.
 - **Hero**: sem altura mínima no celular, título em `clamp(1.75rem, 7vw, 2.25rem)`, botões empilhados com 100% de largura e marcadores com área de toque de 44px — o ponto visual é desenhado em `.hero__dot::after`. A faixa usa `scroll-behavior: smooth` (desligado por `prefers-reduced-motion`) e `overscroll-behavior-x: contain`.
 - **Vitrine**: duas colunas com card compacto (título 0.875rem, preço em coluna, selos menores). O card inteiro é área de toque: o link do título se estende por `::after` com `inset: 0`.
 - **Newsletter**: campo e botão empilhados em coluna, ambos com 100% de largura e 3rem de altura mínima.

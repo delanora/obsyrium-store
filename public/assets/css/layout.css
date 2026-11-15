@@ -138,13 +138,82 @@ html {
     text-align: center;
 }
 
+/* ============ Botão do menu (só no celular) ============ */
+
+.nav-toggle {
+    display: none;
+    place-items: center;
+    width: var(--target-min);
+    height: var(--target-min);
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+    transition:
+        border-color var(--duration-fast) var(--ease-standard),
+        color var(--duration-fast) var(--ease-standard);
+}
+
+.nav-toggle:hover {
+    border-color: var(--color-border-strong);
+    color: var(--color-accent);
+}
+
+.nav-toggle__icon {
+    position: relative;
+    display: block;
+    width: 1.125rem;
+    height: 2px;
+    border-radius: 1px;
+    background-color: currentColor;
+    transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.nav-toggle__icon::before,
+.nav-toggle__icon::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    height: 2px;
+    border-radius: 1px;
+    background-color: currentColor;
+    transition:
+        top var(--duration-fast) var(--ease-standard),
+        transform var(--duration-fast) var(--ease-standard);
+}
+
+.nav-toggle__icon::before {
+    top: -6px;
+}
+
+.nav-toggle__icon::after {
+    top: 6px;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle__icon {
+    background-color: transparent;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle__icon::before {
+    top: 0;
+    transform: rotate(45deg);
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle__icon::after {
+    top: 0;
+    transform: rotate(-45deg);
+}
+
 /* ============ Cabeçalho compacto (tablet e celular) ============ */
 
 @media (max-width: 60em) {
     :root {
-        --header-height: 6rem;
+        --header-height: 4rem;
     }
 
+    /* Sem JavaScript: menu em duas linhas, como antes. */
     .site-header__inner {
         grid-template-columns: minmax(0, 1fr) auto;
         grid-template-areas:
@@ -163,7 +232,6 @@ html {
         justify-self: end;
     }
 
-    /* Menu em faixa rolável de borda a borda */
     .site-nav {
         grid-area: nav;
         justify-self: stretch;
@@ -183,6 +251,63 @@ html {
         min-height: var(--target-min);
         padding-block: 0;
         font-size: var(--font-size-xs);
+    }
+
+    /* Com JavaScript: uma linha e menu recolhido no hamburger. */
+    .js .site-header__inner {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "toggle brand actions";
+        gap: var(--space-2);
+        min-height: var(--header-height);
+        padding-block: var(--space-2);
+    }
+
+    .js .nav-toggle {
+        display: inline-grid;
+        grid-area: toggle;
+    }
+
+    .js .site-header__brand {
+        grid-area: brand;
+        justify-self: start;
+    }
+
+    .js .site-nav {
+        display: none;
+    }
+
+    .js .site-header[data-menu="open"] .site-nav {
+        display: block;
+        position: absolute;
+        inset-block-start: 100%;
+        inset-inline: 0;
+        margin-inline: 0;
+        padding: var(--space-2) var(--gutter) var(--space-4);
+        border-bottom: 1px solid var(--color-border);
+        background-color: var(--color-bg);
+        box-shadow: var(--shadow-md);
+    }
+
+    .js .site-header[data-menu="open"] .site-nav__list {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+        overflow: visible;
+    }
+
+    .js .site-header[data-menu="open"] .site-nav__link {
+        min-height: var(--target-min);
+        padding-inline: 0;
+        border-bottom: 1px solid var(--color-border);
+        font-size: var(--font-size-sm);
+    }
+
+    .js .site-header[data-menu="open"] .site-nav__list > li:last-child .site-nav__link {
+        border-bottom-color: transparent;
+    }
+
+    .js .site-header[data-menu="open"] .site-nav__link[aria-current="page"] {
+        border-bottom-color: var(--color-accent);
     }
 }
 
@@ -686,7 +811,20 @@ html {
     }
 
     .site-header__name {
-        font-size: var(--font-size-sm);
+        font-size: 0.8125rem;
         letter-spacing: var(--letter-spacing-caps);
+    }
+
+    .js .site-header__inner {
+        gap: var(--space-1);
+        padding-inline: var(--space-3);
+    }
+
+    .js .site-header__brand {
+        gap: var(--space-2);
+    }
+
+    .js .site-header__actions {
+        gap: 0;
     }
 }
