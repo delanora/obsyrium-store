@@ -24,7 +24,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 <section class="hero" aria-label="Destaques da loja">
 	<div class="hero__slides">
 		<article class="hero__slide" id="slide-1">
-			<div class="container hero__inner">
+			<div class="container hero__inner" data-reveal-stagger>
 				<p class="hero__eyebrow">Drop 01 · tiragem limitada</p>
 				<h1 class="hero__title">Estampas autorais em pequenos lotes</h1>
 				<p class="hero__text">
@@ -39,7 +39,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 		</article>
 
 		<article class="hero__slide" id="slide-2">
-			<div class="container hero__inner">
+			<div class="container hero__inner" data-reveal-stagger>
 				<p class="hero__eyebrow">Algodão premium</p>
 				<h2 class="hero__title">Gramatura alta, caimento oversized</h2>
 				<p class="hero__text">
@@ -60,14 +60,14 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 
 <section class="section" id="lancamentos" aria-labelledby="lancamentos-titulo">
 	<div class="container">
-		<div class="section__head">
+		<div class="section__head" data-reveal>
 			<h2 class="section__title" id="lancamentos-titulo">Lançamentos</h2>
 			<a class="section__link" href="#">Ver todos</a>
 		</div>
 
 		<ul class="product-grid">
 			<?php foreach ($products as $product): ?>
-				<li>
+				<li data-reveal>
 					<article class="product-card<?= $product['soldOut'] ? ' product-card--sold-out' : '' ?>">
 						<figure class="product-card__media">
 							<img
@@ -109,7 +109,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 </section>
 
 <section class="section section--alt">
-	<div class="container content-block">
+	<div class="container content-block" data-reveal>
 		<h2>Camisetas com estampas autorais, feitas em pequenos lotes</h2>
 		<p>
 			A <strong>Obsyrium Store</strong> trabalha com estampas próprias, produzidas em tiragens curtas,
@@ -122,7 +122,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 	</div>
 </section>
 
-<section class="newsletter" aria-labelledby="newsletter-titulo">
+<section class="newsletter" data-reveal-stagger aria-labelledby="newsletter-titulo">
 	<h2 class="newsletter__title" id="newsletter-titulo">Cadastre-se e receba os próximos drops</h2>
 	<p class="newsletter__text">
 		Avisamos antes de cada lançamento e abrimos a lista de espera das estampas esgotadas.

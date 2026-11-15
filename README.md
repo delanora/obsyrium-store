@@ -357,13 +357,14 @@ A estrutura da página inicial segue a da referência Crown Training — a refer
 - `resources/views/partials/footer.php`: colunas do rodapé e linha legal.
 - `resources/views/home/index.php`: hero, vitrine, bloco de conteúdo e newsletter. Os oito produtos são de demonstração, definidos em um array na própria view.
 - `public/assets/css/layout.css`: cabeçalho, navegação, hero, seções, paginação, newsletter, rodapé e `.skip-link`.
-- `public/assets/js/site.js`: abre e fecha o menu do celular, sem dependências.
+- `public/assets/css/animations.css`: camada de movimento (entradas ao rolar, hover e transições).
+- `public/assets/js/site.js`: menu do celular, sombra do cabeçalho e entradas ao rolar, sem dependências.
 
 Cabeçalho e rodapé são reaproveitados por qualquer página renderizada pelo layout `site`.
 
 ### 17.3 Regras de manutenção
 
-- O único JavaScript do site é `public/assets/js/site.js`, que abre e fecha o menu no celular. O hero e os demais estados continuam resolvidos em CSS; sem JavaScript o menu aparece em duas linhas.
+- O JavaScript do site é `public/assets/js/site.js`: menu do celular, sombra do cabeçalho e revelação dos blocos. Hero e estados continuam resolvidos em CSS; sem JavaScript o menu aparece em duas linhas e nada é escondido.
 - Toda classe nova parte de `tokens.css`; cor e espaçamento fixos não entram nos componentes.
 - `HomeController::index()` define `$title`, `$content` e inclui `layouts/site.php`. Novas páginas repetem esse contrato em vez de duplicar o HTML do documento.
 - Um único `<h1>` por página (o do primeiro slide do hero); as seções usam `<h2>`.
@@ -378,3 +379,14 @@ O ajuste responsivo vive em `layout.css` e `components.css`, em duas faixas — 
 - **Newsletter**: campo e botão empilhados em coluna, ambos com 100% de largura e 3rem de altura mínima.
 - **Rodapé**: duas colunas de links no celular, com marca e formas de pagamento ocupando a linha inteira; cada link tem 44px de altura.
 - **Toque e rolagem**: todo alvo usa `--target-min` (44px); `body` recebe `overflow-x: clip` para nenhum elemento gerar rolagem horizontal; `-webkit-tap-highlight-color: transparent` remove o realce azul do toque; o efeito de zoom do card só existe em `@media (hover: hover)`.
+
+### 17.5 Movimento
+
+A camada de animação fica em `public/assets/css/animations.css`, carregada por último, e em `public/assets/js/site.js`.
+
+- **Entrada ao rolar**: blocos com `data-reveal` sobem 1.25rem e aparecem em 600ms; `data-reveal-stagger` aplica o mesmo aos filhos em cascata de 70ms. A vitrine escalona por linha (`4n+2`, `4n+3`, `4n+4`). Quem dispara é um `IntersectionObserver` que adiciona `.is-visible` uma única vez e para de observar o elemento.
+- **Sem JavaScript nada fica escondido**: os estados iniciais dependem de `html.js`, marcado por script inline no `<head>`. Se `site.js` não carregar, um fallback no evento `load` remove a classe e o conteúdo aparece estático.
+- **Cabeçalho**: ganha sombra e fundo mais opaco ao sair do topo (`.is-scrolled`). No celular o painel do menu entra com `menu-panel-in` e os itens em cascata de 40ms.
+- **Microinterações**: sublinhado que cresce no menu (desktop), botões com elevação no hover e afundamento no toque, cards com `translateY(-4px)` e sombra (só em `hover: hover`), imagem com zoom de 500ms, foco do campo de newsletter com halo dourado e brilho do hero pulsando em 9s.
+- **Rolagem suave**: `html { scroll-behavior: smooth }` para as âncoras internas.
+- Tudo respeita `prefers-reduced-motion`: o bloco em `base.css` zera as durações e desliga a pulsação do hero.

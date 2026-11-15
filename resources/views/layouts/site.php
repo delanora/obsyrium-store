@@ -20,7 +20,15 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 	<link rel="stylesheet" href="/assets/css/base.css">
 	<link rel="stylesheet" href="/assets/css/components.css">
 	<link rel="stylesheet" href="/assets/css/layout.css">
-	<script>document.documentElement.classList.add("js");</script>
+	<link rel="stylesheet" href="/assets/css/animations.css">
+	<script>
+		document.documentElement.classList.add("js");
+		window.addEventListener("load", function () {
+			if (!window.__obsyriumReady) {
+				document.documentElement.classList.remove("js");
+			}
+		});
+	</script>
 </head>
 <body>
 	<?php require __DIR__ . '/../partials/header.php'; ?>

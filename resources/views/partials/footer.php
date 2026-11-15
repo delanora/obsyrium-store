@@ -32,7 +32,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 ?>
 <footer class="site-footer">
 	<div class="container">
-		<div class="site-footer__grid">
+		<div class="site-footer__grid" data-reveal-stagger>
 			<div class="site-footer__brand">
 				<img class="site-footer__logo" src="/assets/images/logo-128.png" width="56" height="56" alt="">
 				<p class="site-footer__about">
