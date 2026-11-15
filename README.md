@@ -56,6 +56,7 @@ Extensões adicionais devem ser documentadas quando forem introduzidas pelo proj
 │   ├── Controllers/
 │   ├── Middleware/
 │   ├── Models/
+│   ├── Routing/
 │   ├── Services/
 │   └── Helpers/
 ├── config/
@@ -75,7 +76,8 @@ Extensões adicionais devem ser documentadas quando forem introduzidas pelo proj
 │       ├── products/
 │       ├── cart/
 │       ├── checkout/
-│       └── admin/
+│       ├── admin/
+│       └── errors/
 ├── routes/
 ├── storage/
 │   ├── logs/
@@ -124,8 +126,9 @@ O document root aponta para `public/`, nunca para a raiz do repositório, confor
 - Logs próprios em `/var/log/apache2/obsyrium-store-access.log` e `/var/log/apache2/obsyrium-store-error.log`.
 - O site padrão `000-default` (`DocumentRoot /var/www/html`) está desabilitado, para que a porta 80 sirva somente o projeto.
 - `mod_rewrite` habilitado. PHP executa como módulo do Apache (`libapache2-mod-php8.2`); PHP-FPM não é utilizado.
+- `public/.htaccess` reescreve para `index.php` as requisições que não correspondem a arquivos ou diretórios existentes, entregando tudo ao front controller.
 - Composer instalado via pacote Debian. Ao ser executado como `root`, ele avisa sobre uso de superusuário e desabilita plugins; para permitir plugins, definir `COMPOSER_ALLOW_SUPERUSER=1`.
-- Enquanto `public/index.php` não existir, a raiz responde **403** por causa de `-Indexes`. Esse comportamento é esperado e não indica erro de configuração.
+- A raiz é atendida pelo front controller `public/index.php` e responde **200**. Caminhos sem rota registrada respondem **404** pela view `resources/views/errors/404.php`.
 
 Comandos executados na preparação:
 
@@ -191,6 +194,7 @@ MAIL_FROM_ADDRESS=
 - **Middleware:** executa verificações transversais, como autenticação e autorização.
 - **Views:** renderizam a interface; não devem conter regras de negócio ou consultas SQL.
 - **Routes:** definem os caminhos HTTP e seus respectivos handlers.
+- **Routing:** `routes/web.php` registra as rotas e `App\Routing\Router` casa método e caminho, instancia o controller e executa a ação; o despacho parte de `public/index.php`.
 - **Config:** centraliza configurações não secretas e leitura das variáveis de ambiente.
 
 Controllers devem permanecer pequenos. Regras de negócio não devem ser duplicadas entre controllers.
