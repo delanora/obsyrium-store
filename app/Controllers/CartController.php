@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Database\Connection;
-use App\Repositories\CartRepository;
 use App\Services\CartService;
 use App\Support\Csrf;
 use App\Support\Price;
 use App\Support\Session;
 
 /**
- * Carrinho do cliente: adicionar, alterar e remover item.
+ * Carrinho: ver os itens, adicionar, alterar quantidade e remover.
  *
- * Só cliente autenticado tem carrinho. Toda escrita exige token CSRF, responde
- * com 303 e volta para a página de origem — o formulário manda o slug junto.
+ * O visitante monta o carrinho sem conta (guardado na sessão do navegador) e o
+ * login só é exigido na hora da compra; ao entrar, os itens são levados para o
+ * carrinho do banco. Toda escrita exige token CSRF e responde 303 voltando
+ * para a página de origem — o formulário manda o slug junto.
  */
 final class CartController
 {
@@ -23,10 +24,9 @@ final class CartController
 
     public function add(): void
     {
-        $userId = $this->guard();
+        $this->requireCsrf();
 
         $erro = $this->service()->add(
-            $userId,
             (int) ($_POST['variant_id'] ?? 0),
             (int) ($_POST['quantity'] ?? 1)
         );
@@ -37,10 +37,9 @@ final class CartController
 
     public function update(): void
     {
-        $userId = $this->guard();
+        $this->requireCsrf();
 
         $erro = $this->service()->update(
-            $userId,
             (int) ($_POST['variant_id'] ?? 0),
             (int) ($_POST['quantity'] ?? 0)
         );
@@ -51,29 +50,22 @@ final class CartController
 
     public function remove(): void
     {
-        $userId = $this->guard();
+        $this->requireCsrf();
 
-        $erro = $this->service()->remove($userId, (int) ($_POST['variant_id'] ?? 0));
+        $erro = $this->service()->remove((int) ($_POST['variant_id'] ?? 0));
 
         $this->flash($erro, 'Item removido do carrinho.');
         $this->redirect($this->back());
     }
 
     /**
-     * Página do carrinho com os itens do cliente autenticado.
+     * Página do carrinho, aberta para visitante e para cliente autenticado.
      */
     public function show(): void
     {
-        $userId = Session::userId();
-
-        if ($userId === null) {
-            Session::flash('error', 'Entre na sua conta para ver o carrinho.');
-            $this->redirect('/login');
-        }
-
         $itens = [];
 
-        foreach ((new CartRepository(Connection::get()))->itemsForUser($userId) as $linha) {
+        foreach ($this->service()->items() as $linha) {
             $imagem = (string) ($linha['image_path'] ?? '');
 
             $itens[] = [
@@ -96,39 +88,29 @@ final class CartController
         $basePath = dirname(__DIR__, 2);
         $title = 'Carrinho — Obsyrium Store';
         $limite = CartService::MAX_PER_ITEM;
+        $visitante = Session::userId() === null;
         $content = $basePath . '/resources/views/cart/index.php';
 
         require $basePath . '/resources/views/layouts/site.php';
     }
-    /**
-     * @return int identificador do cliente autenticado
-     */
-    private function guard(): int
+
+    private function requireCsrf(): void
     {
-        if (!Csrf::validate($_POST[Csrf::FIELD] ?? null)) {
-            http_response_code(403);
-            header('Content-Type: text/html; charset=UTF-8');
-
-            require dirname(__DIR__, 2) . '/resources/views/errors/403.php';
-
-            exit;
+        if (Csrf::validate($_POST[Csrf::FIELD] ?? null)) {
+            return;
         }
 
-        $userId = Session::userId();
+        http_response_code(403);
+        header('Content-Type: text/html; charset=UTF-8');
 
-        if ($userId === null) {
-            Session::flash('error', 'Entre na sua conta para usar o carrinho.');
-            $this->redirect('/login');
-        }
+        require dirname(__DIR__, 2) . '/resources/views/errors/403.php';
 
-        return $userId;
+        exit;
     }
 
     private function service(): CartService
     {
-        $pdo = Connection::get();
-
-        return new CartService($pdo, new CartRepository($pdo));
+        return CartService::forCurrentUser(Connection::get());
     }
 
     private function flash(?string $erro, string $sucesso): void

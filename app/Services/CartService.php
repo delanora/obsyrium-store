@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\CartRepository;
+use App\Support\Session;
 use PDO;
 use Throwable;
 
 /**
  * Regras do carrinho: no máximo 5 unidades do mesmo item e nunca mais do que
  * o estoque disponível (quantidade menos o que já está reservado).
+ *
+ * As regras valem para o visitante (carrinho na sessão) e para o cliente
+ * autenticado (carrinho no banco); o que muda é só o CartStorage por trás.
  *
  * A conferência do estoque acontece dentro da transação, com a linha travada
  * por FOR UPDATE: dois cliques simultâneos não podem passar os dois pela mesma
@@ -22,11 +26,28 @@ final class CartService
 
     public function __construct(
         private readonly PDO $pdo,
-        private readonly CartRepository $carts
+        private readonly CartRepository $carts,
+        private readonly CartStorage $storage
     ) {
     }
 
-    public function add(int $userId, int $variantId, int $quantity): ?string
+    /**
+     * Carrinho de quem está navegando: sessão para o visitante, banco para o
+     * cliente autenticado.
+     */
+    public static function forCurrentUser(PDO $pdo): self
+    {
+        $carts = new CartRepository($pdo);
+        $userId = Session::userId();
+
+        return new self(
+            $pdo,
+            $carts,
+            $userId === null ? new SessionCartStorage() : new DatabaseCartStorage($carts, $userId)
+        );
+    }
+
+    public function add(int $variantId, int $quantity): ?string
     {
         if ($variantId <= 0) {
             return 'Escolha um tamanho.';
@@ -51,8 +72,7 @@ final class CartService
                 return 'Este item não está disponível.';
             }
 
-            $cartId = $this->carts->openForUser($userId);
-            $atual = $this->carts->itemQuantity($cartId, $variantId);
+            $atual = $this->storage->quantity($variantId);
             $total = $atual + $quantity;
 
             if ($total > self::MAX_PER_ITEM) {
@@ -71,7 +91,7 @@ final class CartService
                 return $erro;
             }
 
-            $this->carts->setItem($cartId, $variantId, $total);
+            $this->storage->setQuantity($variantId, $total);
             $this->pdo->commit();
 
             return null;
@@ -84,7 +104,7 @@ final class CartService
         }
     }
 
-    public function update(int $userId, int $variantId, int $quantity): ?string
+    public function update(int $variantId, int $quantity): ?string
     {
         if ($variantId <= 0) {
             return 'Escolha um tamanho.';
@@ -109,9 +129,7 @@ final class CartService
                 return 'Este item não está disponível.';
             }
 
-            $cartId = $this->carts->openForUser($userId);
-
-            if ($this->carts->itemQuantity($cartId, $variantId) === 0) {
+            if ($this->storage->quantity($variantId) === 0) {
                 $this->pdo->rollBack();
 
                 return 'Este item não está no carrinho.';
@@ -125,7 +143,7 @@ final class CartService
                 return $erro;
             }
 
-            $this->carts->setItem($cartId, $variantId, $quantity);
+            $this->storage->setQuantity($variantId, $quantity);
             $this->pdo->commit();
 
             return null;
@@ -138,19 +156,118 @@ final class CartService
         }
     }
 
-    public function remove(int $userId, int $variantId): ?string
+    public function remove(int $variantId): ?string
     {
         if ($variantId <= 0) {
             return 'Escolha um tamanho.';
         }
 
-        $cartId = $this->carts->cartIdForUser($userId);
-
-        if ($cartId !== null) {
-            $this->carts->removeItem($cartId, $variantId);
-        }
+        $this->storage->remove($variantId);
 
         return null;
+    }
+
+    /**
+     * Soma das quantidades, para o contador do cabeçalho.
+     */
+    public function total(): int
+    {
+        return array_sum($this->storage->quantities());
+    }
+
+    /**
+     * Linhas prontas para a página do carrinho: dados da variação e do produto
+     * mais a quantidade guardada no carrinho.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function items(): array
+    {
+        $quantidades = $this->storage->quantities();
+
+        if ($quantidades === []) {
+            return [];
+        }
+
+        $porVariacao = [];
+
+        foreach ($this->carts->itemsForVariants(array_keys($quantidades)) as $linha) {
+            $porVariacao[(int) $linha['variant_id']] = $linha;
+        }
+
+        $itens = [];
+
+        foreach ($quantidades as $variantId => $quantidade) {
+            if (!isset($porVariacao[$variantId])) {
+                continue;
+            }
+
+            $linha = $porVariacao[$variantId];
+            $linha['quantity'] = $quantidade;
+            $itens[] = $linha;
+        }
+
+        return $itens;
+    }
+
+    /**
+     * Leva o carrinho do visitante para o carrinho do cliente que acabou de
+     * entrar ou de se cadastrar, respeitando limite e estoque de cada item.
+     *
+     * @return int quantidade de itens aproveitados
+     */
+    public function mergeGuestCart(): int
+    {
+        if (!$this->storage instanceof DatabaseCartStorage) {
+            return 0;
+        }
+
+        $visitante = new SessionCartStorage();
+        $quantidades = $visitante->quantities();
+
+        if ($quantidades === []) {
+            return 0;
+        }
+
+        $mesclados = 0;
+
+        $this->pdo->beginTransaction();
+
+        try {
+            foreach ($quantidades as $variantId => $quantidade) {
+                $variacao = $this->disponivel($variantId);
+
+                if ($variacao === null) {
+                    continue;
+                }
+
+                $disponivel = max(0, (int) $variacao['quantity'] - (int) $variacao['reserved']);
+                $total = min(
+                    $this->storage->quantity($variantId) + $quantidade,
+                    self::MAX_PER_ITEM,
+                    $disponivel
+                );
+
+                if ($total < 1) {
+                    continue;
+                }
+
+                $this->storage->setQuantity($variantId, $total);
+                $mesclados++;
+            }
+
+            $this->pdo->commit();
+        } catch (Throwable $erro) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $erro;
+        }
+
+        $visitante->clear();
+
+        return $mesclados;
     }
 
     /**

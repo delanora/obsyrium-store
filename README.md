@@ -481,7 +481,7 @@ Rota `GET /produto/{slug}`, atendida por `App\Controllers\ProductController::sho
 
 ## 20. Carrinho
 
-O carrinho é persistido no banco, um por cliente (`carts`, chave única em `user_id`), com um item por variação em `cart_items`. O visitante ainda não tem carrinho: as rotas mandam para `/login`.
+O login só é exigido na hora da compra: o visitante monta o carrinho sem conta. Para ele o carrinho fica na sessão do navegador (`$_SESSION['guest_cart']`, `SessionCartStorage`); para o cliente autenticado fica no banco (`carts`, chave única em `user_id`, e um item por variação em `cart_items`, `DatabaseCartStorage`). As duas implementações seguem a interface `App\Services\CartStorage`; as regras ficam em `CartService` e valem para as duas.
 
 | Rota | Ação |
 | --- | --- |
@@ -495,5 +495,7 @@ O carrinho é persistido no banco, um por cliente (`carts`, chave única em `use
 - A conferência do estoque roda dentro de uma transação, com a linha do estoque travada por `SELECT ... FOR UPDATE`, para que dois envios simultâneos não passem os dois pela mesma validação.
 - O preço não é guardado no carrinho: cada item mostra o preço atual de `products.price_cents` e **o total da compra ainda não é calculado** (item “cálculo do valor total” do roadmap). Frete e checkout também são itens futuros.
 - `resources/views/cart/index.php` monta a página com imagem, tamanho, preço, campo de quantidade (máximo `CartService::MAX_PER_ITEM`) e botão de remover — cada ação tem o próprio formulário e token CSRF. Sem itens, mostra o estado vazio com link para a vitrine. O estilo fica em `public/assets/css/cart.css`.
-- O ícone do carrinho no cabeçalho virou link para `/carrinho` e mostra a soma das quantidades do cliente, vinda de `CartRepository::quantityForUser` (zero para visitante).
+- O ícone do carrinho no cabeçalho é link para `/carrinho` e mostra a soma das quantidades de quem está navegando, vinda de `CartService::forCurrentUser(...)->total()` — sessão para visitante, banco para cliente — sem nenhuma consulta extra quando o carrinho está vazio.
+- Ao entrar ou se cadastrar, `CartService::mergeGuestCart()` soma o carrinho da sessão ao do banco (respeitando o limite de 5 e o estoque disponível) e esvazia a sessão; quem já tinha itens no banco recebe a soma. O logout limpa a sessão e preserva o carrinho do banco.
 - Produto inativo, variação inexistente, quantidade zero, item fora do carrinho e estoque insuficiente são recusados com mensagem, sem gravar nada.
+- Visitante com itens vê na página do carrinho o aviso “Você está sem conta: o carrinho fica guardado neste navegador”, com link para `/login`. O carrinho de visitante dura o tempo da sessão do navegador; o do banco fica gravado.

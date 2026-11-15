@@ -9,6 +9,7 @@ use App\Repositories\LoginAttemptRepository;
 use App\Services\LoginThrottle;
 use App\Repositories\UserRepository;
 use App\Services\AuthService;
+use App\Services\CartService;
 use App\Support\Csrf;
 use App\Support\Session;
 
@@ -35,7 +36,7 @@ final class AuthController
         $erros = $this->service()->register($_POST);
 
         if ($erros === []) {
-            Session::flash('success', 'Conta criada. Você já está conectado.');
+            Session::flash('success', 'Conta criada. Você já está conectado.' . $this->avisoDoCarrinho());
             $this->redirect('/');
         }
 
@@ -60,7 +61,7 @@ final class AuthController
         $erro = $this->service()->login($_POST, (string) ($_SERVER['REMOTE_ADDR'] ?? ''));
 
         if ($erro === null) {
-            Session::flash('success', 'Bem-vindo de volta.');
+            Session::flash('success', 'Bem-vindo de volta.' . $this->avisoDoCarrinho());
             $this->redirect('/');
         }
 
@@ -80,8 +81,18 @@ final class AuthController
         $this->redirect('/');
     }
 
-    private function service(): AuthService
+    /**
+     * Junta o carrinho do visitante ao do cliente que acabou de entrar e
+     * devolve a frase que acompanha a mensagem de boas-vindas.
+     */
+    private function avisoDoCarrinho(): string
     {
+        $itens = CartService::forCurrentUser(Connection::get())->mergeGuestCart();
+
+        return $itens > 0 ? ' Os itens do seu carrinho continuam aqui.' : '';
+    }
+
+    private function service(): AuthService    {
         return new AuthService(
             new UserRepository(Connection::get()),
             new LoginThrottle(new LoginAttemptRepository(Connection::get()))

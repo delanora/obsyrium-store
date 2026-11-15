@@ -20,12 +20,7 @@ $menu = [
 
 $conectado = Session::userId() !== null;
 
-$itensNoCarrinho = 0;
-
-if ($conectado) {
-    $itensNoCarrinho = (new App\Repositories\CartRepository(App\Database\Connection::get()))
-        ->quantityForUser((int) Session::userId());
-}
+$itensNoCarrinho = App\Services\CartService::forCurrentUser(App\Database\Connection::get())->total();
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 ?>

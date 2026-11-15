@@ -96,15 +96,60 @@ final class CartRepository
     }
 
     /**
-     * Itens do carrinho com os dados de exibição da página.
+     * Quantidade por variação no carrinho do cliente, na ordem de inclusão.
      *
-     * @return list<array<string, mixed>>
+     * @return array<int, int>
      */
-    public function itemsForUser(int $userId): array
+    public function quantitiesForUser(int $userId): array
     {
         $consulta = $this->pdo->prepare(
-            'SELECT ci.variant_id,
-                    ci.quantity,
+            'SELECT ci.variant_id, ci.quantity
+               FROM cart_items ci
+               INNER JOIN carts c ON c.id = ci.cart_id
+              WHERE c.user_id = :user_id
+              ORDER BY ci.created_at, ci.id'
+        );
+
+        $consulta->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $consulta->execute();
+
+        $quantidades = [];
+
+        foreach ($consulta->fetchAll() as $linha) {
+            $quantidades[(int) $linha['variant_id']] = (int) $linha['quantity'];
+        }
+
+        return $quantidades;
+    }
+
+    /**
+     * Dados de exibição das variações pedidas: nome, tamanho, preço, estoque
+     * disponível e imagem principal.
+     *
+     * Os marcadores do IN são gerados aqui (só caracteres "?"); os valores vão
+     * presos ao prepared statement.
+     *
+     * @param list<int> $variantIds
+     * @return list<array<string, mixed>>
+     */
+    public function itemsForVariants(array $variantIds): array
+    {
+        $ids = [];
+
+        foreach ($variantIds as $variantId) {
+            if ($variantId > 0 && !in_array($variantId, $ids, true)) {
+                $ids[] = $variantId;
+            }
+        }
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $marcadores = implode(', ', array_fill(0, count($ids), '?'));
+
+        $consulta = $this->pdo->prepare(
+            "SELECT v.id AS variant_id,
                     v.size,
                     p.name,
                     p.slug,
@@ -119,37 +164,16 @@ final class CartRepository
                       WHERE i.product_id = p.id
                       ORDER BY i.position, i.id
                       LIMIT 1) AS image_alt
-               FROM cart_items ci
-               INNER JOIN carts c ON c.id = ci.cart_id
-               INNER JOIN product_variants v ON v.id = ci.variant_id
+               FROM product_variants v
                INNER JOIN products p ON p.id = v.product_id
                LEFT JOIN stock s ON s.variant_id = v.id
-              WHERE c.user_id = :user_id
-              ORDER BY ci.created_at, ci.id'
+              WHERE v.id IN ({$marcadores})
+              ORDER BY p.name, v.id"
         );
 
-        $consulta->bindValue(':user_id', $userId, PDO::PARAM_INT);
-        $consulta->execute();
+        $consulta->execute($ids);
 
         return $consulta->fetchAll();
-    }
-
-    /**
-     * Soma das quantidades no carrinho, para o contador do cabeçalho.
-     */
-    public function quantityForUser(int $userId): int
-    {
-        $consulta = $this->pdo->prepare(
-            'SELECT COALESCE(SUM(ci.quantity), 0)
-               FROM cart_items ci
-               INNER JOIN carts c ON c.id = ci.cart_id
-              WHERE c.user_id = :user_id'
-        );
-
-        $consulta->bindValue(':user_id', $userId, PDO::PARAM_INT);
-        $consulta->execute();
-
-        return (int) $consulta->fetchColumn();
     }
     /**
      * Variação com o estoque travado para conferência.
