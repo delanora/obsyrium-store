@@ -99,6 +99,7 @@
         var telaGrande = window.matchMedia('(min-width: 64rem)');
         var focoAnterior = null;
         var fechamentoAutomatico = 0;
+        var aberturaEm = 0;
         var painelDaGaveta = gaveta.querySelector('.cart-drawer__panel');
 
         var cancelarFechamentoAutomatico = function () {
@@ -110,6 +111,7 @@
 
         var abrirGaveta = function (comFoco) {
             focoAnterior = document.activeElement;
+            aberturaEm = Date.now();
             gaveta.hidden = false;
             document.body.classList.add('cart-drawer-open');
             abridor.setAttribute('aria-expanded', 'true');
@@ -230,47 +232,27 @@
             });
         }
 
-        // A barra de rolagem da página continua à vista com a gaveta aberta, então
-        // o fundo não pode andar: roda e toque fora do painel são consumidos, e o
-        // painel cuida da própria rolagem (overscroll-behavior no cart.css).
-        var foraDoPainel = function (evento) {
-            return !evento.target.closest || evento.target.closest('.cart-drawer__panel') === null;
-        };
-
-        // Com a lista curta o painel não tem o que rolar, e a roda sobre ele
-        // passaria para a página: nesse caso o evento também é consumido.
-        var painelRola = function () {
-            return painelDaGaveta !== null
-                && painelDaGaveta.scrollHeight > painelDaGaveta.clientHeight + 1;
-        };
-
-        gaveta.addEventListener('wheel', function (evento) {
-            if (foraDoPainel(evento) || !painelRola()) {
-                evento.preventDefault();
+        // Rolar a página com a gaveta aberta é permitido, e é esse gesto que
+        // recolhe a gaveta na direção do ícone: o cliente voltou a navegar. A
+        // rolagem dentro do painel não mexe na página (overscroll-behavior no
+        // cart.css) e por isso não fecha nada.
+        window.addEventListener('scroll', function () {
+            if (gaveta.hidden || gaveta.classList.contains('is-collapsing')) {
+                return;
             }
-        }, {passive: false});
 
-        gaveta.addEventListener('touchmove', function (evento) {
-            if (foraDoPainel(evento) || !painelRola()) {
-                evento.preventDefault();
+            // A posição que o navegador restaura ao carregar a página não é
+            // intenção do cliente.
+            if (Date.now() - aberturaEm < 300) {
+                return;
             }
-        }, {passive: false});
 
-        var teclasDeRolagem = [' ', 'PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+            fecharComAnimacao();
+        }, {passive: true});
 
         document.addEventListener('keydown', function (evento) {
-            if (gaveta.hidden) {
-                return;
-            }
-
-            if (evento.key === 'Escape') {
+            if (!gaveta.hidden && evento.key === 'Escape') {
                 fecharComAnimacao();
-
-                return;
-            }
-
-            if (foraDoPainel(evento) && teclasDeRolagem.indexOf(evento.key) !== -1) {
-                evento.preventDefault();
             }
         });
     }

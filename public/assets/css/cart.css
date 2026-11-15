@@ -244,9 +244,10 @@
 
 /*
  * A gaveta aberta não esconde a barra de rolagem da página: nada pula de
- * largura e a barra não pisca. Quem impede o fundo de andar é o `site.js`, que
- * consome roda, toque e teclas de rolagem fora do painel; dentro dele a rolagem
- * é a do próprio painel (`overscroll-behavior: contain` acima).
+ * largura e a barra não pisca. Rolar a página com ela aberta é permitido e o
+ * `site.js` usa justamente esse gesto para recolher a gaveta; a rolagem do
+ * painel fica presa nele (`overscroll-behavior: contain` acima), então rolar a
+ * lista do carrinho não mexe na página nem fecha a gaveta.
  */
 
 .cart-drawer__header {
