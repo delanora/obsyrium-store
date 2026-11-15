@@ -22,6 +22,15 @@ final class Csrf
         return $token;
     }
 
+    /**
+     * Troca o token da sessão. Chamado no login para que um token obtido
+     * antes da autenticação não valha depois dela.
+     */
+    public static function rotate(): void
+    {
+        Session::put(self::KEY, bin2hex(random_bytes(32)));
+    }
+
     public static function field(): string
     {
         return '<input type="hidden" name="' . self::FIELD . '" value="' . self::token() . '">';

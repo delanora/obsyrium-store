@@ -20,8 +20,10 @@ final class AuthService
     private const MIN_PASSWORD = 8;
     private const MAX_NAME = 120;
 
-    public function __construct(private readonly UserRepository $users)
-    {
+    public function __construct(
+        private readonly UserRepository $users,
+        private readonly LoginThrottle $throttle
+    ) {
     }
 
     /**
@@ -106,7 +108,7 @@ final class AuthService
      * @param array<string, mixed> $entrada
      * @return string|null mensagem de erro, ou null quando entrou
      */
-    public function login(array $entrada): ?string
+    public function login(array $entrada, string $ip): ?string
     {
         $email = mb_strtolower(trim((string) ($entrada['email'] ?? '')));
         $senha = (string) ($entrada['password'] ?? '');
@@ -115,9 +117,17 @@ final class AuthService
             return 'Informe e-mail e senha.';
         }
 
+        $bloqueio = $this->throttle->blockedFor($email, $ip);
+
+        if ($bloqueio !== null) {
+            return LoginThrottle::describe($bloqueio);
+        }
+
         $usuario = $this->users->findByEmail($email);
 
         if ($usuario === null || !password_verify($senha, $usuario['password'])) {
+            $this->throttle->recordFailure($email, $ip);
+
             return 'E-mail ou senha inválidos.';
         }
 
@@ -129,6 +139,7 @@ final class AuthService
             $this->users->updatePasswordHash($usuario['id'], password_hash($senha, PASSWORD_ARGON2ID));
         }
 
+        $this->throttle->clear($email);
         $this->users->touchLastLogin($usuario['id']);
         Session::login($usuario['id']);
 

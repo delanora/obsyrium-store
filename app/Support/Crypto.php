@@ -209,16 +209,16 @@ final class Crypto
 
         $configurada = Env::get('APP_INDEX_KEY');
 
-        if ($configurada !== null && $configurada !== '') {
-            $raw = self::decodeKey($configurada);
-
-            if ($raw === null) {
-                throw new RuntimeException('APP_INDEX_KEY inválida: esperado base64: com 32 bytes.');
-            }
-
-            return self::$indexKey = $raw;
+        if ($configurada === null || $configurada === '') {
+            throw new RuntimeException('APP_INDEX_KEY não configurada: o índice cego não é derivado da APP_KEY.');
         }
 
-        return self::$indexKey = hash_hmac('sha256', 'obsyrium:blind-index', self::keyFor(self::currentVersion()), true);
+        $raw = self::decodeKey($configurada);
+
+        if ($raw === null) {
+            throw new RuntimeException('APP_INDEX_KEY inválida: esperado base64: com 32 bytes.');
+        }
+
+        return self::$indexKey = $raw;
     }
 }

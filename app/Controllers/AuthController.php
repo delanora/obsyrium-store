@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Database\Connection;
+use App\Repositories\LoginAttemptRepository;
+use App\Services\LoginThrottle;
 use App\Repositories\UserRepository;
 use App\Services\AuthService;
 use App\Support\Csrf;
@@ -55,7 +57,7 @@ final class AuthController
             return;
         }
 
-        $erro = $this->service()->login($_POST);
+        $erro = $this->service()->login($_POST, (string) ($_SERVER['REMOTE_ADDR'] ?? ''));
 
         if ($erro === null) {
             Session::flash('success', 'Bem-vindo de volta.');
@@ -80,7 +82,10 @@ final class AuthController
 
     private function service(): AuthService
     {
-        return new AuthService(new UserRepository(Connection::get()));
+        return new AuthService(
+            new UserRepository(Connection::get()),
+            new LoginThrottle(new LoginAttemptRepository(Connection::get()))
+        );
     }
 
     private function csrfOk(): bool

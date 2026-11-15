@@ -60,6 +60,7 @@ final class Session
         self::start();
         session_regenerate_id(true);
         $_SESSION[self::USER_KEY] = $userId;
+        Csrf::rotate();
     }
 
     public static function userId(): ?int

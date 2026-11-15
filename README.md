@@ -204,7 +204,7 @@ O `.env` é lido por `Config\Env::load()`, chamado no bootstrap de `public/index
 
 ### 6.2 Chave de cifra (APP_KEY)
 
-`App\Support\Crypto` exige `APP_KEY` com 32 bytes em base64. Para gerar uma:
+`App\Support\Crypto` exige `APP_KEY` **e** `APP_INDEX_KEY`, cada uma com 32 bytes em base64. O índice cego não é derivado da `APP_KEY`: sem `APP_INDEX_KEY`, cifrar continua funcionando, mas gerar ou consultar índices falha. Para gerar uma chave:
 
 ```bash
 php -r 'echo "base64:", base64_encode(random_bytes(32)), PHP_EOL;'
@@ -221,7 +221,7 @@ O payload cifrado carrega a versão da chave (`v1:`, `v2:`...), então a `APP_KE
 | `APP_KEY` | Chave atual, 32 bytes em base64. |
 | `APP_KEY_VERSION` | Versão da chave atual (padrão `1`). |
 | `APP_KEY_PREVIOUS` | Chaves antigas, apenas para decifrar: `1:base64:...,2:base64:...`. |
-| `APP_INDEX_KEY` | Chave do índice cego (CPF), independente da rotação para não invalidar buscas. |
+| `APP_INDEX_KEY` | Chave do índice cego (CPF). Obrigatória; independente da rotação para não invalidar buscas. |
 
 Para rotacionar:
 
@@ -284,7 +284,7 @@ Controllers devem permanecer pequenos. Regras de negócio não devem ser duplica
 - Não registrar senhas, tokens ou dados sensíveis nos logs.
 - Nenhum erro pode expor stack trace, caminho interno, SQL ou credencial ao usuário: `display_errors` fica desligado e exceções e erros fatais são registrados em `storage/logs/app.log`, com resposta apenas das páginas genéricas de `resources/views/errors/`.
 - Validar a autenticidade de notificações recebidas de serviços externos.
-- Aplicar rate limiting onde houver risco de abuso, como login e recuperação de senha.
+- O login tem bloqueio temporário: 5 falhas por conta ou 20 por IP em 15 minutos travam novas tentativas até a falha mais antiga da janela expirar. O recorte de tempo usa `NOW()` do banco, não o relógio do PHP — os dois podem estar em fusos diferentes. Um login bem-sucedido limpa as falhas da conta.
 
 ## 10. Pagamentos e operações assíncronas
 
@@ -310,7 +310,8 @@ Regras mínimas:
 - O diretório `database/migrations/` guarda um arquivo por mudança de schema, nomeado `AAAA_MM_DD_NNNNNN_descricao.php`. Cada arquivo devolve um `callable(PDO)` que executa o DDL.
 - `php database/migrate.php` aplica as pendentes e registra o nome na tabela `migrations`; `php database/migrate.php --status` mostra o estado de cada arquivo. Atalhos: `composer db:migrate` e `composer db:seed`.
 - `php database/seed.php` popula dados de demonstração (2 categorias, 8 estampas, 5 tamanhos por peça, estoque e imagem). Ele limpa as tabelas da vitrine antes de inserir e recusa rodar com `APP_ENV=production`.
-- Tabelas atuais: `categories`, `products`, `product_variants`, `stock`, `product_images`, `users`, `addresses` e `migrations`.
+- Tabelas atuais: `categories`, `products`, `product_variants`, `stock`, `product_images`, `users`, `addresses`, `login_attempts` e `migrations`.
+- `login_attempts` guarda só as falhas de login: o e-mail entra como índice cego (HMAC) e o IP em texto puro, porque é a chave do bloqueio por origem. Registros com mais de 24 horas são apagados a cada nova falha.
 - Em `users`, o CPF e o telefone são gravados cifrados (`cpf_encrypted`, `phone_encrypted`) e o CPF tem um índice cego único (`cpf_index`) para a regra de unicidade e para busca. A conferência dos dígitos verificadores é feita em `App\Support\Cpf`, antes de cifrar — o banco não tem como validar o formato. `password` guarda apenas o hash de `password_hash()` com Argon2id. O e-mail é único e comparado sem diferenciar maiúsculas.
 - `addresses` guarda os endereços de entrega do cliente para reuso: rua, número, complemento, bairro, cidade e destinatário cifrados; CEP e UF em texto puro porque alimentam o cálculo de frete; `is_default` marca o endereço preferido e `deleted_at` permite remover sem perder histórico.
 - Preços ficam em centavos (`price_cents`, `compare_price_cents`) para não depender de arredondamento de `float`. O estoque é por variação de tamanho e `stock.reserved` guarda unidades presas em carrinho/checkout.
@@ -472,5 +473,7 @@ Rota `GET /produto/{slug}`, atendida por `App\Controllers\ProductController::sho
 - CPF e telefone são normalizados (só dígitos) e cifrados antes de ir para o banco; o CPF ganha um índice cego para a regra de unicidade.
 - Login compara a senha com `password_verify` e reaproveita `password_needs_rehash` para atualizar o hash Argon2id quando necessário. Mensagem de erro é sempre "E-mail ou senha inválidos." — não revela se o e-mail existe.
 - `App\Support\Session` cuida do cookie (`HttpOnly`, `SameSite=Lax`, `Secure` sob HTTPS) e regenera o identificador no login. Contas com `is_active = 0` ou `deleted_at` preenchido não entram.
+- O token CSRF é trocado no login (`Csrf::rotate()` dentro de `Session::login`): um token obtido no formulário de login não vale para o logout depois de autenticado.
+- `App\Services\LoginThrottle` aplica o bloqueio: 5 falhas por conta, 20 por IP, janela de 15 minutos, chaveada pelo índice cego do e-mail e pelo IP de origem.
 - O cabeçalho mostra "entrar" para visitante e um botão de sair (POST com CSRF) para quem está conectado. Mensagens de retorno usam flash e aparecem no topo do conteúdo.
 - Estilo em `public/assets/css/auth.css` (card, campos, erros) e a mensagem flash em `layout.css`.
