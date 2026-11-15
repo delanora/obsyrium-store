@@ -279,3 +279,57 @@
     color: var(--color-text-muted);
     font-size: var(--font-size-xs);
 }
+
+/* ============ Botão ============ */
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: var(--target-min);
+    padding: var(--space-3) var(--space-5);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-accent);
+    color: var(--color-accent-contrast);
+    font-family: var(--font-display);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background-color var(--duration-fast) var(--ease-standard),
+        border-color var(--duration-fast) var(--ease-standard),
+        color var(--duration-fast) var(--ease-standard);
+}
+
+.button:hover {
+    background-color: var(--color-accent-hover);
+}
+
+.button:active {
+    background-color: var(--color-accent-active);
+}
+
+.button--ghost {
+    background-color: transparent;
+    border-color: var(--color-border-strong);
+    color: var(--color-text);
+}
+
+.button--ghost:hover {
+    background-color: transparent;
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+    background-color: var(--color-surface-raised);
+    color: var(--color-text-subtle);
+    border-color: var(--color-border);
+    cursor: not-allowed;
+}

@@ -337,5 +337,33 @@ Arquivos do logo em `public/assets/images/`: `logo-512.png` e `logo-128.png`, am
 - **Card de produto** (`.product-card`, dentro de `.product-grid`): mídia com proporção 3:4, selos em `.product-card__badges`, título, metadados, preço com valor antigo/atual e notas de Pix/parcelas. Variante `.product-card--sold-out`.
 - **Faixa de confiança** (`.trust-bar`): grade responsiva de itens com ícone SVG inline herdando `currentColor`, rótulo e texto de apoio.
 
-A view `resources/views/home/index.php` exibe uma prévia dos três componentes; a página inicial definitiva pertence à fase 4.- `database/migrations/`: histórico de alterações do banco.
-- `tests/`: testes automatizados.
+## 17. Layout da home
+
+A estrutura da página inicial segue a da referência Crown Training — a referência é de **layout** (seções, ordem e hierarquia), não de design. Cores, tipografia e ornamentos continuam os da identidade descrita na seção 16.
+
+### 17.1 Ordem das seções
+
+1. **Barra de benefícios** (`.topbar`): cinco itens com ícone — parcelamento, frete grátis, atendimento, troca e site seguro.
+2. **Cabeçalho** (`.site-header`): emblema com nome da loja, menu de categorias, busca, conta e carrinho com contador.
+3. **Hero** (`.hero`): dois slides em faixa horizontal com `scroll-snap` e marcadores (`.hero__dot`) que ancoram em cada slide. Sem JavaScript.
+4. **Vitrine "Lançamentos"** (`.section` + `.product-grid`): oito cards com selo, cor, preço, valor no Pix e parcelamento, seguidos da `.pagination`.
+5. **Bloco de conteúdo** (`.section--alt` + `.content-block`): H2 e dois parágrafos institucionais.
+6. **Newsletter** (`.newsletter`): título, texto de apoio, campo de e-mail e botão desabilitado até o envio existir.
+7. **Rodapé** (`.site-footer`): colunas de políticas, atendimento, redes sociais e formas de pagamento, mais a linha legal.
+
+### 17.2 Arquivos
+
+- `resources/views/layouts/site.php`: documento HTML e `<head>` com os quatro CSS na ordem `tokens` → `base` → `components` → `layout`; inclui o cabeçalho, o `<main id="conteudo">` com a view de conteúdo e o rodapé.
+- `resources/views/partials/header.php`: barra de benefícios e cabeçalho. Links de categoria e botões de ação ainda apontam para `#`.
+- `resources/views/partials/footer.php`: colunas do rodapé e linha legal.
+- `resources/views/home/index.php`: hero, vitrine, bloco de conteúdo e newsletter. Os oito produtos são de demonstração, definidos em um array na própria view.
+- `public/assets/css/layout.css`: topbar, cabeçalho, navegação, hero, seções, paginação, newsletter, rodapé e `.skip-link`.
+
+Cabeçalho e rodapé são reaproveitados por qualquer página renderizada pelo layout `site`.
+
+### 17.3 Regras de manutenção
+
+- O layout não carrega JavaScript: hero e estados são resolvidos em CSS. Comportamento interativo (dots sincronizados, carrinho, busca) entra junto com o JavaScript do projeto.
+- Toda classe nova parte de `tokens.css`; cor e espaçamento fixos não entram nos componentes.
+- `HomeController::index()` define `$title`, `$content` e inclui `layouts/site.php`. Novas páginas repetem esse contrato em vez de duplicar o HTML do documento.
+- Um único `<h1>` por página (o do primeiro slide do hero); as seções usam `<h2>`.

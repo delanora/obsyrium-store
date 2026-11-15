@@ -1,208 +1,141 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Obsyrium Store</title>
-	<link rel="stylesheet" href="/assets/css/tokens.css">
-	<link rel="stylesheet" href="/assets/css/base.css">
-	<link rel="stylesheet" href="/assets/css/components.css">
-	<style>
-		/* Layout apenas desta prévia. A página inicial será construída na fase 4. */
-		.preview {
-			display: flex;
-			flex-direction: column;
-			gap: var(--section-space);
-			padding-block: var(--space-8);
-		}
+<?php
 
-		.preview__note {
-			max-width: 60ch;
-			color: var(--color-text-muted);
-			font-size: var(--font-size-sm);
-		}
+declare(strict_types=1);
 
-		.preview__brand {
-			display: flex;
-			align-items: center;
-			gap: var(--space-4);
-		}
+/*
+ * Vitrine da página inicial.
+ *
+ * Os produtos são de demonstração e serão carregados do banco na fase 5.
+ */
 
-		.preview__logo {
-			flex: none;
-			width: 72px;
-			height: 72px;
-			border-radius: var(--radius-circle);
-			box-shadow: var(--shadow-accent);
-		}
+$products = [
+    ['name' => 'Camiseta Estampa 01', 'color' => 'Preta', 'price' => 'R$ 129,90', 'pix' => 'R$ 123,41', 'installments' => '3x de R$ 43,30 sem juros', 'badge' => 'Novo', 'old' => null, 'soldOut' => false],
+    ['name' => 'Camiseta Estampa 02', 'color' => 'Off white', 'price' => 'R$ 127,90', 'pix' => 'R$ 121,51', 'installments' => '3x de R$ 42,63 sem juros', 'badge' => 'Drop 01', 'old' => 'R$ 149,90', 'soldOut' => false],
+    ['name' => 'Camiseta Estampa 03', 'color' => 'Grafite', 'price' => 'R$ 129,90', 'pix' => 'R$ 123,41', 'installments' => '3x de R$ 43,30 sem juros', 'badge' => 'Esgotado', 'old' => null, 'soldOut' => true],
+    ['name' => 'Camiseta Estampa 04', 'color' => 'Preta', 'price' => 'R$ 139,90', 'pix' => 'R$ 132,91', 'installments' => '3x de R$ 46,63 sem juros', 'badge' => null, 'old' => null, 'soldOut' => false],
+    ['name' => 'Camiseta Estampa 05', 'color' => 'Marrom', 'price' => 'R$ 139,90', 'pix' => 'R$ 132,91', 'installments' => '3x de R$ 46,63 sem juros', 'badge' => null, 'old' => null, 'soldOut' => false],
+    ['name' => 'Camiseta Estampa 06', 'color' => 'Off white', 'price' => 'R$ 129,90', 'pix' => 'R$ 123,41', 'installments' => '3x de R$ 43,30 sem juros', 'badge' => null, 'old' => null, 'soldOut' => false],
+    ['name' => 'Camiseta Estampa 07', 'color' => 'Verde musgo', 'price' => 'R$ 149,90', 'pix' => 'R$ 142,41', 'installments' => '3x de R$ 49,97 sem juros', 'badge' => 'Novo', 'old' => null, 'soldOut' => false],
+    ['name' => 'Camiseta Estampa 08', 'color' => 'Bordô', 'price' => 'R$ 129,90', 'pix' => 'R$ 123,41', 'installments' => '3x de R$ 43,30 sem juros', 'badge' => 'Esgotado', 'old' => null, 'soldOut' => true],
+];
 
-		.preview__section {
-			display: flex;
-			flex-direction: column;
-			gap: var(--space-4);
-		}
-
-		.preview__section > h2 {
-			font-size: var(--font-size-lg);
-			color: var(--color-text-muted);
-			letter-spacing: var(--letter-spacing-wide);
-		}
-
-		.preview__max {
-			max-width: 22rem;
-		}
-	</style>
-</head>
-<body>
-	<main class="container preview">
-		<header class="preview__brand">
-			<img class="preview__logo" src="/assets/images/logo-128.png" width="72" height="72" alt="Obsyrium Store">
-			<div>
-				<h1>Obsyrium Store</h1>
-				<p class="preview__note">
-					Identidade visual derivada do emblema da marca. Prévia dos componentes base
-					(seletor de tamanho, card de produto e faixa de confiança); a página inicial da loja
-					será construída na fase 4.
+$escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+?>
+<section class="hero" aria-label="Destaques da loja">
+	<div class="hero__slides">
+		<article class="hero__slide" id="slide-1">
+			<div class="container hero__inner">
+				<p class="hero__eyebrow">Drop 01 · tiragem limitada</p>
+				<h1 class="hero__title">Estampas autorais em pequenos lotes</h1>
+				<p class="hero__text">
+					Camisetas em algodão premium, com estampa serigráfica e tiragem limitada.
+					Sem reposição depois que o lote acaba.
+				</p>
+				<p class="hero__actions">
+					<a class="button" href="#lancamentos">Ver lançamentos</a>
+					<a class="button button--ghost" href="#">Tabela de medidas</a>
 				</p>
 			</div>
-		</header>
+		</article>
 
-		<section class="preview__section">
-			<h2>Seletor de tamanho</h2>
+		<article class="hero__slide" id="slide-2">
+			<div class="container hero__inner">
+				<p class="hero__eyebrow">Frete grátis</p>
+				<h2 class="hero__title">Acima de R$ 199 no Brasil</h2>
+				<p class="hero__text">
+					Primeira troca grátis em até 7 dias e pagamento em até 3x sem juros ou com desconto no Pix.
+				</p>
+				<p class="hero__actions">
+					<a class="button" href="#lancamentos">Conhecer as estampas</a>
+				</p>
+			</div>
+		</article>
+	</div>
 
-			<fieldset class="size-picker preview__max">
-				<legend class="size-picker__legend">Tamanho</legend>
-				<div class="size-picker__options">
-					<input class="size-option__input" type="radio" name="size" id="size-pp" value="PP">
-					<label class="size-option" for="size-pp">PP</label>
+	<p class="hero__dots">
+		<a class="hero__dot" href="#slide-1" aria-current="true"><span class="visually-hidden">Ir para o primeiro destaque</span></a>
+		<a class="hero__dot" href="#slide-2"><span class="visually-hidden">Ir para o segundo destaque</span></a>
+	</p>
+</section>
 
-					<input class="size-option__input" type="radio" name="size" id="size-p" value="P">
-					<label class="size-option" for="size-p">P</label>
+<section class="section" id="lancamentos" aria-labelledby="lancamentos-titulo">
+	<div class="container">
+		<div class="section__head">
+			<h2 class="section__title" id="lancamentos-titulo">Lançamentos</h2>
+			<a class="section__link" href="#">Ver todos</a>
+		</div>
 
-					<input class="size-option__input" type="radio" name="size" id="size-m" value="M" checked>
-					<label class="size-option" for="size-m">M</label>
-
-					<input class="size-option__input" type="radio" name="size" id="size-g" value="G">
-					<label class="size-option" for="size-g">G</label>
-
-					<input class="size-option__input" type="radio" name="size" id="size-gg" value="GG" disabled>
-					<label class="size-option" for="size-gg">GG<span class="visually-hidden"> (esgotado)</span></label>
-				</div>
-				<p class="size-picker__hint">Modelagem oversized. <a href="#">Ver tabela de medidas</a></p>
-			</fieldset>
-		</section>
-
-		<section class="preview__section">
-			<h2>Card de produto</h2>
-
-			<ul class="product-grid">
+		<ul class="product-grid">
+			<?php foreach ($products as $product): ?>
 				<li>
-					<article class="product-card">
+					<article class="product-card<?= $product['soldOut'] ? ' product-card--sold-out' : '' ?>">
 						<figure class="product-card__media">
-							<img class="product-card__image" src="/assets/images/placeholder.svg" alt="Camiseta Estampa 01, modelagem oversized, na cor preta" width="300" height="400">
-							<div class="product-card__badges">
-								<span class="product-card__badge product-card__badge--accent">Novo</span>
-							</div>
+							<img
+								class="product-card__image"
+								src="/assets/images/placeholder.svg"
+								alt="Camiseta <?= $escape($product['name']) ?>, modelagem oversized, na cor <?= $escape($product['color']) ?>"
+								width="300"
+								height="400"
+								loading="lazy"
+							>
+							<?php if ($product['badge'] !== null): ?>
+								<div class="product-card__badges">
+									<span class="product-card__badge<?= $product['badge'] === 'Novo' || $product['badge'] === 'Drop 01' ? ' product-card__badge--accent' : '' ?>"><?= $escape($product['badge']) ?></span>
+								</div>
+							<?php endif; ?>
 						</figure>
+
 						<div class="product-card__body">
-							<h3 class="product-card__title"><a href="#">Camiseta Estampa 01</a></h3>
-							<p class="product-card__meta">Preta · algodão 100%</p>
+							<h3 class="product-card__title"><a href="#"><?= $escape($product['name']) ?></a></h3>
+							<p class="product-card__meta"><?= $escape($product['color']) ?> · algodão 100%</p>
 							<p class="product-card__price">
-								<span class="product-card__price-current">R$ 129,90</span>
-								<span class="product-card__price-note">ou <strong>R$ 110,42 no pix</strong></span>
-								<span class="product-card__price-note">3x de R$ 43,30 sem juros</span>
+								<?php if ($product['old'] !== null): ?>
+									<span class="product-card__price-old"><?= $escape($product['old']) ?></span>
+								<?php endif; ?>
+								<span class="product-card__price-current"><?= $escape($product['price']) ?></span>
+								<span class="product-card__price-note">ou <strong><?= $escape($product['pix']) ?> no pix</strong></span>
+								<span class="product-card__price-note"><?= $escape($product['installments']) ?></span>
 							</p>
 						</div>
 					</article>
 				</li>
+			<?php endforeach; ?>
+		</ul>
 
-				<li>
-					<article class="product-card">
-						<figure class="product-card__media">
-							<img class="product-card__image" src="/assets/images/placeholder.svg" alt="Camiseta Estampa 02, modelagem oversized, na cor off white" width="300" height="400">
-							<div class="product-card__badges">
-								<span class="product-card__badge">Drop 01</span>
-								<span class="product-card__badge product-card__badge--accent">-15%</span>
-							</div>
-						</figure>
-						<div class="product-card__body">
-							<h3 class="product-card__title"><a href="#">Camiseta Estampa 02</a></h3>
-							<p class="product-card__meta">Off white · algodão 100%</p>
-							<p class="product-card__price">
-								<span class="product-card__price-old">R$ 149,90</span>
-								<span class="product-card__price-current">R$ 127,90</span>
-								<span class="product-card__price-note">ou <strong>R$ 108,72 no pix</strong></span>
-							</p>
-						</div>
-					</article>
-				</li>
+		<nav class="pagination" aria-label="Paginação da vitrine">
+			<span class="pagination__item" aria-current="page">1</span>
+		</nav>
+	</div>
+</section>
 
-				<li>
-					<article class="product-card product-card--sold-out">
-						<figure class="product-card__media">
-							<img class="product-card__image" src="/assets/images/placeholder.svg" alt="Camiseta Estampa 03, modelagem oversized, na cor grafite" width="300" height="400" loading="lazy">
-							<div class="product-card__badges">
-								<span class="product-card__badge">Esgotado</span>
-							</div>
-						</figure>
-						<div class="product-card__body">
-							<h3 class="product-card__title"><a href="#">Camiseta Estampa 03</a></h3>
-							<p class="product-card__meta">Grafite · algodão 100%</p>
-							<p class="product-card__price">
-								<span class="product-card__price-current">R$ 129,90</span>
-								<span class="product-card__price-note">Avise-me quando voltar</span>
-							</p>
-						</div>
-					</article>
-				</li>
-			</ul>
-		</section>
+<section class="section section--alt">
+	<div class="container content-block">
+		<h2>Camisetas com estampas autorais, feitas em pequenos lotes</h2>
+		<p>
+			A <strong>Obsyrium Store</strong> trabalha com estampas próprias, produzidas em tiragens curtas,
+			em malha de algodão de gramatura alta e caimento oversized.
+		</p>
+		<p>
+			Cada lote é estampado uma única vez: quando esgota, não volta. As peças vão do PP ao GG,
+			com tabela de medidas em centímetros ao lado do seletor de tamanho em cada produto.
+		</p>
+	</div>
+</section>
 
-		<section class="preview__section">
-			<h2>Faixa de confiança</h2>
+<section class="newsletter" aria-labelledby="newsletter-titulo">
+	<h2 class="newsletter__title" id="newsletter-titulo">Cadastre-se e receba os próximos drops</h2>
+	<p class="newsletter__text">
+		Avisamos antes de cada lançamento e abrimos a lista de espera das estampas esgotadas.
+	</p>
 
-			<ul class="trust-bar">
-				<li class="trust-bar__item">
-					<span class="trust-bar__icon">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>
-					</span>
-					<span>
-						<span class="trust-bar__label">Pix e cartão</span>
-						<span class="trust-bar__text">Até 3x sem juros</span>
-					</span>
-				</li>
+	<div class="newsletter__form">
+		<label class="visually-hidden" for="newsletter-email">Seu e-mail</label>
+		<input class="newsletter__input" type="email" id="newsletter-email" name="email" placeholder="seu@email.com" autocomplete="email">
+		<button class="button" type="button" disabled>Cadastrar</button>
+	</div>
 
-				<li class="trust-bar__item">
-					<span class="trust-bar__icon">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg>
-					</span>
-					<span>
-						<span class="trust-bar__label">Entrega para todo o Brasil</span>
-						<span class="trust-bar__text">Prazo informado no carrinho</span>
-					</span>
-				</li>
-
-				<li class="trust-bar__item">
-					<span class="trust-bar__icon">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg>
-					</span>
-					<span>
-						<span class="trust-bar__label">Primeira troca grátis</span>
-						<span class="trust-bar__text">Você tem 7 dias</span>
-					</span>
-				</li>
-
-				<li class="trust-bar__item">
-					<span class="trust-bar__icon">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>
-					</span>
-					<span>
-						<span class="trust-bar__label">Compra segura</span>
-						<span class="trust-bar__text">Seus dados protegidos</span>
-					</span>
-				</li>
-			</ul>
-		</section>
-	</main>
-</body>
-</html>
+	<p class="newsletter__note">
+		Cadastro será habilitado quando o envio de e-mails estiver implementado.
+		Ao se cadastrar você concorda com a <a href="#">Política de Privacidade</a>.
+	</p>
+</section>

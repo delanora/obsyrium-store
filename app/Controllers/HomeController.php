@@ -11,6 +11,11 @@ final class HomeController
         http_response_code(200);
         header('Content-Type: text/html; charset=UTF-8');
 
-        require dirname(__DIR__, 2) . '/resources/views/home/index.php';
+        $basePath = dirname(__DIR__, 2);
+
+        $title = 'Obsyrium Store — camisetas com estampas autorais';
+        $content = $basePath . '/resources/views/home/index.php';
+
+        require $basePath . '/resources/views/layouts/site.php';
     }
 }
