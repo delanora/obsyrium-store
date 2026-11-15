@@ -19,7 +19,23 @@ Este repositório contém o código-fonte da aplicação, scripts de banco de da
 | Controle de versão | Git |
 | Dependências PHP | Composer, quando necessário |
 
-As versões definitivas devem ser registradas neste documento quando o ambiente de produção estiver definido.
+As versões efetivamente instaladas no ambiente de desenvolvimento atual estão registradas na seção [2.1](#21-versões-instaladas-no-ambiente-de-desenvolvimento). As versões definitivas de produção devem ser registradas neste documento quando esse ambiente estiver definido.
+
+### 2.1 Versões instaladas no ambiente de desenvolvimento
+
+Ambiente verificado em 15/11/2026 na VM de desenvolvimento, com o projeto em `/var/www/html/obsyrium-store`.
+
+| Componente | Versão instalada |
+|---|---|
+| Sistema operacional | Debian GNU/Linux 12 (bookworm), kernel 6.1.0-54-amd64 |
+| PHP (CLI e `libapache2-mod-php8.2`) | 8.2.35 |
+| Apache HTTP Server | 2.4.71-1~deb12u1 |
+| MariaDB Server / Client | 10.11.19-MariaDB-0+deb12u1 |
+| Composer | 2.5.5 |
+
+Extensões PHP disponíveis e usadas pela aplicação: `pdo_mysql`, `mysqli`, `mbstring`, `intl`, `fileinfo`, `json` e `openssl`. Driver PDO ativo: `mysql`.
+
+O `intl` e as bibliotecas `php-symfony-*` foram instalados como dependências do pacote Debian `composer`, não como requisito direto da aplicação.
 
 ## 3. Requisitos
 
@@ -96,6 +112,45 @@ composer install
 ```
 
 Os comandos de migration e inicialização devem ser adicionados aqui quando a ferramenta correspondente estiver implementada.
+
+### 5.1 Servidor web neste ambiente
+
+O document root aponta para `public/`, nunca para a raiz do repositório, conforme a seção 13. Configuração atual da VM:
+
+- Virtual host: `/etc/apache2/sites-available/obsyrium-store.conf`, habilitado como `/etc/apache2/sites-enabled/obsyrium-store.conf`.
+- `DocumentRoot /var/www/html/obsyrium-store/public`.
+- `ServerName obsyrium-store.local` e `ServerAlias obsyrium.local` — nomes provisórios, sem DNS configurado; o acesso atual é pelo IP `10.8.0.9`.
+- `<Directory>` do document root com `Options +FollowSymLinks -Indexes` e `AllowOverride All`, permitindo `.htaccess` para o roteamento por front controller.
+- Logs próprios em `/var/log/apache2/obsyrium-store-access.log` e `/var/log/apache2/obsyrium-store-error.log`.
+- O site padrão `000-default` (`DocumentRoot /var/www/html`) está desabilitado, para que a porta 80 sirva somente o projeto.
+- `mod_rewrite` habilitado. PHP executa como módulo do Apache (`libapache2-mod-php8.2`); PHP-FPM não é utilizado.
+- Composer instalado via pacote Debian. Ao ser executado como `root`, ele avisa sobre uso de superusuário e desabilita plugins; para permitir plugins, definir `COMPOSER_ALLOW_SUPERUSER=1`.
+- Enquanto `public/index.php` não existir, a raiz responde **403** por causa de `-Indexes`. Esse comportamento é esperado e não indica erro de configuração.
+
+Comandos executados na preparação:
+
+```bash
+apt-get install -y php8.2-mysql php8.2-mbstring composer mariadb-server
+a2enmod rewrite
+a2ensite obsyrium-store
+a2dissite 000-default
+apache2ctl configtest && systemctl reload apache2
+systemctl enable --now mariadb
+```
+
+Rollback do virtual host: `a2dissite obsyrium-store && a2ensite 000-default && a2dismod rewrite && systemctl reload apache2`.
+
+### 5.2 Banco de dados neste ambiente
+
+- MariaDB 10.11.19 ativo e habilitado no boot (`systemctl enable --now mariadb`).
+- Escuta somente em `127.0.0.1:3306` (`bind-address = 127.0.0.1`), sem exposição na rede.
+- `datadir` em `/var/lib/mysql/`.
+- Autenticação do usuário `root` do SGBD via soquete Unix (`unix_socket`), sem senha em texto plano.
+- Nenhum banco de dados ou usuário da aplicação foi criado ainda. A criação deve acontecer junto das migrations, com usuário de privilégios restritos (seção 11).
+
+### 5.3 Proxy
+
+Esta VM **não possui proxy** configurado: nenhum módulo `proxy_*` do Apache habilitado, nenhuma diretiva `ProxyPass`/`ProxyPassMatch` nos sites habilitados, nenhuma variável de ambiente `*_proxy` e nenhuma configuração de proxy em `apt`, `git`, `curl` ou `wget`. O virtual host da aplicação não deve receber configuração de proxy; esse ajuste será feito manualmente em outro momento.
 
 ## 6. Variáveis de ambiente
 
@@ -225,5 +280,7 @@ Cada integração deve possuir configuração própria, tratamento de falhas, lo
 ## 15. Documentação complementar
 
 - [`AGENTS.md`](./AGENTS.md): instruções para agentes de desenvolvimento.
+- Seção [2.1](#21-versões-instaladas-no-ambiente-de-desenvolvimento): versões instaladas no ambiente de desenvolvimento.
+- Seções [5.1](#51-servidor-web-neste-ambiente), [5.2](#52-banco-de-dados-neste-ambiente) e [5.3](#53-proxy): configuração atual da VM (servidor web, banco e ausência de proxy).
 - `database/migrations/`: histórico de alterações do banco.
 - `tests/`: testes automatizados.
