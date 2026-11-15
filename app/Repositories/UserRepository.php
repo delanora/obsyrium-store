@@ -29,7 +29,7 @@ final class UserRepository
     public function cpfExists(string $cpf): bool
     {
         $consulta = $this->pdo->prepare('SELECT 1 FROM users WHERE cpf_index = :indice LIMIT 1');
-        $consulta->bindValue(':indice', Crypto::blindIndex($cpf, 'cpf'));
+        $consulta->bindValue(':indice', Crypto::cpfIndex($cpf));
         $consulta->execute();
 
         return $consulta->fetchColumn() !== false;
@@ -47,7 +47,7 @@ final class UserRepository
 
         $consulta->bindValue(':name', $dados['name']);
         $consulta->bindValue(':cpf', Crypto::encrypt($dados['cpf']));
-        $consulta->bindValue(':cpf_index', Crypto::blindIndex($dados['cpf'], 'cpf'));
+        $consulta->bindValue(':cpf_index', Crypto::cpfIndex($dados['cpf']));
         $consulta->bindValue(':email', $dados['email']);
         $consulta->bindValue(':password', $dados['password']);
         $consulta->bindValue(':phone', Crypto::encrypt($dados['phone']));

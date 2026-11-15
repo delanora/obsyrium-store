@@ -112,6 +112,15 @@ final class Crypto
         return hash_hmac('sha256', $context . '|' . $value, self::indexKey());
     }
 
+    /**
+     * Índice de CPF: normaliza os dígitos antes do HMAC, para que
+     * "529.982.247-25" e "52998224725" caiam no mesmo índice.
+     */
+    public static function cpfIndex(string $cpf): string
+    {
+        return self::blindIndex(self::normalizeCpf($cpf), 'cpf');
+    }
+
     public static function normalizeCpf(string $cpf): string
     {
         return preg_replace('/\D+/', '', $cpf) ?? '';
