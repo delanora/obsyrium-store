@@ -99,6 +99,7 @@
         var telaGrande = window.matchMedia('(min-width: 64rem)');
         var focoAnterior = null;
         var fechamentoAutomatico = 0;
+        var painelDaGaveta = gaveta.querySelector('.cart-drawer__panel');
 
         var cancelarFechamentoAutomatico = function () {
             if (fechamentoAutomatico) {
@@ -139,7 +140,6 @@
                 return;
             }
 
-            var painel = gaveta.querySelector('.cart-drawer__panel');
             var concluido = false;
 
             var concluir = function () {
@@ -159,8 +159,8 @@
 
             gaveta.classList.add('is-collapsing');
 
-            if (painel) {
-                painel.addEventListener('animationend', function (evento) {
+            if (painelDaGaveta) {
+                painelDaGaveta.addEventListener('animationend', function (evento) {
                     if (evento.animationName === 'cart-drawer-collapse') {
                         concluir();
                     }
@@ -189,7 +189,6 @@
                 atalhoDoAviso.remove();
             }
 
-            var painelDaGaveta = gaveta.querySelector('.cart-drawer__panel');
             var destinoDoAviso = gaveta.querySelector('.cart-drawer__list, .cart-drawer__empty');
 
             if (painelDaGaveta && destinoDoAviso) {
@@ -222,9 +221,14 @@
         });
 
         // Se o cliente começa a mexer na gaveta, o fechamento automático espera.
-        ['mouseenter', 'pointerdown', 'keydown', 'focusin'].forEach(function (nome) {
-            gaveta.addEventListener(nome, cancelarFechamentoAutomatico);
-        });
+        // A escuta é só no painel: o container cobre a tela inteira e o
+        // navegador dispara mouseenter nele mesmo com o cursor parado, o que
+        // cancelava o fechamento sem o cliente ter feito nada.
+        if (painelDaGaveta) {
+            ['pointerdown', 'keydown', 'focusin'].forEach(function (nome) {
+                painelDaGaveta.addEventListener(nome, cancelarFechamentoAutomatico);
+            });
+        }
 
         document.addEventListener('keydown', function (evento) {
             if (evento.key === 'Escape' && !gaveta.hidden) {

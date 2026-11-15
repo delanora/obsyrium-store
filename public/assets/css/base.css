@@ -115,6 +115,49 @@ ol {
     }
 }
 
+/* ============ Barra de rolagem ============ */
+
+/*
+ * Barra fina e discreta no tom do mármore da interface, para acompanhar o
+ * layout em vez de brigar com ele. Vale para a página e para a gaveta do
+ * carrinho, que rola por dentro; o polegar esquenta para o dourado no hover.
+ */
+html::-webkit-scrollbar,
+.cart-drawer__panel::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+html::-webkit-scrollbar-track,
+.cart-drawer__panel::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+html::-webkit-scrollbar-thumb,
+.cart-drawer__panel::-webkit-scrollbar-thumb {
+    border-radius: var(--radius-pill);
+    background-color: var(--color-border-strong);
+}
+
+html::-webkit-scrollbar-thumb:hover,
+.cart-drawer__panel::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-accent-strong);
+}
+
+/*
+ * Firefox não conhece os pseudo-elementos acima e usa as propriedades padrão.
+ * Elas ficam no @supports de propósito: no Chromium, definir scrollbar-width ou
+ * scrollbar-color desliga o caminho do ::-webkit-scrollbar e a barra voltaria
+ * para os 17px do sistema.
+ */
+@supports (-moz-appearance: none) {
+    html,
+    .cart-drawer__panel {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-border-strong) transparent;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
