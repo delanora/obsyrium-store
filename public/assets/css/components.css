@@ -135,7 +135,12 @@
     transition: transform var(--duration-base) var(--ease-standard);
 }
 
-.product-card:hover .product-card__image,
+@media (hover: hover) {
+    .product-card:hover .product-card__image {
+        transform: scale(1.03);
+    }
+}
+
 .product-card:focus-within .product-card__image {
     transform: scale(1.03);
 }
@@ -189,6 +194,13 @@
 .product-card__title a:hover {
     text-decoration: underline;
     text-decoration-color: var(--color-accent);
+}
+
+/* O card inteiro vira área de toque: o link do título se estende por cima. */
+.product-card__title a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
 }
 
 .product-card__meta {
@@ -332,4 +344,54 @@
     color: var(--color-text-subtle);
     border-color: var(--color-border);
     cursor: not-allowed;
+}
+
+/* ============ Ajustes para telas pequenas ============ */
+
+@media (max-width: 60em) {
+    .product-grid {
+        gap: var(--space-3);
+    }
+
+    .product-card {
+        border-radius: var(--radius-sm);
+    }
+
+    .product-card__body {
+        padding: var(--space-2) var(--space-2) var(--space-3);
+    }
+
+    .product-card__title {
+        font-size: var(--font-size-sm);
+        line-height: var(--line-height-snug);
+    }
+
+    .product-card__meta {
+        font-size: var(--font-size-xs);
+    }
+
+    .product-card__badges {
+        inset-block-start: var(--space-1);
+        inset-inline-start: var(--space-1);
+    }
+
+    .product-card__badge {
+        padding: 2px var(--space-2);
+        font-size: 0.625rem;
+    }
+
+    .product-card__price {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        padding-top: var(--space-1);
+    }
+
+    .product-card__price-current {
+        font-size: var(--font-size-base);
+    }
+
+    .product-card__price-note {
+        line-height: var(--line-height-snug);
+    }
 }
