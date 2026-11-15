@@ -124,8 +124,8 @@ ol {
  */
 html::-webkit-scrollbar,
 .cart-drawer__panel::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 html::-webkit-scrollbar-track,

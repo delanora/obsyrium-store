@@ -230,9 +230,47 @@
             });
         }
 
+        // A barra de rolagem da página continua à vista com a gaveta aberta, então
+        // o fundo não pode andar: roda e toque fora do painel são consumidos, e o
+        // painel cuida da própria rolagem (overscroll-behavior no cart.css).
+        var foraDoPainel = function (evento) {
+            return !evento.target.closest || evento.target.closest('.cart-drawer__panel') === null;
+        };
+
+        // Com a lista curta o painel não tem o que rolar, e a roda sobre ele
+        // passaria para a página: nesse caso o evento também é consumido.
+        var painelRola = function () {
+            return painelDaGaveta !== null
+                && painelDaGaveta.scrollHeight > painelDaGaveta.clientHeight + 1;
+        };
+
+        gaveta.addEventListener('wheel', function (evento) {
+            if (foraDoPainel(evento) || !painelRola()) {
+                evento.preventDefault();
+            }
+        }, {passive: false});
+
+        gaveta.addEventListener('touchmove', function (evento) {
+            if (foraDoPainel(evento) || !painelRola()) {
+                evento.preventDefault();
+            }
+        }, {passive: false});
+
+        var teclasDeRolagem = [' ', 'PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+
         document.addEventListener('keydown', function (evento) {
-            if (evento.key === 'Escape' && !gaveta.hidden) {
+            if (gaveta.hidden) {
+                return;
+            }
+
+            if (evento.key === 'Escape') {
                 fecharComAnimacao();
+
+                return;
+            }
+
+            if (foraDoPainel(evento) && teclasDeRolagem.indexOf(evento.key) !== -1) {
+                evento.preventDefault();
             }
         });
     }
