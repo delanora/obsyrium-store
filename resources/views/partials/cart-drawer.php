@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Services\CartService;
 use App\Support\Csrf;
 use App\Support\Price;
 
@@ -18,6 +19,8 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 $voltar = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
 $voltar = is_string($voltar) && $voltar !== '' ? $voltar : '/';
 $quantidadeTotal = array_sum(array_column($itensDoCarrinho, 'quantity'));
+$limiteDaGaveta = CartService::MAX_PER_ITEM;
+
 $totalCentavos = array_sum(array_map(
     static fn (array $item): int => (int) $item['price_cents'] * (int) $item['quantity'],
     $itensDoCarrinho
@@ -47,7 +50,17 @@ $totalCentavos = array_sum(array_map(
 
 						<div class="cart-drawer__info">
 							<a class="cart-drawer__name" href="/produto/<?= $escape($item['slug']) ?>"><?= $escape($item['name']) ?></a>
-							<p class="cart-drawer__meta">Tam. <?= $escape($item['size']) ?> · <?= (int) $item['quantity'] ?>x · <?= $escape($item['price']) ?></p>
+<p class="cart-drawer__meta">Tam. <?= $escape($item['size']) ?> · <?= $escape($item['price']) ?></p>
+
+						<form class="cart-drawer__quantity" action="/carrinho/atualizar" method="post">
+							<?= Csrf::field() ?>
+							<input type="hidden" name="variant_id" value="<?= (int) $item['variant_id'] ?>">
+							<input type="hidden" name="quantity" value="<?= (int) $item['quantity'] ?>" data-quantity-input data-max="<?= $limiteDaGaveta ?>">
+
+							<button class="cart-drawer__step" type="button" data-quantity-step="-1" aria-label="Diminuir quantidade"<?= (int) $item['quantity'] <= 1 ? ' disabled' : '' ?>>−</button>
+							<span class="cart-drawer__quantity-value" aria-hidden="true"><?= (int) $item['quantity'] ?></span>
+							<button class="cart-drawer__step" type="button" data-quantity-step="1" aria-label="Aumentar quantidade"<?= (int) $item['quantity'] >= $limiteDaGaveta ? ' disabled' : '' ?>>+</button>
+						</form>
 
 							<?php if (!$item['active']): ?>
 								<p class="cart-drawer__warning">Fora do catálogo.</p>

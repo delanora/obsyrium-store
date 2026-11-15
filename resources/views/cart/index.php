@@ -9,8 +9,8 @@ use App\Support\Price;
  * Página do carrinho. Recebe do CartController os itens já formatados e o
  * limite de unidades por item.
  *
- * Cada item traz o próprio formulário de quantidade e de remoção: as duas
- * ações postam nas rotas que já existem e voltam para o carrinho.
+ * Cada item traz o próprio formulário de quantidade (enviado sozinho quando o
+ * número muda, pelo site.js) e de remoção, que volta para o carrinho.
  *
  * @var list<array<string, mixed>> $itens
  * @var int $limite
@@ -70,7 +70,6 @@ $totalCentavos = array_sum(array_map(
 									max="<?= $limite ?>"
 									required
 								>
-								<button class="cart-quantity__submit" type="submit">Atualizar</button>
 							</form>
 
 							<form action="/carrinho/remover" method="post">

@@ -282,14 +282,116 @@
             }
         };
 
+        var atualizarListaDaGaveta = function (doc) {
+            var listaAtual = gaveta.querySelector('.cart-drawer__list');
+            var listaNova = doc.querySelector('.cart-drawer__list');
+
+            if (listaAtual && listaNova) {
+                listaAtual.replaceWith(document.importNode(listaNova, true));
+            }
+        };
+
+        var aplicarResposta = function (doc) {
+            atualizarSinais(doc);
+            atualizarListaDaGaveta(doc);
+            atualizarPaginaDoCarrinho(doc);
+        };
+
+        // Quantidade: na página o número é enviado sozinho quando muda; na gaveta,
+        // pelos botões + e −. Nenhum dos dois recarrega a página. Se o servidor
+        // recusar (limite ou estoque), o envio tradicional mostra o aviso.
+        var enviarQuantidade = function (formulario, quantidade) {
+            if (typeof window.fetch !== 'function' || typeof window.FormData !== 'function' || typeof window.DOMParser !== 'function') {
+                formulario.submit();
+
+                return;
+            }
+
+            var dados = new FormData(formulario);
+            dados.set('quantity', String(quantidade));
+
+            fetch(formulario.action, {
+                method: 'POST',
+                body: dados,
+                credentials: 'same-origin',
+                redirect: 'follow'
+            }).then(function (resposta) {
+                if (!resposta.ok) {
+                    throw new Error('quantidade falhou');
+                }
+
+                return resposta.text();
+            }).then(function (html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+
+                if (doc.querySelector('.flash--error')) {
+                    formulario.submit();
+
+                    return;
+                }
+
+                aplicarResposta(doc);
+            }).catch(function () {
+                formulario.submit();
+            });
+        };
+
+        document.addEventListener('change', function (evento) {
+            var entrada = evento.target;
+
+            if (!entrada || !entrada.matches || !entrada.matches('.cart-quantity__input')) {
+                return;
+            }
+
+            var formulario = entrada.closest('form');
+            var quantidade = parseInt(entrada.value, 10);
+
+            if (!formulario || isNaN(quantidade) || quantidade < 1) {
+                return;
+            }
+
+            enviarQuantidade(formulario, quantidade);
+        });
+
+        document.addEventListener('click', function (evento) {
+            var botao = evento.target.closest ? evento.target.closest('[data-quantity-step]') : null;
+
+            if (!botao) {
+                return;
+            }
+
+            var formulario = botao.closest('form');
+            var entrada = formulario ? formulario.querySelector('[data-quantity-input]') : null;
+
+            if (!formulario || !entrada) {
+                return;
+            }
+
+            var passo = parseInt(botao.getAttribute('data-quantity-step'), 10) || 0;
+            var atual = parseInt(entrada.value, 10) || 1;
+            var maximo = parseInt(entrada.getAttribute('data-max'), 10) || atual;
+            var quantidade = Math.min(Math.max(atual + passo, 1), maximo);
+
+            if (quantidade === atual) {
+                return;
+            }
+
+            entrada.value = String(quantidade);
+            enviarQuantidade(formulario, quantidade);
+        });
+
         gaveta.addEventListener('submit', function (evento) {
             var formulario = evento.target;
 
-            if (!formulario || !formulario.closest) {
+            if (!formulario || !formulario.closest || formulario.getAttribute('action') !== '/carrinho/remover') {
                 return;
             }
 
             var item = formulario.closest('.cart-drawer__item');
+
+            if (!item) {
+                return;
+            }
 
             if (!item || item.classList.contains('is-removendo') || item.classList.contains('cart-drawer__item--aviso')) {
                 return;
