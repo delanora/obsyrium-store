@@ -343,21 +343,20 @@ A estrutura da página inicial segue a da referência Crown Training — a refer
 
 ### 17.1 Ordem das seções
 
-1. **Barra de benefícios** (`.topbar`): três itens com ícone — parcelamento, atendimento e site seguro.
-2. **Cabeçalho** (`.site-header`): barra em largura total (sem `.container`), com margem lateral de `--gutter`, em três colunas — emblema e nome "Obsyrium" à esquerda, menu (Lançamentos, Camisetas, Sobre, Contato) centralizado e busca, conta e carrinho à direita.
-3. **Hero** (`.hero`): dois slides em faixa horizontal com `scroll-snap` e marcadores (`.hero__dot`) que ancoram em cada slide. Sem JavaScript.
-4. **Vitrine "Lançamentos"** (`.section` + `.product-grid`): oito cards com selo, cor, preço, valor no Pix e parcelamento, seguidos da `.pagination`.
-5. **Bloco de conteúdo** (`.section--alt` + `.content-block`): H2 e dois parágrafos institucionais.
-6. **Newsletter** (`.newsletter`): título, texto de apoio, campo de e-mail e botão desabilitado até o envio existir.
-7. **Rodapé** (`.site-footer`): colunas de políticas, atendimento, redes sociais e formas de pagamento, mais a linha legal.
+1. **Cabeçalho** (`.site-header`): barra em largura total (sem `.container`), com margem lateral de `--gutter`, em três colunas — emblema e nome "Obsyrium" à esquerda, menu (Lançamentos, Camisetas, Sobre, Contato) centralizado e busca, conta e carrinho à direita.
+2. **Hero** (`.hero`): dois slides em faixa horizontal com `scroll-snap` e marcadores (`.hero__dot`) que ancoram em cada slide. Sem JavaScript.
+3. **Vitrine "Lançamentos"** (`.section` + `.product-grid`): oito cards com selo, cor, preço, valor no Pix e parcelamento, seguidos da `.pagination`.
+4. **Bloco de conteúdo** (`.section--alt` + `.content-block`): H2 e dois parágrafos institucionais.
+5. **Newsletter** (`.newsletter`): título, texto de apoio, campo de e-mail e botão desabilitado até o envio existir.
+6. **Rodapé** (`.site-footer`): colunas de políticas, atendimento, redes sociais e formas de pagamento, mais a linha legal.
 
 ### 17.2 Arquivos
 
 - `resources/views/layouts/site.php`: documento HTML e `<head>` com os quatro CSS na ordem `tokens` → `base` → `components` → `layout`; inclui o cabeçalho, o `<main id="conteudo">` com a view de conteúdo e o rodapé.
-- `resources/views/partials/header.php`: barra de benefícios e cabeçalho. Links de categoria e botões de ação ainda apontam para `#`.
+- `resources/views/partials/header.php`: cabeçalho com marca, menu e ações. Links de categoria e botões de ação ainda apontam para `#`.
 - `resources/views/partials/footer.php`: colunas do rodapé e linha legal.
 - `resources/views/home/index.php`: hero, vitrine, bloco de conteúdo e newsletter. Os oito produtos são de demonstração, definidos em um array na própria view.
-- `public/assets/css/layout.css`: topbar, cabeçalho, navegação, hero, seções, paginação, newsletter, rodapé e `.skip-link`.
+- `public/assets/css/layout.css`: cabeçalho, navegação, hero, seções, paginação, newsletter, rodapé e `.skip-link`.
 
 Cabeçalho e rodapé são reaproveitados por qualquer página renderizada pelo layout `site`.
 
