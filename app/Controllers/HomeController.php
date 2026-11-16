@@ -7,14 +7,11 @@ namespace App\Controllers;
 use App\Database\Connection;
 use App\Repositories\ProductRepository;
 use App\Support\Navegacao;
-use App\Support\Price;
+use App\Support\ProductCard;
 
 final class HomeController
 {
     private const SHOWCASE_LIMIT = 8;
-    private const PIX_DISCOUNT = 5;
-    private const INSTALLMENTS = 3;
-    private const FALLBACK_IMAGE = '/assets/images/placeholder.svg';
 
     public function index(): void
     {
@@ -27,7 +24,7 @@ final class HomeController
 
         $repository = new ProductRepository(Connection::get());
         $products = array_map(
-            fn (array $linha): array => $this->toCard($linha),
+            static fn (array $linha): array => ProductCard::fromRow($linha),
             $repository->showcase(self::SHOWCASE_LIMIT)
         );
 
@@ -35,46 +32,5 @@ final class HomeController
         $content = $basePath . '/resources/views/home/index.php';
 
         require $basePath . '/resources/views/layouts/site.php';
-    }
-
-    /**
-     * Converte a linha do banco no formato que o card da vitrine consome.
-     *
-     * @param array<string, mixed> $linha
-     * @return array<string, mixed>
-     */
-    private function toCard(array $linha): array
-    {
-        $preco = (int) $linha['price_cents'];
-        $precoAntigo = $linha['compare_price_cents'] !== null ? (int) $linha['compare_price_cents'] : null;
-        $estoque = (int) $linha['stock_quantity'];
-        $desconto = $precoAntigo !== null ? Price::discountPercent($precoAntigo, $preco) : 0;
-        $imagem = (string) ($linha['image_path'] ?? '');
-
-        $selo = null;
-        $seloAcento = false;
-
-        if ($estoque === 0) {
-            $selo = 'Esgotado';
-        } elseif ($desconto > 0) {
-            $selo = '-' . $desconto . '%';
-            $seloAcento = true;
-        }
-
-        return [
-            'name' => (string) $linha['name'],
-            'href' => '/produto/' . rawurlencode((string) $linha['slug']),
-            'color' => (string) $linha['color'],
-            'material' => (string) $linha['material'],
-            'image' => $imagem !== '' ? $imagem : self::FALLBACK_IMAGE,
-            'imageAlt' => (string) ($linha['image_alt'] ?? ''),
-            'price' => Price::format($preco),
-            'oldPrice' => $precoAntigo !== null ? Price::format($precoAntigo) : null,
-            'pix' => Price::withDiscount($preco, self::PIX_DISCOUNT),
-            'installments' => Price::installment($preco, self::INSTALLMENTS),
-            'badge' => $selo,
-            'badgeAccent' => $seloAcento,
-            'soldOut' => $estoque === 0,
-        ];
     }
 }

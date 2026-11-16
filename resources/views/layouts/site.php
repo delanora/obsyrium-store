@@ -25,6 +25,7 @@ $flash = App\Support\Session::takeFlash();
 	<link rel="stylesheet" href="/assets/css/components.css">
 	<link rel="stylesheet" href="/assets/css/layout.css">
 	<link rel="stylesheet" href="/assets/css/product.css">
+	<link rel="stylesheet" href="/assets/css/catalog.css">
 	<link rel="stylesheet" href="/assets/css/cart.css">
 	<link rel="stylesheet" href="/assets/css/account.css">
 	<link rel="stylesheet" href="/assets/css/checkout.css">

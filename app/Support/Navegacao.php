@@ -9,7 +9,9 @@ namespace App\Support;
  * (como adicionar ao carrinho) devolvam o cliente ao ponto de onde veio, sem
  * depender do cabeçalho Referer.
  *
- * Só entram caminhos conhecidos: `/`, `/carrinho` e `/produto/{slug}`.
+ * Só entram caminhos conhecidos: `/`, `/catalogo`, `/carrinho` e
+ * `/produto/{slug}`. O catálogo entra sem os filtros — voltar para ele é
+ * voltar para a lista inteira.
  */
 final class Navegacao
 {
@@ -50,6 +52,6 @@ final class Navegacao
             return null;
         }
 
-        return preg_match('#^/(carrinho|produto/[a-z0-9-]+)?$#', $caminho) === 1 ? $caminho : null;
+        return preg_match('#^/(carrinho|catalogo|produto/[a-z0-9-]+)?$#', $caminho) === 1 ? $caminho : null;
     }
 }

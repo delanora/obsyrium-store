@@ -3,7 +3,8 @@
  *
  * Menu do celular (hamburger, com foco, Escape e clique fora), gaveta do
  * carrinho no computador, sombra do cabeçalho ao rolar, entrada dos blocos
- * marcados com [data-reveal] e o CEP que preenche o endereço pela BrasilAPI.
+ * marcados com [data-reveal], os filtros recolhíveis do catálogo no celular e
+ * o CEP que preenche o endereço pela BrasilAPI.
  * Sem este arquivo o site continua inteiro: o menu fica em duas linhas e
  * nada é escondido, porque os estados iniciais dependem de html.js.
  */
@@ -671,6 +672,18 @@
 
         campoCep.addEventListener('change', consultarCep);
     }
+    // Catálogo: no celular a barra de filtros nasce recolhida. Com filtro
+    // ativo ela continua aberta, para dar para ajustar o que está ligado.
+    var filtros = document.querySelector('[data-catalog-filters]');
+
+    if (
+        filtros &&
+        window.matchMedia('(max-width: 47.99rem)').matches &&
+        !filtros.hasAttribute('data-active')
+    ) {
+        filtros.open = false;
+    }
+
     // Marca para o script inline que o comportamento carregou.
     window.__obsyriumReady = true;
 })();

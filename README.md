@@ -625,3 +625,15 @@ O estoque ganhou o botão **Novo modelo** e a lateral ganhou **Categorias**.
 - A tela de categorias conta só os vínculos diretos: um produto na subcategoria aparece na subcategoria, não na mãe.
 - Migration `2026_11_16_000013_add_category_tree_and_product_categories.php` cria `categories.parent_id`, a tabela `product_categories` e copia os vínculos antigos de `products.category_id`.
 MD
+
+## 30. Catálogo
+
+`/catalogo` lista todos os produtos ativos, sem depender da vitrine de oito da home.
+
+- **Filtros**: categoria e subcategoria (a categoria traz também o que está nas filhas), tamanho com saldo, disponibilidade (disponível/esgotado) e faixa de preço. Cada opção é um link com a contagem de produtos; clicar de novo no filtro ligado desliga ele.
+- **Ordenação**: novidades (padrão), menor preço, maior preço e nome de A a Z.
+- **Estado na URL**: `/catalogo?categoria=camisetas&sub=oversized&tamanho=M&preco=100-149&ordem=preco-asc&pagina=2`. Valores padrão não entram na URL, então `/catalogo` é o catálogo inteiro. O servidor valida tudo: categoria, subcategoria (precisa ser filha da escolhida), tamanho, faixa e ordenação que não existem são ignorados.
+- **Paginação** de 12 por página, com a faixa "1–12 de 14" e o resumo das páginas (primeira, atual, última e vizinhas).
+- **Celular**: a barra de filtros é um `<details>` que nasce recolhida (`site.js` fecha quando não há filtro ativo) e abre com o toque; com filtro ligado já vem aberta e mostra um selo com a quantidade.
+- O card da vitrine virou o partial `resources/views/partials/product-card.php` e o formato do card saiu para `App\Support\ProductCard`, usados pela home e pelo catálogo.
+- O menu ganhou **Catálogo** (marcado como página atual) e o "Ver todos" da vitrine aponta para ele. `Navegacao` passou a aceitar `/catalogo` como origem, então adicionar ao carrinho a partir do catálogo devolve o cliente para o catálogo.

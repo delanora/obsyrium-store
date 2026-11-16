@@ -6,6 +6,7 @@ use App\Controllers\AccountController;
 use App\Controllers\AdminController;
 use App\Controllers\AuthController;
 use App\Controllers\CartController;
+use App\Controllers\CatalogController;
 use App\Controllers\CheckoutController;
 use App\Controllers\HomeController;
 use App\Controllers\ProductController;
@@ -20,6 +21,7 @@ use App\Routing\Router;
 
 return static function (Router $router): void {
     $router->get('/', [HomeController::class, 'index']);
+    $router->get('/catalogo', [CatalogController::class, 'index']);
     $router->get('/produto/{slug}', [ProductController::class, 'show']);
 
     $router->get('/carrinho', [CartController::class, 'show']);

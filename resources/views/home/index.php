@@ -8,8 +8,6 @@ declare(strict_types=1);
  *
  * @var list<array<string, mixed>> $products
  */
-
-$escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 ?>
 <section class="hero" aria-label="Destaques da loja">
 	<div class="hero__slides">
@@ -52,7 +50,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 	<div class="container">
 		<div class="section__head" data-reveal>
 			<h2 class="section__title" id="lancamentos-titulo">Lançamentos</h2>
-			<a class="section__link" href="#">Ver todos</a>
+			<a class="section__link" href="/catalogo">Ver todos</a>
 		</div>
 
 		<?php if ($products === []): ?>
@@ -62,43 +60,10 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 		<ul class="product-grid">
 			<?php foreach ($products as $product): ?>
 				<li data-reveal>
-					<article class="product-card<?= $product['soldOut'] ? ' product-card--sold-out' : '' ?>">
-						<figure class="product-card__media">
-							<img
-								class="product-card__image"
-								src="<?= $escape($product['image']) ?>"
-								alt="<?= $escape($product['imageAlt']) ?>"
-								width="300"
-								height="400"
-								loading="lazy"
-							>
-							<?php if ($product['badge'] !== null): ?>
-								<div class="product-card__badges">
-									<span class="product-card__badge<?= $product['badgeAccent'] ? ' product-card__badge--accent' : '' ?>"><?= $escape($product['badge']) ?></span>
-								</div>
-							<?php endif; ?>
-						</figure>
-
-						<div class="product-card__body">
-							<h3 class="product-card__title"><a href="<?= $escape($product['href']) ?>"><?= $escape($product['name']) ?></a></h3>
-							<p class="product-card__meta"><?= $escape($product['color']) ?> · <?= $escape($product['material']) ?></p>
-							<p class="product-card__price">
-								<?php if ($product['oldPrice'] !== null): ?>
-									<span class="product-card__price-old"><?= $escape($product['oldPrice']) ?></span>
-								<?php endif; ?>
-								<span class="product-card__price-current"><?= $escape($product['price']) ?></span>
-								<span class="product-card__price-note">ou <strong><?= $escape($product['pix']) ?> no pix</strong></span>
-								<span class="product-card__price-note"><?= $escape($product['installments']) ?></span>
-							</p>
-						</div>
-					</article>
+					<?php require dirname(__DIR__) . '/partials/product-card.php'; ?>
 				</li>
 			<?php endforeach; ?>
 		</ul>
-
-		<nav class="pagination" aria-label="Paginação da vitrine">
-			<span class="pagination__item" aria-current="page">1</span>
-		</nav>
 	</div>
 </section>
 

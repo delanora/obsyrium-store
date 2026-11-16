@@ -12,9 +12,11 @@ use App\Support\Session;
  * computador (site.js) e navega para /carrinho no celular.
  */
 
+$caminhoAtual = (string) (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/');
+
 $menu = [
-    ['label' => 'Lançamentos', 'href' => '#lancamentos', 'current' => true],
-    ['label' => 'Camisetas', 'href' => '#'],
+    ['label' => 'Lançamentos', 'href' => '/#lancamentos', 'current' => $caminhoAtual === '/'],
+    ['label' => 'Catálogo', 'href' => '/catalogo', 'current' => $caminhoAtual === '/catalogo'],
     ['label' => 'Sobre', 'href' => '#'],
     ['label' => 'Contato', 'href' => '#'],
 ];
