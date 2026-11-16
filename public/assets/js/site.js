@@ -578,8 +578,14 @@
             window.fetch('https://brasilapi.com.br/api/cep/v2/' + digitos, {
                 headers: { Accept: 'application/json' }
             }).then(function (resposta) {
+                // 404 é a BrasilAPI dizendo que nenhum serviço achou o CEP; os
+                // demais códigos (ou a rede caída) são falha de consulta.
+                if (resposta.status === 404) {
+                    throw new Error('cep-nao-encontrado');
+                }
+
                 if (!resposta.ok) {
-                    throw new Error('cep');
+                    throw new Error('cep-falhou');
                 }
 
                 return resposta.json();
@@ -590,12 +596,19 @@
 
                 preencherCep(dados);
                 mostrarAvisoCep('Endereço preenchido pelo CEP. Confira o número e o complemento.');
-            }).catch(function () {
+            }).catch(function (erro) {
                 if (tentativa !== buscaCep) {
                     return;
                 }
 
                 ultimoCepConsultado = '';
+
+                if (erro instanceof Error && erro.message === 'cep-nao-encontrado') {
+                    mostrarAvisoCep('CEP não encontrado. Confira os números.');
+
+                    return;
+                }
+
                 mostrarAvisoCep('Não foi possível buscar o CEP agora. Preencha manualmente.');
             }).then(function () {
                 if (tentativa === buscaCep) {
