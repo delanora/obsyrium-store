@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Services\StockService;
 use App\Support\Csrf;
 
 /*
@@ -226,7 +227,7 @@ foreach ($adminProduto['variants'] as $variacao) {
 
 <section class="admin-product__variants" aria-labelledby="tamanhos-titulo">
 	<h2 class="admin-product__subtitle" id="tamanhos-titulo">Tamanhos</h2>
-	<p class="field__hint">O saldo de cada tamanho continua sendo ajustado na tela de estoque.</p>
+	<p class="field__hint">Digite o saldo e salve. É o mesmo saldo da tela de estoque, tamanho por tamanho.</p>
 
 	<div class="admin-table-wrap">
 		<table class="admin-table">
@@ -239,10 +240,25 @@ foreach ($adminProduto['variants'] as $variacao) {
 			</thead>
 			<tbody>
 				<?php foreach ($adminProduto['variants'] as $variacao): ?>
+					<?php $campoSaldo = 'saldo-tamanho-' . (int) $variacao['id']; ?>
 					<tr>
 						<td><?= $escape((string) $variacao['size']) ?></td>
 						<td class="admin-table__muted admin-table__sku"><?= $escape((string) $variacao['sku']) ?></td>
-						<td class="admin-table__total"><?= (int) $variacao['quantity'] ?></td>
+						<td>
+							<form class="stock-form" method="post" action="<?= $escape($urlDoProduto . '/saldo') ?>">
+								<?= Csrf::field() ?>
+								<input type="hidden" name="variant_id" value="<?= (int) $variacao['id'] ?>">
+								<input type="hidden" name="atual" value="<?= (int) $variacao['quantity'] ?>">
+								<?php foreach ($adminVoltar as $campo => $info): ?>
+									<input type="hidden" name="<?= $escape((string) $campo) ?>" value="<?= $escape((string) $info) ?>">
+								<?php endforeach; ?>
+
+								<label class="admin-visually-hidden" for="<?= $escape($campoSaldo) ?>">Saldo do tamanho <?= $escape((string) $variacao['size']) ?></label>
+								<input class="stock-form__input" id="<?= $escape($campoSaldo) ?>" name="quantity" type="number" min="0" max="<?= StockService::MAX_QUANTITY ?>" step="1" inputmode="numeric" value="<?= (int) $variacao['quantity'] ?>" required>
+
+								<button class="stock-form__save" type="submit">Salvar</button>
+							</form>
+						</td>
 					</tr>
 				<?php endforeach; ?>
 			</tbody>

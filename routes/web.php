@@ -61,6 +61,7 @@ return static function (Router $router): void {
     $router->post('/admin/estoque/voltar', [AdminController::class, 'restore']);
     $router->get('/admin/estoque/produto/{id}', [AdminController::class, 'product']);
     $router->post('/admin/estoque/produto/{id}', [AdminController::class, 'saveProduct']);
+    $router->post('/admin/estoque/produto/{id}/saldo', [AdminController::class, 'saveProductStock']);
     $router->post('/admin/estoque/produto/{id}/foto', [AdminController::class, 'uploadPhoto']);
     $router->post('/admin/estoque/produto/{id}/foto/remover', [AdminController::class, 'removePhoto']);
 };

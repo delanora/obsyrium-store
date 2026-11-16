@@ -387,6 +387,20 @@ final class ProductAdminService
     }
 
     /**
+     * Confere se o tamanho pertence ao produto aberto: o saldo é salvo pela
+     * tela do produto, mas a variação vem do formulário.
+     */
+    public function hasVariant(int $productId, int $variantId): bool
+    {
+        $consulta = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM product_variants WHERE id = :variant AND product_id = :product'
+        );
+        $consulta->execute([':variant' => $variantId, ':product' => $productId]);
+
+        return (int) $consulta->fetchColumn() > 0;
+    }
+
+    /**
      * Limite de tamanho de cada foto, em texto ("2 MB").
      */
     public function photoLimitLabel(): string

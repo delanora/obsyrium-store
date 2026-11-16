@@ -301,6 +301,46 @@ final class AdminController
     }
 
     /**
+     * Saldo de um tamanho salvo pela própria tela do produto.
+     *
+     * @param array<string, string> $params
+     */
+    public function saveProductStock(array $params): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $variacaoId = (int) ($_POST['variant_id'] ?? 0);
+        $esperado = (int) ($_POST['atual'] ?? 0);
+        $saldo = trim((string) ($_POST['quantity'] ?? ''));
+
+        if (!$this->products()->hasVariant($id, $variacaoId)) {
+            Session::flash('error', 'Tamanho não encontrado para este produto.');
+
+            $this->redirect($this->productUrl($id, $_POST));
+        }
+
+        if (preg_match('/^\d{1,5}$/', $saldo) !== 1) {
+            Session::flash('error', sprintf(
+                'Informe o saldo em número inteiro, de 0 a %d.',
+                StockService::MAX_QUANTITY
+            ));
+
+            $this->redirect($this->productUrl($id, $_POST));
+        }
+
+        $erro = (new StockService(Connection::get()))->update($variacaoId, (int) $saldo, $esperado);
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Saldo atualizado.');
+
+        $this->redirect($this->productUrl($id, $_POST));
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function admin(): array
@@ -313,6 +353,11 @@ final class AdminController
         }
 
         return $admin;
+    }
+
+    private function products(): ProductAdminService
+    {
+        return new ProductAdminService(Connection::get());
     }
 
     private function auth(): AdminAuthService
@@ -367,7 +412,7 @@ final class AdminController
      */
     private function renderProduct(int $id, array $admin, array $erros = [], array $valores = []): void
     {
-        $servico = new ProductAdminService(Connection::get());
+        $servico = $this->products();
         $produto = $id > 0 ? $servico->find($id) : null;
 
         if ($produto === null) {

@@ -611,4 +611,5 @@ O lápis ao lado da lixeira (e do carrinho, na aba fora de linha) abre `/admin/e
 - A primeira foto de verdade apaga a linha do placeholder compartilhado (`/assets/images/placeholder.svg`), que nunca é removido do disco; o placeholder também nunca é apagado como arquivo, só a linha dele.
 - Remover foto apaga a linha e o arquivo — apenas quando o caminho está dentro de `/uploads/produtos/`.
 - O "Voltar" e o retorno depois de salvar preservam aba, coluna, direção e página do estoque.
+- Tamanhos: o saldo de cada tamanho é editável na própria tela do produto (`POST /admin/estoque/produto/{id}/saldo`), com a mesma trava otimista da tela de estoque — se o saldo mudar enquanto a página está aberta, o POST é recusado com aviso e nada é gravado.
 MD
