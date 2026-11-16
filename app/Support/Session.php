@@ -12,6 +12,7 @@ final class Session
 {
     private const NAME = 'obsyrium_session';
     private const USER_KEY = 'user_id';
+    private const ADMIN_KEY = 'admin_id';
     private const FLASH_KEY = '_flash';
 
     public static function start(): void
@@ -63,11 +64,59 @@ final class Session
         Csrf::rotate();
     }
 
+    /**
+     * Abre a sessão de administração sem tocar na sessão do cliente: o mesmo
+     * navegador pode estar comprando na loja e operando o painel.
+     */
+    public static function loginAdmin(int $adminId): void
+    {
+        self::start();
+        session_regenerate_id(true);
+        $_SESSION[self::ADMIN_KEY] = $adminId;
+        Csrf::rotate();
+    }
+
+    public static function adminId(): ?int
+    {
+        $id = self::get(self::ADMIN_KEY);
+
+        return is_int($id) ? $id : null;
+    }
+
+    /**
+     * Sai do painel sem derrubar a conta do cliente no mesmo navegador.
+     */
+    public static function adminLogout(): void
+    {
+        if (!self::isStarted()) {
+            return;
+        }
+
+        unset($_SESSION[self::ADMIN_KEY]);
+        session_regenerate_id(true);
+        Csrf::rotate();
+    }
+
     public static function userId(): ?int
     {
         $id = self::get(self::USER_KEY);
 
         return is_int($id) ? $id : null;
+    }
+
+    /**
+     * Encerra só a sessão do cliente, sem derrubar um painel aberto no mesmo
+     * navegador.
+     */
+    public static function forgetUser(): void
+    {
+        if (!self::isStarted()) {
+            return;
+        }
+
+        unset($_SESSION[self::USER_KEY]);
+        session_regenerate_id(true);
+        Csrf::rotate();
     }
 
     public static function logout(): void

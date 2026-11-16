@@ -550,3 +550,20 @@ O fechamento do carrinho virou pedido: o checkout grava `orders` + `order_items`
 - `GET /conta/compras` usa `OrderService::ordersForUser()` (50 mais recentes, itens em uma consulta só) e mostra um cartão por pedido com número, data, peças, situação, itens, endereço de entrega e totais. A situação aparece por extenso (“Aguardando pagamento”) e a cor só reforça.
 - Estilos em `public/assets/css/account.css` (bloco `order*`): cartões no mesmo desenho dos endereços, itens em lista e endereço/totais lado a lado a partir de 40 rem.
 - O estoque é baixado na hora da compra. Reserva que expira e pagamento pendente ficaram para as próximas etapas.
+
+## 24. Painel administrativo de pedidos
+
+A administração tem barra, layout e sessão próprios em `/admin` — nada do cabeçalho da loja, e `noindex`.
+
+- Contas ficam em `admins` (migration `2026_11_16_000012_create_admins_table.php`), separadas de `users`: administrador não compra, não tem CPF e não herda o perfil do cliente. A conta nasce pelo terminal, nunca por formulário público:
+  - `php database/admin.php criar "Nome" email@daloja.com "senha com 10+"`
+  - `php database/admin.php senha email@daloja.com "nova senha"`
+  - `php database/admin.php listar`
+- `App\Services\AdminAuthService` usa Argon2id, rehash automático, o mesmo `LoginThrottle` do cliente (5 falhas por conta ou 20 por IP em 15 minutos) e mensagem de erro genérica. A sessão do painel é a chave `admin_id` (`Session::loginAdmin()`/`adminLogout()`), então abrir o painel não transforma o navegador em cliente logado e sair do painel não derruba a conta da loja.
+- Rotas: `GET /admin` e `GET /admin/pedidos` (lista com filtro por situação), `GET /admin/pedidos/{number}` (detalhe), `POST /admin/pedidos/{number}/status` (troca de situação), `GET|POST /admin/login`, `POST /admin/logout`. Sem sessão de administrador, tudo além do login responde 303 para `/admin/login` com aviso.
+- `OrderService::adminOrders()` lista os 100 pedidos mais recentes com nome e e-mail do cliente; `adminOrder()` monta o detalhe com itens, endereço decifrado e totais.
+- Transições em `OrderService::NEXT_STATUSES`: aguardando pagamento → pago/cancelado, pago → enviado/cancelado, enviado → entregue, e entregue/cancelado são finais. O formulário só oferece o que o servidor aceita e o servidor confere de novo.
+- `changeStatus()` roda em transação com a linha do pedido travada (`FOR UPDATE`): dois cliques em "cancelar" não somam estoque duas vezes. Cancelar devolve as peças com um `UPDATE stock ... + oi.quantity` a partir de `order_items`, ignorando itens cuja variação já não existe.
+- Views em `resources/views/admin/` (`login`, `orders`, `order`) sobre `layouts/admin.php`; estilos em `public/assets/css/admin.css`. A tabela rola na horizontal abaixo de 56 rem e o detalhe empilha itens e colunas laterais.
+- Situação aparece por extenso; a cor do selo só reforça. O aviso de cancelamento (“Cancelar devolve as peças deste pedido ao estoque.”) fica visível junto do formulário.
+- O painel ainda não cobre produtos, estoque, cupons nem pagamentos — só pedidos, como primeiro passo.

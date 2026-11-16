@@ -1,0 +1,538 @@
+/*
+ * Painel de administração: mesma paleta da loja, densidade maior.
+ *
+ * A barra do topo é a única navegação; o conteúdo é uma tabela de pedidos e a
+ * tela de detalhe com itens à esquerda e situação/cliente/entrega à direita.
+ * Abaixo de 56rem a tabela rola na horizontal e o detalhe empilha.
+ */
+
+.admin-body {
+    min-height: 100vh;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+}
+
+.admin-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-5);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-5);
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-bg-alt);
+}
+
+.admin-bar__brand {
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--font-size-base);
+    letter-spacing: var(--letter-spacing-display);
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.admin-bar__brand span {
+    color: var(--color-accent);
+}
+
+.admin-bar__nav {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+}
+
+.admin-bar__link {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.admin-bar__link:hover,
+.admin-bar__link[aria-current="page"] {
+    color: var(--color-accent);
+}
+
+.admin-bar__user {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+.admin-bar__name {
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+}
+
+.admin-bar__out {
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+}
+
+.admin-bar__out:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.admin-flash {
+    margin: 0;
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--font-size-sm);
+}
+
+.admin-flash--success {
+    background-color: rgb(98 181 122 / 12%);
+    color: var(--color-success);
+}
+
+.admin-flash--error,
+.admin-flash--cart {
+    background-color: rgb(224 87 74 / 12%);
+    color: var(--color-danger);
+}
+
+.admin-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-4) var(--space-8);
+}
+
+/* Cabeçalho de cada tela */
+
+.admin-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.admin-head__eyebrow {
+    margin: 0;
+    color: var(--color-accent);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.admin-head__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-display);
+    letter-spacing: var(--letter-spacing-display);
+    line-height: var(--line-height-tight);
+    text-transform: uppercase;
+}
+
+.admin-head__text {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+}
+
+.admin-back {
+    align-self: flex-start;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.admin-back:hover {
+    color: var(--color-accent);
+}
+
+/* Filtro por situação */
+
+.admin-filters {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
+}
+
+.admin-filter {
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.admin-filter:hover {
+    border-color: var(--color-border-strong);
+    color: var(--color-text);
+}
+
+.admin-filter--ativo {
+    border-color: var(--color-accent-strong);
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent);
+}
+
+/* Tabela de pedidos */
+
+.admin-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.admin-table th {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-wide);
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.admin-table td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.admin-table tbody tr:hover {
+    background-color: var(--color-surface-raised);
+}
+
+.admin-table__number a {
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+}
+
+.admin-table__number a:hover {
+    color: var(--color-accent);
+}
+
+.admin-table__meta {
+    display: block;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+}
+
+.admin-table__muted {
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.admin-table__total {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.admin-table__open {
+    color: var(--color-accent);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.admin-table__open:hover {
+    color: var(--color-accent-hover);
+}
+
+.admin-empty {
+    margin: 0;
+    padding: var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-align: center;
+}
+
+/* Situação do pedido */
+
+.admin-status {
+    display: inline-block;
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.admin-status--aguardando_pagamento {
+    border-color: var(--color-accent-strong);
+    color: var(--color-accent);
+}
+
+.admin-status--pago,
+.admin-status--entregue {
+    border-color: rgb(98 181 122 / 45%);
+    color: var(--color-success);
+}
+
+.admin-status--enviado {
+    border-color: rgb(217 162 74 / 45%);
+    color: var(--color-warning);
+}
+
+.admin-status--cancelado {
+    border-color: rgb(224 87 74 / 45%);
+    color: var(--color-danger);
+}
+
+/* Detalhe do pedido */
+
+.admin-detail {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.admin-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.admin-panel__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+}
+
+.admin-side {
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+}
+
+.admin-items {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.admin-item {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.admin-item:last-child {
+    border-bottom: 0;
+}
+
+.admin-item__name {
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+}
+
+.admin-item__meta {
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+}
+
+.admin-item__price {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.admin-totals {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--font-size-sm);
+}
+
+.admin-totals__row {
+    display: flex;
+    gap: var(--space-3);
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.admin-totals__row dt {
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.admin-totals__row dd {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.admin-totals__row--total dt,
+.admin-totals__row--total dd {
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+}
+
+.admin-status-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.admin-info {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+}
+
+.admin-info__muted {
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+}
+
+.admin-note {
+    margin: 0;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-base);
+}
+
+.admin-note--warning {
+    color: var(--color-warning);
+}
+
+.admin-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+    white-space: nowrap;
+}
+
+/* Login do painel */
+
+.admin-login {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-8) var(--space-4);
+}
+
+.admin-login__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+    max-width: 24rem;
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.admin-login__eyebrow {
+    margin: 0;
+    color: var(--color-accent);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.admin-login__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-display);
+    letter-spacing: var(--letter-spacing-display);
+    text-transform: uppercase;
+}
+
+.admin-login__text {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.admin-login__alert {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid rgb(224 87 74 / 45%);
+    border-radius: var(--radius-sm);
+    background-color: rgb(224 87 74 / 12%);
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+}
+
+.admin-login__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+@media (min-width: 40rem) {
+    .admin-item {
+        grid-template-columns: 1fr auto;
+        align-items: baseline;
+    }
+
+    .admin-item__meta {
+        grid-column: 1;
+    }
+}
+
+@media (min-width: 56rem) {
+    .admin-main {
+        padding-inline: var(--space-5);
+    }
+
+    .admin-detail {
+        grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr);
+        align-items: start;
+    }
+}

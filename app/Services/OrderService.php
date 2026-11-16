@@ -12,7 +12,7 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Fechamento de pedido e leitura do histórico de compras.
+ * Pedidos: fechamento da compra, histórico do cliente e operação no painel.
  *
  * O pedido é montado como um retrato: preço, nome, tamanho e SKU saem da
  * variação no momento da compra, e o endereço escolhido é copiado cifrado para
@@ -21,7 +21,8 @@ use Throwable;
  *
  * Tudo acontece numa transação só: carrinho travado (FOR UPDATE), estoque
  * conferido e debitado, pedido e itens gravados e o carrinho esvaziado. Se
- * qualquer conferência falhar, nada fica pela metade.
+ * qualquer conferência falhar, nada fica pela metade. O cancelamento segue a
+ * mesma regra e devolve as peças ao estoque.
  */
 final class OrderService
 {
@@ -38,11 +39,43 @@ final class OrderService
     ];
 
     /**
+     * Para onde cada situação pode ir. Não há volta: entregue e cancelado são
+     * finais, e sair de `enviado` só para `entregue`.
+     */
+    public const NEXT_STATUSES = [
+        'aguardando_pagamento' => ['pago', 'cancelado'],
+        'pago' => ['enviado', 'cancelado'],
+        'enviado' => ['entregue'],
+        'entregue' => [],
+        'cancelado' => [],
+    ];
+
+    /**
      * Prefixo do número que o cliente lê. O número sai do id: OBS-000042.
      */
     private const NUMBER_PREFIX = 'OBS-';
 
     private const HISTORY_LIMIT = 50;
+
+    private const ADMIN_LIMIT = 100;
+
+    private const ORDER_COLUMNS = 'o.id,
+                    o.number,
+                    o.status,
+                    o.pieces,
+                    o.subtotal_cents,
+                    o.shipping_cents,
+                    o.total_cents,
+                    o.created_at,
+                    o.ship_label,
+                    o.ship_recipient_encrypted,
+                    o.ship_postal_code,
+                    o.ship_street_encrypted,
+                    o.ship_number_encrypted,
+                    o.ship_complement_encrypted,
+                    o.ship_district_encrypted,
+                    o.ship_city_encrypted,
+                    o.ship_state';
 
     public function __construct(private readonly PDO $pdo)
     {
@@ -76,7 +109,7 @@ final class OrderService
                 return ['error' => 'Seu carrinho está vazio.'];
             }
 
-            $erro = $this->conferirEstoque($itens);
+            $erro = $this->checkStock($itens);
 
             if ($erro !== null) {
                 $this->pdo->rollBack();
@@ -122,26 +155,10 @@ final class OrderService
         }
 
         $consulta = $this->pdo->prepare(
-            'SELECT id,
-                    number,
-                    status,
-                    pieces,
-                    subtotal_cents,
-                    shipping_cents,
-                    total_cents,
-                    created_at,
-                    ship_label,
-                    ship_recipient_encrypted,
-                    ship_postal_code,
-                    ship_street_encrypted,
-                    ship_number_encrypted,
-                    ship_complement_encrypted,
-                    ship_district_encrypted,
-                    ship_city_encrypted,
-                    ship_state
-               FROM orders
-              WHERE user_id = :user
-              ORDER BY created_at DESC, id DESC
+            'SELECT ' . self::ORDER_COLUMNS . '
+               FROM orders o
+              WHERE o.user_id = :user
+              ORDER BY o.created_at DESC, o.id DESC
               LIMIT :limite'
         );
 
@@ -155,51 +172,173 @@ final class OrderService
             return [];
         }
 
-        $itensPorPedido = $this->itemsForOrders(array_map(
-            static fn (array $linha): int => (int) $linha['id'],
+        $itensPorPedido = $this->itemsForOrders($this->ids($linhas));
+
+        return array_map(
+            fn (array $linha): array => $this->hydrateOrder($linha, $itensPorPedido[(int) $linha['id']] ?? []),
             $linhas
-        ));
+        );
+    }
 
-        $pedidos = [];
+    /**
+     * Lista do painel: todos os pedidos, opcionalmente filtrados por situação,
+     * com o nome e o e-mail do cliente.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function adminOrders(?string $status = null): array
+    {
+        $filtro = $status !== null && isset(self::STATUS_LABELS[$status]) ? $status : null;
+        $where = $filtro !== null ? ' WHERE o.status = :status' : '';
 
-        foreach ($linhas as $linha) {
-            $id = (int) $linha['id'];
-            $status = (string) $linha['status'];
+        $consulta = $this->pdo->prepare(
+            'SELECT ' . self::ORDER_COLUMNS . ',
+                    u.name AS customer_name,
+                    u.email AS customer_email
+               FROM orders o
+               INNER JOIN users u ON u.id = o.user_id' . $where . '
+              ORDER BY o.created_at DESC, o.id DESC
+              LIMIT :limite'
+        );
 
-            $pedidos[] = [
-                'number' => (string) $linha['number'],
-                'date' => date('d/m/Y', strtotime((string) $linha['created_at'])),
-                'status' => $status,
-                'status_label' => self::statusLabel($status),
-                'pieces' => (int) $linha['pieces'],
-                'subtotal' => Price::format((int) $linha['subtotal_cents']),
-                'shipping' => (int) $linha['shipping_cents'] > 0
-                    ? Price::format((int) $linha['shipping_cents'])
-                    : 'A calcular',
-                'total' => Price::format((int) $linha['total_cents']),
-                'address' => [
-                    'label' => (string) $linha['ship_label'],
-                    'recipient' => Crypto::decrypt((string) $linha['ship_recipient_encrypted']),
-                    'postal_code' => (string) $linha['ship_postal_code'],
-                    'street' => Crypto::decrypt((string) $linha['ship_street_encrypted']),
-                    'number' => Crypto::decrypt((string) $linha['ship_number_encrypted']),
-                    'complement' => $linha['ship_complement_encrypted'] !== null
-                        ? Crypto::decrypt((string) $linha['ship_complement_encrypted'])
-                        : '',
-                    'district' => Crypto::decrypt((string) $linha['ship_district_encrypted']),
-                    'city' => Crypto::decrypt((string) $linha['ship_city_encrypted']),
-                    'state' => (string) $linha['ship_state'],
-                ],
-                'items' => $itensPorPedido[$id] ?? [],
-            ];
+        if ($filtro !== null) {
+            $consulta->bindValue(':status', $filtro);
         }
 
-        return $pedidos;
+        $consulta->bindValue(':limite', self::ADMIN_LIMIT, PDO::PARAM_INT);
+        $consulta->execute();
+
+        $linhas = $consulta->fetchAll();
+        $itensPorPedido = $linhas === [] ? [] : $this->itemsForOrders($this->ids($linhas));
+
+        return array_map(
+            fn (array $linha): array => $this->hydrateOrder($linha, $itensPorPedido[(int) $linha['id']] ?? []),
+            $linhas
+        );
+    }
+
+    /**
+     * Pedido único para a tela de detalhe do painel.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function adminOrder(string $number): ?array
+    {
+        $consulta = $this->pdo->prepare(
+            'SELECT ' . self::ORDER_COLUMNS . ',
+                    u.name AS customer_name,
+                    u.email AS customer_email
+               FROM orders o
+               INNER JOIN users u ON u.id = o.user_id
+              WHERE o.number = :number
+              LIMIT 1'
+        );
+
+        $consulta->bindValue(':number', $number);
+        $consulta->execute();
+
+        $linha = $consulta->fetch();
+
+        if ($linha === false) {
+            return null;
+        }
+
+        $itens = $this->itemsForOrders([(int) $linha['id']]);
+
+        return $this->hydrateOrder($linha, $itens[(int) $linha['id']] ?? []);
+    }
+
+    /**
+     * Muda a situação do pedido. Cancelar devolve as peças ao estoque na mesma
+     * transação, uma única vez: a situação é travada por FOR UPDATE antes de
+     * qualquer gravação, então dois cliques no botão não somam estoque duas
+     * vezes.
+     *
+     * @return string|null mensagem de erro, ou null quando mudou
+     */
+    public function changeStatus(string $number, string $status): ?string
+    {
+        if (!isset(self::STATUS_LABELS[$status])) {
+            return 'Situação inválida.';
+        }
+
+        $this->pdo->beginTransaction();
+
+        try {
+            $consulta = $this->pdo->prepare(
+                'SELECT id, status FROM orders WHERE number = :number LIMIT 1 FOR UPDATE'
+            );
+
+            $consulta->bindValue(':number', $number);
+            $consulta->execute();
+
+            $pedido = $consulta->fetch();
+
+            if ($pedido === false) {
+                $this->pdo->rollBack();
+
+                return 'Pedido não encontrado.';
+            }
+
+            $atual = (string) $pedido['status'];
+
+            if ($atual === $status) {
+                $this->pdo->rollBack();
+
+                return sprintf('O pedido já está como %s.', mb_strtolower(self::statusLabel($status)));
+            }
+
+            if (!in_array($status, self::NEXT_STATUSES[$atual] ?? [], true)) {
+                $this->pdo->rollBack();
+
+                return sprintf(
+                    'Não é possível passar de %s para %s.',
+                    mb_strtolower(self::statusLabel($atual)),
+                    mb_strtolower(self::statusLabel($status))
+                );
+            }
+
+            $atualizar = $this->pdo->prepare('UPDATE orders SET status = :status WHERE id = :id');
+            $atualizar->bindValue(':status', $status);
+            $atualizar->bindValue(':id', (int) $pedido['id'], PDO::PARAM_INT);
+            $atualizar->execute();
+
+            if ($status === 'cancelado') {
+                $this->returnStock((int) $pedido['id']);
+            }
+
+            $this->pdo->commit();
+
+            return null;
+        } catch (Throwable $erro) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $erro;
+        }
     }
 
     public static function statusLabel(string $status): string
     {
         return self::STATUS_LABELS[$status] ?? 'Em análise';
+    }
+
+    /**
+     * Situações possíveis a partir da atual, com o rótulo já pronto para o
+     * formulário do painel.
+     *
+     * @return array<string, string>
+     */
+    public static function nextStatuses(string $status): array
+    {
+        $opcoes = [];
+
+        foreach (self::NEXT_STATUSES[$status] ?? [] as $proximo) {
+            $opcoes[$proximo] = self::statusLabel($proximo);
+        }
+
+        return $opcoes;
     }
 
     /**
@@ -244,7 +383,7 @@ final class OrderService
     /**
      * @param list<array<string, mixed>> $itens
      */
-    private function conferirEstoque(array $itens): ?string
+    private function checkStock(array $itens): ?string
     {
         foreach ($itens as $item) {
             $tamanho = (string) $item['size'];
@@ -388,6 +527,23 @@ final class OrderService
         }
     }
 
+    /**
+     * Devolve ao estoque as peças de um pedido cancelado. Skipped quando a
+     * variação não existe mais: aí não há saldo para somar.
+     */
+    private function returnStock(int $orderId): void
+    {
+        $consulta = $this->pdo->prepare(
+            'UPDATE stock s
+               INNER JOIN order_items oi ON oi.variant_id = s.variant_id
+                SET s.quantity = s.quantity + oi.quantity
+              WHERE oi.order_id = :order'
+        );
+
+        $consulta->bindValue(':order', $orderId, PDO::PARAM_INT);
+        $consulta->execute();
+    }
+
     private function clearCart(int $userId): void
     {
         $consulta = $this->pdo->prepare(
@@ -410,6 +566,10 @@ final class OrderService
      */
     private function itemsForOrders(array $orderIds): array
     {
+        if ($orderIds === []) {
+            return [];
+        }
+
         $marcadores = implode(', ', array_fill(0, count($orderIds), '?'));
 
         $consulta = $this->pdo->prepare(
@@ -441,5 +601,67 @@ final class OrderService
         }
 
         return $porPedido;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $linhas
+     * @return list<int>
+     */
+    private function ids(array $linhas): array
+    {
+        return array_map(static fn (array $linha): int => (int) $linha['id'], $linhas);
+    }
+
+    /**
+     * Monta o pedido com o endereço decifrado e os valores formatados. Os
+     * campos de cliente só existem nas consultas do painel.
+     *
+     * @param array<string, mixed> $linha
+     * @param list<array<string, mixed>> $itens
+     *
+     * @return array<string, mixed>
+     */
+    private function hydrateOrder(array $linha, array $itens): array
+    {
+        $status = (string) $linha['status'];
+
+        $pedido = [
+            'id' => (int) $linha['id'],
+            'number' => (string) $linha['number'],
+            'date' => date('d/m/Y', strtotime((string) $linha['created_at'])),
+            'created_at' => (string) $linha['created_at'],
+            'status' => $status,
+            'status_label' => self::statusLabel($status),
+            'next_statuses' => self::nextStatuses($status),
+            'pieces' => (int) $linha['pieces'],
+            'subtotal' => Price::format((int) $linha['subtotal_cents']),
+            'shipping' => (int) $linha['shipping_cents'] > 0
+                ? Price::format((int) $linha['shipping_cents'])
+                : 'A calcular',
+            'total' => Price::format((int) $linha['total_cents']),
+            'address' => [
+                'label' => (string) $linha['ship_label'],
+                'recipient' => Crypto::decrypt((string) $linha['ship_recipient_encrypted']),
+                'postal_code' => (string) $linha['ship_postal_code'],
+                'street' => Crypto::decrypt((string) $linha['ship_street_encrypted']),
+                'number' => Crypto::decrypt((string) $linha['ship_number_encrypted']),
+                'complement' => $linha['ship_complement_encrypted'] !== null
+                    ? Crypto::decrypt((string) $linha['ship_complement_encrypted'])
+                    : '',
+                'district' => Crypto::decrypt((string) $linha['ship_district_encrypted']),
+                'city' => Crypto::decrypt((string) $linha['ship_city_encrypted']),
+                'state' => (string) $linha['ship_state'],
+            ],
+            'items' => $itens,
+        ];
+
+        if (isset($linha['customer_name'], $linha['customer_email'])) {
+            $pedido['customer'] = [
+                'name' => (string) $linha['customer_name'],
+                'email' => (string) $linha['customer_email'],
+            ];
+        }
+
+        return $pedido;
     }
 }

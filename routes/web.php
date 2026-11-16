@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controllers\AccountController;
+use App\Controllers\AdminController;
 use App\Controllers\AuthController;
 use App\Controllers\CartController;
 use App\Controllers\CheckoutController;
@@ -46,4 +47,12 @@ return static function (Router $router): void {
     $router->get('/login', [AuthController::class, 'showLogin']);
     $router->post('/login', [AuthController::class, 'login']);
     $router->post('/logout', [AuthController::class, 'logout']);
+
+    $router->get('/admin', [AdminController::class, 'orders']);
+    $router->get('/admin/login', [AdminController::class, 'showLogin']);
+    $router->post('/admin/login', [AdminController::class, 'login']);
+    $router->post('/admin/logout', [AdminController::class, 'logout']);
+    $router->get('/admin/pedidos', [AdminController::class, 'orders']);
+    $router->get('/admin/pedidos/{number}', [AdminController::class, 'order']);
+    $router->post('/admin/pedidos/{number}/status', [AdminController::class, 'changeStatus']);
 };

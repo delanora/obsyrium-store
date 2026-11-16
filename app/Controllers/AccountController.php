@@ -193,7 +193,7 @@ final class AccountController
         $usuario = $this->service()->user(Session::userId() ?? 0);
 
         if ($usuario === null || !$usuario['is_active'] || $usuario['deleted_at'] !== null) {
-            Session::logout();
+            Session::forgetUser();
             Session::flash('error', 'Entre na sua conta para abrir o perfil.');
             $this->redirect('/login');
         }
