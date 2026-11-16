@@ -9,6 +9,7 @@ use App\Repositories\AddressRepository;
 use App\Repositories\UserRepository;
 use App\Services\AccountService;
 use App\Services\CartService;
+use App\Services\OrderService;
 use App\Support\Csrf;
 use App\Support\Price;
 use App\Support\Session;
@@ -17,40 +18,41 @@ use App\Support\Session;
  * Finalização da compra.
  *
  * A página mostra o resumo do carrinho, o total e o endereço de entrega
- * escolhido entre os que o cliente guardou no perfil. O pagamento ainda não
- * existe: confirmar o endereço guarda a escolha na sessão para a etapa de
- * pagamento aproveitar quando ela chegar.
+ * escolhido entre os que o cliente guardou no perfil. Confirmar grava o pedido
+ * (OrderService), esvazia o carrinho e leva para a aba Compras. O pagamento
+ * entra na próxima etapa: o pedido nasce aguardando pagamento.
  */
 final class CheckoutController
 {
     private const TITLE = 'Finalizar compra — Obsyrium Store';
-
-    private const SESSION_KEY = 'checkout_address';
 
     public function show(): void
     {
         $this->pagina($this->itens());
     }
 
-    public function confirmAddress(): void
+    public function place(): void
     {
-        $itens = $this->itens();
+        $this->itens();
 
         if (!$this->csrfOk()) {
             return;
         }
 
-        $escolhido = $this->servico()->address((int) ($_POST['address_id'] ?? 0), (int) Session::userId());
+        $pedido = (new OrderService(Connection::get()))
+            ->place((int) Session::userId(), (int) ($_POST['address_id'] ?? 0));
 
-        if ($escolhido === null) {
-            Session::flash('error', 'Escolha um endereço de entrega da sua conta.');
+        if (isset($pedido['error'])) {
+            Session::flash('error', $pedido['error']);
             $this->redirect('/checkout');
         }
 
-        Session::put(self::SESSION_KEY, (int) $escolhido['id']);
-        Session::flash('success', 'Endereço de entrega confirmado. O pagamento entra na próxima etapa.');
+        Session::flash('success', sprintf(
+            'Pedido %s registrado. Ele já aparece em Compras e o pagamento entra na próxima etapa.',
+            $pedido['number']
+        ));
 
-        $this->redirect('/checkout');
+        $this->redirect('/conta/compras');
     }
 
     /**
@@ -108,21 +110,13 @@ final class CheckoutController
     }
 
     /**
-     * A escolha guardada na sessão vale enquanto o endereço existir; senão cai
-     * para o principal e, na falta dele, para o primeiro da lista.
+     * Começa marcado o endereço principal e, na falta dele, o primeiro da
+     * lista. O cliente pode trocar a escolha no próprio formulário.
      *
      * @param array<int, array<string, mixed>> $enderecos
      */
     private function enderecoEscolhido(array $enderecos): ?int
     {
-        $guardado = Session::get(self::SESSION_KEY);
-
-        foreach ($enderecos as $endereco) {
-            if (is_int($guardado) && (int) $endereco['id'] === $guardado) {
-                return $guardado;
-            }
-        }
-
         foreach ($enderecos as $endereco) {
             if ($endereco['is_default']) {
                 return (int) $endereco['id'];

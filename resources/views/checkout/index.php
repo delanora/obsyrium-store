@@ -9,8 +9,8 @@ use App\Support\Price;
  * Página de finalização da compra.
  *
  * Resumo dos itens à esquerda, escolha do endereço de entrega entre os que o
- * cliente guardou no perfil e o total à direita. O pagamento entra na próxima
- * etapa: por enquanto o botão confirma o endereço e guarda a escolha.
+ * cliente guardou no perfil e o total à direita. O botão grava o pedido com o
+ * endereço escolhido; o pagamento entra na próxima etapa.
  *
  * @var array<int, array<string, mixed>> $checkoutItens
  * @var array<int, array<string, mixed>> $checkoutEnderecos
@@ -32,7 +32,7 @@ $cepLabel = static function (string $cep): string {
 		<header class="checkout__header">
 			<p class="checkout__eyebrow">Checkout</p>
 			<h1 class="checkout__title">Finalizar compra</h1>
-			<p class="checkout__text">Confira os itens, escolha o endereço de entrega e pronto. O pagamento entra na próxima etapa.</p>
+			<p class="checkout__text">Confira os itens, escolha o endereço de entrega e finalize. O pedido fica registrado em Compras e o pagamento entra na próxima etapa.</p>
 		</header>
 
 		<div class="checkout__layout">
@@ -96,7 +96,7 @@ $cepLabel = static function (string $cep): string {
 							</ul>
 
 							<div class="checkout__actions">
-								<button class="button" type="submit">Confirmar endereço</button>
+								<button class="button" type="submit">Finalizar pedido</button>
 								<a class="button button--ghost" href="/conta/enderecos">Gerenciar endereços</a>
 							</div>
 						</form>
@@ -129,7 +129,7 @@ $cepLabel = static function (string $cep): string {
 					</div>
 				</dl>
 
-				<p class="checkout__note">O pagamento entra na próxima etapa — nada é cobrado agora.</p>
+				<p class="checkout__note">O pedido fica como aguardando pagamento — nada é cobrado agora.</p>
 
 				<a class="button button--ghost checkout__back" href="/carrinho">Voltar ao carrinho</a>
 			</aside>

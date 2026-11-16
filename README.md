@@ -526,13 +526,27 @@ O ícone de pessoa no cabeçalho aponta para `/conta` quando há sessão aberta;
 - O campo de CEP aceita só dígitos e coloca o hífen sozinho (`01310-100`): a máscara é só estética, o valor gravado continua sendo os 8 números, e backspace logo depois do hífen apaga o quinto dígito em vez de ficar preso nele.
 - O CEP do formulário de endereço consulta a [BrasilAPI](https://brasilapi.com.br) direto do navegador (`https://brasilapi.com.br/api/cep/v2/{cep}`, que libera CORS) assim que os oito dígitos estão completos: rua, bairro, cidade e UF são preenchidos automaticamente e número e complemento continuam manuais. Uma consulta por CEP é feita e o resultado aparece em `[data-cep-aviso]` (`aria-live`), separando os casos: `404` da API vira “CEP não encontrado. Confira os números.”, enquanto falha de rede ou erro do serviço vira “Não foi possível buscar o CEP agora. Preencha manualmente.” — nenhum dos dois bloqueia o envio, e o campo volta a consultar quando o CEP muda. Sem JavaScript o formulário funciona como antes.
 - `App\Services\AccountService` valida perfil e endereço (nome, telefone com DDD, CEP de 8 dígitos, UF na lista oficial e limites de tamanho) e devolve os erros por campo, no formato que as views já usam.
-- "Compras" está no menu com estado vazio: a lista de pedidos entra nela quando as tabelas de pedido existirem (Fase 3). A tabela de avaliações e a moderação no painel ficaram registradas no roadmap como tarefas futuras.
+- "Compras" lista os pedidos do mais novo para o mais antigo, com número, data, situação, itens e o endereço de entrega registrado na compra (seção 23). A tabela de avaliações e a moderação no painel ficaram registradas no roadmap como tarefas futuras.
 ## 22. Finalização da compra
 
 `/checkout` deixou de ser só um portão de login e virou página: resumo dos itens, totais e escolha do endereço de entrega.
 
 - `GET /checkout` exige carrinho com itens (senão volta para `/carrinho` com aviso) e cliente logado (senão vai para `/login`). A página mostra cada linha do carrinho com imagem, nome, tamanho, quantidade e valor da linha, o resumo de valores (peças, subtotal, frete “a calcular” e total) e os endereços salvos no perfil em cartões de rádio, com o principal marcado.
-- `POST /checkout` confere o CSRF e se o endereço escolhido pertence ao cliente; endereço de outra conta ou inexistente volta com “Escolha um endereço de entrega da sua conta.” e mantém a escolha anterior. A escolha fica na sessão (`checkout_address`) para a etapa de pagamento aproveitar. Sem endereço salvo, a página mostra o estado vazio com link para `/conta/enderecos`.
-- `CheckoutController` monta os dados: `CartService::itemsForDisplay()` para as linhas, `AccountService::addressesFor()` para os endereços, e o total somando `price_cents × quantity`. A escolha guardada só vale enquanto o endereço existir; senão cai para o principal e, na falta dele, para o primeiro da lista.
+- `POST /checkout` confere o CSRF e se o endereço escolhido pertence ao cliente; endereço de outra conta ou inexistente volta com “Escolha um endereço de entrega da sua conta.” e mantém a escolha anterior. Confirmar grava o pedido (seção 23), esvazia o carrinho e leva para `/conta/compras`. Sem endereço salvo, a página mostra o estado vazio com link para `/conta/enderecos`.
+- `CheckoutController` monta os dados: `CartService::itemsForDisplay()` para as linhas, `AccountService::addressesFor()` para os endereços, e o total somando `price_cents × quantity`. O endereço principal já vem marcado; na falta dele, o primeiro da lista.
 - Layout em `public/assets/css/checkout.css`: uma coluna no celular e duas no computador (conteúdo à esquerda, resumo de valores numa coluna de 20 rem que acompanha a rolagem). O endereço marcado ganha a borda dourada e o fundo do acento.
-- Pagamento não existe ainda: o botão da página confirma o endereço e o texto avisa que nada é cobrado agora. Carrinho e checkout continuam sem frete calculado.
+- Pagamento não existe ainda: o botão grava o pedido como `aguardando_pagamento` e o texto avisa que nada é cobrado agora. Carrinho e checkout continuam sem frete calculado.
+
+## 23. Pedidos e histórico de compras
+
+O fechamento do carrinho virou pedido: o checkout grava `orders` + `order_items`, baixa o estoque e esvazia o carrinho numa transação só; a aba Compras lista o histórico.
+
+- Migration `database/migrations/2026_11_16_000011_create_orders_tables.php` cria `orders`, `order_items` e `payments`. `payments` nasce vazia: o gateway da Fase 6 grava ali a cobrança ligada ao pedido.
+- `orders` guarda o retrato da venda: número legível (`OBS-000042`, derivado do id), situação (`aguardando_pagamento`, `pago`, `enviado`, `entregue`, `cancelado`), peças, subtotal, frete (0 por enquanto), total e o endereço de entrega copiado cifrado (`ship_*`). Mudar o endereço no perfil depois não altera pedido antigo.
+- `order_items` copia nome, slug, tamanho, SKU, preço unitário e total da linha. `variant_id` aceita `NULL` (`ON DELETE SET NULL`) para o histórico sobreviver à exclusão de uma variação.
+- `App\Services\OrderService::place()` cuida do fechamento dentro da transação: trava as linhas do carrinho (`FOR UPDATE`, em ordem de `variant_id` para não cruzar com o `CartService`), confere produto ativo e estoque disponível, grava pedido e itens, debita `stock.quantity` com a mesma condição no `WHERE` e apaga os itens do carrinho. Qualquer falha desfaz tudo e o aviso diz qual item precisa de ajuste.
+- Preço, quantidade e estoque saem sempre do banco; o formulário só manda o `address_id`, conferido contra o dono. Somamos sempre em centavos inteiros.
+- `POST /checkout` virou `CheckoutController::place()`: grava o pedido, avisa com o número e manda para `/conta/compras`. O pedido nasce `aguardando_pagamento` — nada é cobrado.
+- `GET /conta/compras` usa `OrderService::ordersForUser()` (50 mais recentes, itens em uma consulta só) e mostra um cartão por pedido com número, data, peças, situação, itens, endereço de entrega e totais. A situação aparece por extenso (“Aguardando pagamento”) e a cor só reforça.
+- Estilos em `public/assets/css/account.css` (bloco `order*`): cartões no mesmo desenho dos endereços, itens em lista e endereço/totais lado a lado a partir de 40 rem.
+- O estoque é baixado na hora da compra. Reserva que expira e pagamento pendente ficaram para as próximas etapas.

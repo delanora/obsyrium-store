@@ -8,6 +8,7 @@ use App\Database\Connection;
 use App\Repositories\AddressRepository;
 use App\Repositories\UserRepository;
 use App\Services\AccountService;
+use App\Services\OrderService;
 use App\Support\Csrf;
 use App\Support\Session;
 
@@ -137,10 +138,11 @@ final class AccountController
 
     public function orders(): void
     {
-        $this->usuario();
+        $usuario = $this->usuario();
 
         $this->render('orders', self::TITLES['compras'], [
             'aba' => 'compras',
+            'pedidos' => (new OrderService(Connection::get()))->ordersForUser((int) $usuario['id']),
         ]);
     }
 
@@ -238,6 +240,7 @@ final class AccountController
         $contaEnderecos = $contexto['enderecos'] ?? [];
         $contaUfs = $contexto['ufs'] ?? [];
         $contaEdicao = $contexto['edicao'] ?? null;
+        $contaPedidos = $contexto['pedidos'] ?? [];
         $content = $basePath . '/resources/views/account/' . $view . '.php';
 
         require $basePath . '/resources/views/layouts/site.php';
