@@ -57,4 +57,6 @@ return static function (Router $router): void {
     $router->post('/admin/pedidos/{number}/status', [AdminController::class, 'changeStatus']);
     $router->get('/admin/estoque', [AdminController::class, 'stock']);
     $router->post('/admin/estoque/saldo', [AdminController::class, 'saveStock']);
+    $router->post('/admin/estoque/fora-de-linha', [AdminController::class, 'discontinue']);
+    $router->post('/admin/estoque/voltar', [AdminController::class, 'restore']);
 };

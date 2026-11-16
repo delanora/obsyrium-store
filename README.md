@@ -589,3 +589,14 @@ A administração tem barra, layout e sessão próprios em `/admin` — nada do 
 - `INSERT … ON DUPLICATE KEY UPDATE` cobre a variação que ainda não tem linha em `stock`.
 - A leitura do estoque passou de `DashboardService` para `StockService::all()`; o dashboard ficou só com os indicadores.
 - Cada campo tem `label` associado (visualmente escondido, porque a coluna já diz o que é), e o formulário manda o token CSRF junto.
+
+## 27. Estoque com abas, paginação e linha
+
+`/admin/estoque` virou a central de estoque: abas por situação, colunas ordenáveis, 10 linhas por página e o interruptor de linha do produto.
+
+- Abas (`StockService::TABS`): **Em estoque** (`is_active = 1` e disponível > 0), **Esgotados** (`is_active = 1` e disponível ≤ 0), **Fora de linha** (`is_active = 0`) e **Todos** (`is_active = 1`, sem os fora de linha). Cada aba mostra o contador no botão.
+- Ordenação: `?ordem=…&direcao=asc|desc` com lista branca em `StockService::SORTABLE` — produto, tamanho (ordem real PP/P/M/G/GG via `FIELD`), SKU, preço, promocional, reservado, saldo e disponível. O cabeçalho é um link que inverte a direção e marca `aria-sort`; nada de SQL vindo da URL.
+- Paginação de 10 (`PER_PAGE`) com `LIMIT/OFFSET`, contagem total e “Mostrando 1–10 de 24”. Página fora do intervalo cai na última; os links preservam aba, coluna e direção.
+- Colunas de preço: **Preço** = valor cheio (`compare_price_cents`, ou `price_cents` quando não há comparação) e **Promocional** = valor cobrado (`price_cents`), com o selo de desconto quando os dois diferem. É o mesmo par que a loja usa no produto.
+- A lixeira de cada linha age no **modelo**: `products.is_active = 0`. O produto sai da loja e das abas de produtos ativos, e o saldo não muda. Na aba Fora de linha o ícone vira **carrinho**, que devolve o produto (`is_active = 1`): se não houver saldo ele volta esgotado, como esperado.
+- Ações em `POST /admin/estoque/fora-de-linha` e `POST /admin/estoque/voltar`, com CSRF e redirecionamento 303 para a mesma aba/ordem/página de origem (reconstruída só com valores da lista branca).

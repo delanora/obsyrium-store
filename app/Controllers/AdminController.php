@@ -134,8 +134,15 @@ final class AdminController
     {
         $admin = $this->admin();
 
+        $estoque = (new StockService(Connection::get()))->page(
+            (string) ($_GET['aba'] ?? 'todos'),
+            (string) ($_GET['ordem'] ?? 'produto'),
+            (string) ($_GET['direcao'] ?? 'asc'),
+            (int) ($_GET['pagina'] ?? 1)
+        );
+
         $this->render('estoque', 'Estoque — Administração Obsyrium', $admin, 'estoque', [
-            'estoque' => (new StockService(Connection::get()))->all(),
+            'estoque' => $estoque,
         ]);
     }
 
@@ -156,14 +163,60 @@ final class AdminController
                 'Informe o saldo em número inteiro, de 0 a %d.',
                 StockService::MAX_QUANTITY
             ));
-            $this->redirect('/admin/estoque');
+            $this->redirect($this->stockUrl($_POST));
         }
 
         $erro = (new StockService(Connection::get()))->update($variacaoId, (int) $saldo, $esperado);
 
         Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Saldo atualizado.');
 
-        $this->redirect('/admin/estoque');
+        $this->redirect($this->stockUrl($_POST));
+    }
+
+    /**
+     * Lixeira: tira o modelo de linha (sai da loja e das abas de produtos
+     * ativos). O saldo fica como está.
+     */
+    public function discontinue(): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $resultado = (new StockService(Connection::get()))
+            ->setLine((int) ($_POST['product_id'] ?? 0), false);
+
+        Session::flash(
+            isset($resultado['error']) ? 'error' : 'success',
+            $resultado['error'] ?? sprintf('%s saiu de linha.', (string) $resultado['product'])
+        );
+
+        $this->redirect($this->stockUrl($_POST));
+    }
+
+    /**
+     * Carrinho da aba fora de linha: devolve o modelo à loja. Se não houver
+     * saldo, ele reaparece esgotado.
+     */
+    public function restore(): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $resultado = (new StockService(Connection::get()))
+            ->setLine((int) ($_POST['product_id'] ?? 0), true);
+
+        Session::flash(
+            isset($resultado['error']) ? 'error' : 'success',
+            $resultado['error'] ?? sprintf('%s voltou para a loja.', (string) $resultado['product'])
+        );
+
+        $this->redirect($this->stockUrl($_POST));
     }
 
     /**
@@ -186,6 +239,26 @@ final class AdminController
         $pdo = Connection::get();
 
         return new AdminAuthService(new AdminRepository($pdo), new LoginThrottle(new LoginAttemptRepository($pdo)));
+    }
+
+    /**
+     * Reconstrói a URL do estoque a partir dos campos do formulário, só com os
+     * valores que o serviço conhece: aba, coluna, direção e página.
+     *
+     * @param array<string, mixed> $dados
+     */
+    private function stockUrl(array $dados): string
+    {
+        $aba = (string) ($dados['aba'] ?? 'todos');
+        $ordem = (string) ($dados['ordem'] ?? 'produto');
+        $direcao = (string) ($dados['direcao'] ?? 'asc');
+
+        return '/admin/estoque?' . http_build_query([
+            'aba' => isset(StockService::TABS[$aba]) ? $aba : 'todos',
+            'ordem' => isset(StockService::SORTABLE[$ordem]) ? $ordem : 'produto',
+            'direcao' => strtolower($direcao) === 'desc' ? 'desc' : 'asc',
+            'pagina' => max(1, (int) ($dados['pagina'] ?? 1)),
+        ]);
     }
 
     /**
