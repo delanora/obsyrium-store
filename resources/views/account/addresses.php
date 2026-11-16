@@ -132,7 +132,8 @@ $cepLabel = static function (string $cep): string {
 
 						<div class="field">
 							<label class="field__label" for="postal_code">CEP</label>
-							<input class="field__input" id="postal_code" name="postal_code" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="01234-567" required value="<?= $valor('postal_code') ?>">
+							<input class="field__input" id="postal_code" name="postal_code" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="01234-567" required value="<?= $valor('postal_code') ?>" data-cep>
+							<p class="field__hint" data-cep-aviso aria-live="polite" hidden>Buscamos rua, bairro, cidade e UF pelo CEP.</p>
 							<?php if (isset($errors['postal_code'])): ?>
 								<p class="field__error"><?= $escape($errors['postal_code']) ?></p>
 							<?php endif; ?>

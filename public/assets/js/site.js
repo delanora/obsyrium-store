@@ -2,8 +2,8 @@
  * Comportamento do site.
  *
  * Menu do celular (hamburger, com foco, Escape e clique fora), gaveta do
- * carrinho no computador, sombra do cabeçalho ao rolar e entrada dos blocos
- * marcados com [data-reveal].
+ * carrinho no computador, sombra do cabeçalho ao rolar, entrada dos blocos
+ * marcados com [data-reveal] e o CEP que preenche o endereço pela BrasilAPI.
  * Sem este arquivo o site continua inteiro: o menu fica em duas linhas e
  * nada é escondido, porque os estados iniciais dependem de html.js.
  */
@@ -509,6 +509,108 @@
         }
 
         window.setTimeout(fecharAviso, 6000);
+    }
+    // CEP: ao completar os oito dígitos, a BrasilAPI devolve rua, bairro,
+    // cidade e UF do endereço. Número e complemento continuam manuais, e sem
+    // JavaScript o formulário segue funcionando do jeito antigo.
+    var campoCep = document.querySelector('[data-cep]');
+
+    if (campoCep && campoCep.form && typeof window.fetch === 'function') {
+        var formularioCep = campoCep.form;
+        var avisoCep = formularioCep.querySelector('[data-cep-aviso]');
+        var buscaCep = 0;
+        var ultimoCepConsultado = '';
+
+        var mostrarAvisoCep = function (texto) {
+            if (!avisoCep) {
+                return;
+            }
+
+            avisoCep.textContent = texto;
+            avisoCep.hidden = texto === '';
+        };
+
+        var preencherCep = function (dados) {
+            var campos = {
+                street: formularioCep.querySelector('[name="street"]'),
+                district: formularioCep.querySelector('[name="district"]'),
+                city: formularioCep.querySelector('[name="city"]'),
+                state: formularioCep.querySelector('[name="state"]')
+            };
+
+            if (campos.street && dados.street) {
+                campos.street.value = dados.street;
+            }
+
+            if (campos.district && dados.neighborhood) {
+                campos.district.value = dados.neighborhood;
+            }
+
+            if (campos.city && dados.city) {
+                campos.city.value = dados.city;
+            }
+
+            if (campos.state && dados.state) {
+                campos.state.value = dados.state;
+            }
+        };
+
+        var consultarCep = function () {
+            var digitos = campoCep.value.replace(/\D+/g, '');
+
+            if (digitos.length !== 8) {
+                mostrarAvisoCep('');
+
+                return;
+            }
+
+            if (digitos === ultimoCepConsultado) {
+                return;
+            }
+
+            ultimoCepConsultado = digitos;
+
+            var tentativa = buscaCep + 1;
+            buscaCep = tentativa;
+            campoCep.setAttribute('aria-busy', 'true');
+            mostrarAvisoCep('Buscando o endereço do CEP…');
+
+            window.fetch('https://brasilapi.com.br/api/cep/v2/' + digitos, {
+                headers: { Accept: 'application/json' }
+            }).then(function (resposta) {
+                if (!resposta.ok) {
+                    throw new Error('cep');
+                }
+
+                return resposta.json();
+            }).then(function (dados) {
+                if (tentativa !== buscaCep) {
+                    return;
+                }
+
+                preencherCep(dados);
+                mostrarAvisoCep('Endereço preenchido pelo CEP. Confira o número e o complemento.');
+            }).catch(function () {
+                if (tentativa !== buscaCep) {
+                    return;
+                }
+
+                ultimoCepConsultado = '';
+                mostrarAvisoCep('Não foi possível buscar o CEP agora. Preencha manualmente.');
+            }).then(function () {
+                if (tentativa === buscaCep) {
+                    campoCep.removeAttribute('aria-busy');
+                }
+            });
+        };
+
+        campoCep.addEventListener('input', function () {
+            if (campoCep.value.replace(/\D+/g, '').length === 8) {
+                consultarCep();
+            }
+        });
+
+        campoCep.addEventListener('change', consultarCep);
     }
     // Marca para o script inline que o comportamento carregou.
     window.__obsyriumReady = true;
