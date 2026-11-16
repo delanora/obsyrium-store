@@ -9,18 +9,26 @@ use PDO;
 use Throwable;
 
 /**
- * Edição do produto pelo painel: leitura do formulário, gravação dos campos e
- * as fotos que aparecem na página do item.
+ * Cadastro e edição do produto pelo painel: campos, categorias (mais de uma,
+ * com subcategoria opcional) e as fotos que aparecem na página do item.
+ *
+ * O produto guarda `category_id` como categoria principal — a primeira
+ * escolhida — e todos os vínculos em `product_categories`. A vitrine continua
+ * lendo só a principal; o painel de categorias lê os vínculos.
  *
  * As fotos ficam em `public/uploads/produtos` e a tabela `product_images`
- * guarda o caminho público (`/uploads/produtos/...`), o texto alternativo e a
- * posição — a menor posição é a foto principal. O placeholder do seed é
- * compartilhado: ele nunca é apagado do disco, só a linha dele sai quando a
- * primeira foto de verdade é enviada.
+ * guarda o caminho público, o texto alternativo e a posição — a menor posição
+ * é a foto principal. O placeholder nunca é apagado do disco, só a linha dele
+ * sai quando a primeira foto de verdade é enviada.
  */
 final class ProductAdminService
 {
     public const MAX_IMAGES = 8;
+
+    /**
+     * Tamanhos que o cadastro oferece.
+     */
+    public const SIZES = ['PP', 'P', 'M', 'G', 'GG'];
 
     private const PLACEHOLDER = '/assets/images/placeholder.svg';
 
@@ -39,7 +47,7 @@ final class ProductAdminService
     }
 
     /**
-     * Produto com categoria, fotos e tamanhos, do jeito que a tela precisa.
+     * Produto com categoria principal, categorias escolhidas, fotos e tamanhos.
      *
      * @return array<string, mixed>|null
      */
@@ -72,12 +80,19 @@ final class ProductAdminService
             return null;
         }
 
+        $categorias = $this->productCategories($id);
+
+        if ($categorias === []) {
+            $categorias = [(int) $linha['category_id']];
+        }
+
         return [
             'id' => (int) $linha['id'],
             'name' => (string) $linha['name'],
             'slug' => (string) $linha['slug'],
             'category_id' => (int) $linha['category_id'],
             'category' => (string) $linha['category_name'],
+            'category_ids' => $categorias,
             'color' => (string) $linha['color'],
             'material' => (string) $linha['material'],
             'description' => trim((string) ($linha['description'] ?? '')),
@@ -90,16 +105,101 @@ final class ProductAdminService
     }
 
     /**
+     * Categorias e subcategorias para o formulário.
+     *
      * @return list<array<string, mixed>>
      */
     public function categories(): array
     {
-        $consulta = $this->pdo->query('SELECT id, name FROM categories ORDER BY position, name');
+        return (new CategoryService($this->pdo))->formTree();
+    }
 
-        return array_map(
-            static fn (array $linha): array => ['id' => (int) $linha['id'], 'name' => (string) $linha['name']],
-            $consulta->fetchAll()
-        );
+    /**
+     * Cria um modelo novo com tamanhos e saldo inicial.
+     *
+     * @param array<string, mixed> $dados
+     *
+     * @return array{errors: list<string>, values: array<string, mixed>, id?: int}
+     */
+    public function create(array $dados): array
+    {
+        $check = $this->validar($dados, 0);
+
+        if ($check['errors'] !== []) {
+            return $check;
+        }
+
+        $tamanhos = $this->tamanhos($dados);
+        $saldoBruto = trim((string) ($dados['initial_stock'] ?? '0'));
+
+        $check['values']['tamanhos'] = $tamanhos;
+        $check['values']['initial_stock'] = $saldoBruto;
+
+        if ($tamanhos === []) {
+            $check['errors'][] = 'Escolha pelo menos um tamanho.';
+
+            return $check;
+        }
+
+        if (preg_match('/^\d{1,5}$/', $saldoBruto) !== 1) {
+            $check['errors'][] = sprintf('O saldo inicial vai de 0 a %d peças.', StockService::MAX_QUANTITY);
+
+            return $check;
+        }
+
+        $dadosNormalizados = $check['dados'];
+        $saldo = (int) $saldoBruto;
+
+        $this->pdo->beginTransaction();
+
+        try {
+            $this->pdo->prepare(
+                'INSERT INTO products (category_id, name, slug, color, material, description, price_cents, compare_price_cents, is_active)
+                 VALUES (:category, :name, :slug, :color, :material, :description, :price, :compare, :active)'
+            )->execute([
+                ':category' => $dadosNormalizados['categories'][0],
+                ':name' => $dadosNormalizados['name'],
+                ':slug' => $dadosNormalizados['slug'],
+                ':color' => $dadosNormalizados['color'],
+                ':material' => $dadosNormalizados['material'],
+                ':description' => $dadosNormalizados['description'],
+                ':price' => $dadosNormalizados['price'],
+                ':compare' => $dadosNormalizados['compare'],
+                ':active' => $dadosNormalizados['active'],
+            ]);
+
+            $id = (int) $this->pdo->lastInsertId();
+
+            $this->aplicarCategorias($id, $dadosNormalizados['categories']);
+
+            $variacao = $this->pdo->prepare('INSERT INTO product_variants (product_id, size, sku) VALUES (:product, :size, :sku)');
+            $estoque = $this->pdo->prepare('INSERT INTO stock (variant_id, quantity) VALUES (:variant, :quantity)');
+
+            foreach ($tamanhos as $tamanho) {
+                $variacao->execute([
+                    ':product' => $id,
+                    ':size' => $tamanho,
+                    ':sku' => $this->sku($dadosNormalizados['slug'], $tamanho),
+                ]);
+
+                $estoque->execute([
+                    ':variant' => (int) $this->pdo->lastInsertId(),
+                    ':quantity' => $saldo,
+                ]);
+            }
+
+            $this->pdo->commit();
+        } catch (Throwable $erro) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $erro;
+        }
+
+        $check['id'] = $id;
+
+        return $check;
     }
 
     /**
@@ -107,7 +207,7 @@ final class ProductAdminService
      *
      * @param array<string, mixed> $dados campos crus do POST
      *
-     * @return array{errors: list<string>, values: array<string, string>}
+     * @return array{errors: list<string>, values: array<string, mixed>}
      */
     public function save(int $id, array $dados): array
     {
@@ -117,110 +217,54 @@ final class ProductAdminService
             return ['errors' => ['Produto não encontrado.'], 'values' => []];
         }
 
-        $nome = trim((string) ($dados['name'] ?? ''));
-        $slug = trim((string) ($dados['slug'] ?? ''));
-        $cor = trim((string) ($dados['color'] ?? ''));
-        $material = trim((string) ($dados['material'] ?? ''));
-        $descricao = trim((string) ($dados['description'] ?? ''));
-        $precoBruto = trim((string) ($dados['price'] ?? ''));
-        $comparativoBruto = trim((string) ($dados['compare_price'] ?? ''));
-        $categoriaId = (int) ($dados['category_id'] ?? 0);
-        $ativo = isset($dados['is_active']) ? 1 : 0;
+        $check = $this->validar($dados, $id);
 
-        $valores = [
-            'name' => $nome,
-            'slug' => $slug,
-            'color' => $cor,
-            'material' => $material,
-            'description' => $descricao,
-            'price' => $precoBruto,
-            'compare_price' => $comparativoBruto,
-            'category_id' => (string) $categoriaId,
-            'is_active' => (string) $ativo,
-        ];
-
-        $erros = [];
-
-        if (mb_strlen($nome) < 3 || mb_strlen($nome) > 120) {
-            $erros[] = 'O nome precisa ter de 3 a 120 caracteres.';
+        if ($check['errors'] !== []) {
+            return $check;
         }
 
-        if ($slug === '') {
-            $slug = $this->slugify($nome);
-            $valores['slug'] = $slug;
-        }
+        $dadosNormalizados = $check['dados'];
 
-        if (preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug) !== 1 || mb_strlen($slug) > 140) {
-            $erros[] = 'O endereço do produto aceita apenas letras minúsculas, números e hífen (até 140).';
-        } elseif ($this->slugEmUso($slug, $id)) {
-            $erros[] = sprintf('O endereço "%s" já é de outro produto.', $slug);
-        }
+        $this->pdo->beginTransaction();
 
-        if (mb_strlen($cor) < 2 || mb_strlen($cor) > 40) {
-            $erros[] = 'A cor precisa ter de 2 a 40 caracteres.';
-        }
+        try {
+            $this->pdo->prepare(
+                'UPDATE products
+                    SET category_id = :category,
+                        name = :name,
+                        slug = :slug,
+                        color = :color,
+                        material = :material,
+                        description = :description,
+                        price_cents = :price,
+                        compare_price_cents = :compare,
+                        is_active = :active
+                  WHERE id = :id'
+            )->execute([
+                ':category' => $dadosNormalizados['categories'][0],
+                ':name' => $dadosNormalizados['name'],
+                ':slug' => $dadosNormalizados['slug'],
+                ':color' => $dadosNormalizados['color'],
+                ':material' => $dadosNormalizados['material'],
+                ':description' => $dadosNormalizados['description'],
+                ':price' => $dadosNormalizados['price'],
+                ':compare' => $dadosNormalizados['compare'],
+                ':active' => $dadosNormalizados['active'],
+                ':id' => $id,
+            ]);
 
-        if (mb_strlen($material) < 2 || mb_strlen($material) > 80) {
-            $erros[] = 'O material precisa ter de 2 a 80 caracteres.';
-        }
+            $this->aplicarCategorias($id, $dadosNormalizados['categories']);
 
-        if (mb_strlen($descricao) > 2000) {
-            $erros[] = 'A descrição vai até 2000 caracteres.';
-        }
-
-        if ($categoriaId <= 0 || !$this->categoriaExiste($categoriaId)) {
-            $erros[] = 'Escolha uma categoria da lista.';
-        }
-
-        $preco = $this->cents($precoBruto);
-
-        if ($preco === null || $preco <= 0) {
-            $erros[] = 'Informe o preço em reais, por exemplo 129,90.';
-        }
-
-        $comparativo = null;
-
-        if ($comparativoBruto !== '') {
-            $comparativo = $this->cents($comparativoBruto);
-
-            if ($comparativo === null || $comparativo <= 0) {
-                $erros[] = 'O preço cheio precisa ser um valor em reais, ou ficar vazio.';
-            } elseif ($preco !== null && $comparativo <= $preco) {
-                $erros[] = 'O preço cheio precisa ser maior que o preço promocional.';
+            $this->pdo->commit();
+        } catch (Throwable $erro) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
             }
+
+            throw $erro;
         }
 
-        if ($erros !== []) {
-            return ['errors' => $erros, 'values' => $valores];
-        }
-
-        $atualizar = $this->pdo->prepare(
-            'UPDATE products
-                SET category_id = :category,
-                    name = :name,
-                    slug = :slug,
-                    color = :color,
-                    material = :material,
-                    description = :description,
-                    price_cents = :price,
-                    compare_price_cents = :compare,
-                    is_active = :active
-              WHERE id = :id'
-        );
-
-        $atualizar->bindValue(':category', $categoriaId, PDO::PARAM_INT);
-        $atualizar->bindValue(':name', $nome);
-        $atualizar->bindValue(':slug', $slug);
-        $atualizar->bindValue(':color', $cor);
-        $atualizar->bindValue(':material', $material);
-        $atualizar->bindValue(':description', $descricao === '' ? null : $descricao, $descricao === '' ? PDO::PARAM_NULL : PDO::PARAM_STR);
-        $atualizar->bindValue(':price', (int) $preco, PDO::PARAM_INT);
-        $atualizar->bindValue(':compare', $comparativo, $comparativo === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        $atualizar->bindValue(':active', $ativo, PDO::PARAM_INT);
-        $atualizar->bindValue(':id', $id, PDO::PARAM_INT);
-        $atualizar->execute();
-
-        return ['errors' => [], 'values' => $valores];
+        return $check;
     }
 
     /**
@@ -409,6 +453,217 @@ final class ProductAdminService
     }
 
     /**
+     * Valida os campos comuns a criação e edição.
+     *
+     * @param array<string, mixed> $dados
+     *
+     * @return array{errors: list<string>, values: array<string, mixed>, dados: array<string, mixed>}
+     */
+    private function validar(array $dados, int $id): array
+    {
+        $nome = trim((string) ($dados['name'] ?? ''));
+        $slug = trim((string) ($dados['slug'] ?? ''));
+        $cor = trim((string) ($dados['color'] ?? ''));
+        $material = trim((string) ($dados['material'] ?? ''));
+        $descricao = trim((string) ($dados['description'] ?? ''));
+        $precoBruto = trim((string) ($dados['price'] ?? ''));
+        $comparativoBruto = trim((string) ($dados['compare_price'] ?? ''));
+        $ativo = isset($dados['is_active']) ? 1 : 0;
+
+        $categorias = $this->resolverCategorias($dados);
+        $erros = $categorias['errors'];
+
+        $valores = [
+            'name' => $nome,
+            'slug' => $slug,
+            'color' => $cor,
+            'material' => $material,
+            'description' => $descricao,
+            'price' => $precoBruto,
+            'compare_price' => $comparativoBruto,
+            'categorias' => $categorias['ids'],
+            'subcategorias' => $categorias['subcategorias'],
+            'is_active' => (string) $ativo,
+        ];
+
+        if (mb_strlen($nome) < 3 || mb_strlen($nome) > 120) {
+            $erros[] = 'O nome precisa ter de 3 a 120 caracteres.';
+        }
+
+        if ($slug === '') {
+            $slug = $this->slugify($nome);
+            $valores['slug'] = $slug;
+        }
+
+        if (preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug) !== 1 || mb_strlen($slug) > 140) {
+            $erros[] = 'O endereço do produto aceita apenas letras minúsculas, números e hífen (até 140).';
+        } elseif ($this->slugEmUso($slug, $id)) {
+            $erros[] = sprintf('O endereço "%s" já é de outro produto.', $slug);
+        }
+
+        if (mb_strlen($cor) < 2 || mb_strlen($cor) > 40) {
+            $erros[] = 'A cor precisa ter de 2 a 40 caracteres.';
+        }
+
+        if (mb_strlen($material) < 2 || mb_strlen($material) > 80) {
+            $erros[] = 'O material precisa ter de 2 a 80 caracteres.';
+        }
+
+        if (mb_strlen($descricao) > 2000) {
+            $erros[] = 'A descrição vai até 2000 caracteres.';
+        }
+
+        $preco = $this->cents($precoBruto);
+
+        if ($preco === null || $preco <= 0) {
+            $erros[] = 'Informe o preço em reais, por exemplo 129,90.';
+        }
+
+        $comparativo = null;
+
+        if ($comparativoBruto !== '') {
+            $comparativo = $this->cents($comparativoBruto);
+
+            if ($comparativo === null || $comparativo <= 0) {
+                $erros[] = 'O preço cheio precisa ser um valor em reais, ou ficar vazio.';
+            } elseif ($preco !== null && $comparativo <= $preco) {
+                $erros[] = 'O preço cheio precisa ser maior que o preço promocional.';
+            }
+        }
+
+        return [
+            'errors' => $erros,
+            'values' => $valores,
+            'dados' => [
+                'name' => $nome,
+                'slug' => $slug,
+                'color' => $cor,
+                'material' => $material,
+                'description' => $descricao === '' ? null : $descricao,
+                'price' => (int) $preco,
+                'compare' => $comparativo,
+                'active' => $ativo,
+                'categories' => $categorias['ids'],
+            ],
+        ];
+    }
+
+    /**
+     * Traduz os campos de categoria do formulário em ids de folha.
+     *
+     * A categoria raiz marcada guarda a subcategoria escolhida em
+     * `subcategorias[raiz]`; quando não há escolha, o vínculo é com a raiz.
+     *
+     * @param array<string, mixed> $dados
+     *
+     * @return array{ids: list<int>, subcategorias: array<int, int>, errors: list<string>}
+     */
+    private function resolverCategorias(array $dados): array
+    {
+        $mapa = [];
+
+        foreach ($this->pdo->query('SELECT id, parent_id FROM categories')->fetchAll() as $linha) {
+            $mapa[(int) $linha['id']] = $linha['parent_id'] !== null ? (int) $linha['parent_id'] : null;
+        }
+
+        $raizes = array_values(array_unique(array_map('intval', array_filter((array) ($dados['categories'] ?? []), 'is_scalar'))));
+        $subs = (array) ($dados['subcategorias'] ?? []);
+
+        $ids = [];
+        $subcategorias = [];
+        $erros = [];
+
+        foreach ($raizes as $raiz) {
+            if ($raiz <= 0 || !array_key_exists($raiz, $mapa) || $mapa[$raiz] !== null) {
+                $erros[] = 'Uma das categorias escolhidas não existe mais.';
+
+                continue;
+            }
+
+            $filho = (int) ($subs[(string) $raiz] ?? $subs[$raiz] ?? 0);
+
+            if ($filho > 0) {
+                if (!array_key_exists($filho, $mapa) || $mapa[$filho] !== $raiz) {
+                    $erros[] = 'A subcategoria escolhida não pertence à categoria marcada.';
+
+                    continue;
+                }
+
+                $ids[] = $filho;
+                $subcategorias[$raiz] = $filho;
+
+                continue;
+            }
+
+            $ids[] = $raiz;
+        }
+
+        if ($ids === [] && $erros === []) {
+            $erros[] = 'Escolha pelo menos uma categoria.';
+        }
+
+        return [
+            'ids' => array_values(array_unique($ids)),
+            'subcategorias' => $subcategorias,
+            'errors' => $erros,
+        ];
+    }
+
+    /**
+     * Regrava os vínculos do produto na ordem escolhida.
+     *
+     * @param list<int> $ids
+     */
+    private function aplicarCategorias(int $productId, array $ids): void
+    {
+        $this->pdo->prepare('DELETE FROM product_categories WHERE product_id = :id')
+            ->execute([':id' => $productId]);
+
+        $inserir = $this->pdo->prepare(
+            'INSERT INTO product_categories (product_id, category_id, position) VALUES (:product, :category, :position)'
+        );
+
+        foreach ($ids as $posicao => $categoria) {
+            $inserir->execute([
+                ':product' => $productId,
+                ':category' => $categoria,
+                ':position' => $posicao,
+            ]);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $dados
+     *
+     * @return list<string>
+     */
+    private function tamanhos(array $dados): array
+    {
+        $escolhidos = array_map('strval', array_filter((array) ($dados['sizes'] ?? []), 'is_scalar'));
+
+        return array_values(array_intersect(self::SIZES, $escolhidos));
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function productCategories(int $productId): array
+    {
+        $consulta = $this->pdo->prepare(
+            'SELECT category_id FROM product_categories WHERE product_id = :id ORDER BY position, category_id'
+        );
+        $consulta->bindValue(':id', $productId, PDO::PARAM_INT);
+        $consulta->execute();
+
+        return array_map('intval', $consulta->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    private function sku(string $slug, string $size): string
+    {
+        return mb_strtoupper($slug) . '-' . $size;
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     private function images(int $productId): array
@@ -459,15 +714,6 @@ final class ProductAdminService
     {
         $consulta = $this->pdo->prepare('SELECT COUNT(*) FROM products WHERE slug = :slug AND id <> :id');
         $consulta->bindValue(':slug', $slug);
-        $consulta->bindValue(':id', $id, PDO::PARAM_INT);
-        $consulta->execute();
-
-        return (int) $consulta->fetchColumn() > 0;
-    }
-
-    private function categoriaExiste(int $id): bool
-    {
-        $consulta = $this->pdo->prepare('SELECT COUNT(*) FROM categories WHERE id = :id');
         $consulta->bindValue(':id', $id, PDO::PARAM_INT);
         $consulta->execute();
 

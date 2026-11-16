@@ -74,10 +74,17 @@ if ($adminEstoque['paginas'] <= 7) {
 
 $voltar = ['aba' => $aba, 'ordem' => $ordem, 'direcao' => $direcao, 'pagina' => $pagina];
 ?>
-<header class="admin-head">
-	<p class="admin-head__eyebrow">Painel</p>
-	<h1 class="admin-head__title">Estoque</h1>
-	<p class="admin-head__text">Digite o saldo e salve. A lixeira tira o modelo de linha; o carrinho na aba fora de linha devolve ele à loja.</p>
+<header class="admin-head admin-head--row">
+	<div>
+		<p class="admin-head__eyebrow">Painel</p>
+		<h1 class="admin-head__title">Estoque</h1>
+		<p class="admin-head__text">Digite o saldo e salve. A lixeira tira o modelo de linha; o carrinho na aba fora de linha devolve ele à loja.</p>
+	</div>
+
+	<p class="admin-head__actions">
+		<a class="admin-link-button" href="/admin/estoque/novo">Novo modelo</a>
+		<a class="admin-link-button" href="/admin/categorias">Categorias</a>
+	</p>
 </header>
 
 <nav class="admin-tabs" aria-label="Situação do estoque">

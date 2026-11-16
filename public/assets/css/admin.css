@@ -1363,3 +1363,185 @@
 .admin-table--estoque td:last-child {
     padding-inline-end: var(--space-4);
 }
+/* ============ Categorias do produto ============ */
+
+.admin-product--novo {
+    grid-template-columns: minmax(0, 44rem);
+}
+
+.admin-categories {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.admin-category {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+}
+
+.admin-category__label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+}
+
+.admin-category__label:hover {
+    color: var(--color-text);
+}
+
+.admin-category__check {
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0;
+    accent-color: var(--color-accent);
+}
+
+.admin-category__sub {
+    display: grid;
+    gap: var(--space-1);
+    padding-left: calc(1.05rem + var(--space-2));
+}
+
+.admin-category__sub[hidden] {
+    display: none;
+}
+
+/* ============ Tela de categorias ============ */
+
+.admin-cats {
+    display: grid;
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+}
+
+.admin-cats__form {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.admin-cats__novo {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.admin-cats__novo .button {
+    justify-self: start;
+    min-height: 2.5rem;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-xs);
+}
+
+.admin-cats__list {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.admin-cat-card {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.admin-cat-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.admin-cat-card__title {
+    margin: 0;
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--font-size-base);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.admin-cat-card__count {
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.admin-cat-card__empty {
+    margin: 0;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+}
+
+.admin-cat-card__products {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding-left: var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.admin-cat-card__products a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+}
+
+.admin-cat-card__products a:hover {
+    color: var(--color-accent);
+}
+
+.admin-cat-card__children {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+    padding-top: var(--space-3);
+    border-top: 1px dashed var(--color-border);
+}
+
+.admin-cat-card__child {
+    display: grid;
+    gap: var(--space-1);
+    padding-left: var(--space-3);
+    border-left: 2px solid var(--color-border-strong);
+}
+
+.admin-cat-card__subtitle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: baseline;
+    margin: 0;
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.admin-status--fora {
+    border-color: var(--color-border-strong);
+    color: var(--color-text-subtle);
+}
+
+@media (max-width: 60em) {
+    .admin-cats {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-product--novo {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

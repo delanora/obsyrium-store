@@ -8,6 +8,7 @@ use App\Database\Connection;
 use App\Repositories\AdminRepository;
 use App\Repositories\LoginAttemptRepository;
 use App\Services\AdminAuthService;
+use App\Services\CategoryService;
 use App\Services\DashboardService;
 use App\Services\LoginThrottle;
 use App\Services\OrderService;
@@ -221,6 +222,60 @@ final class AdminController
     }
 
     /**
+     * Cadastro de um modelo novo: mesma tela do produto, com tamanhos e saldo
+     * inicial no lugar da galeria de fotos.
+     */
+    public function newProduct(): void
+    {
+        $this->renderNewProduct($this->admin());
+    }
+
+    public function createProduct(): void
+    {
+        $admin = $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $resultado = $this->products()->create($_POST);
+
+        if (isset($resultado['id'])) {
+            Session::flash('success', 'Modelo criado. Envie as fotos para ele aparecer na vitrine.');
+
+            $this->redirect($this->productUrl((int) $resultado['id'], $_POST));
+        }
+
+        $this->renderNewProduct($admin, $resultado['errors'], $resultado['values']);
+    }
+
+    public function categories(): void
+    {
+        $this->renderCategories($this->admin());
+    }
+
+    public function createCategory(): void
+    {
+        $admin = $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $resultado = (new CategoryService(Connection::get()))->create($_POST);
+
+        if ($resultado['errors'] !== []) {
+            $this->renderCategories($admin, $resultado['errors'], $resultado['values']);
+
+            return;
+        }
+
+        Session::flash('success', sprintf('Categoria "%s" criada.', (string) ($resultado['values']['name'] ?? '')));
+
+        $this->redirect('/admin/categorias');
+    }
+
+    /**
      * Editor do produto. É a tela do item da loja, com todos os campos
      * editáveis e as fotos sendo enviadas por ela.
      *
@@ -408,7 +463,7 @@ final class AdminController
     /**
      * @param array<string, mixed> $admin
      * @param list<string> $erros
-     * @param array<string, string> $valores
+     * @param array<string, mixed> $valores
      */
     private function renderProduct(int $id, array $admin, array $erros = [], array $valores = []): void
     {
@@ -420,6 +475,9 @@ final class AdminController
             $this->redirect($this->stockUrl($_GET));
         }
 
+        $arvore = $servico->categories();
+        [$marcadas, $subcategorias] = $this->estadoCategorias($produto['category_ids'], $arvore);
+
         $this->render(
             'produto',
             sprintf('%s — Administração Obsyrium', (string) $produto['name']),
@@ -427,7 +485,12 @@ final class AdminController
             'estoque',
             [
                 'produto' => $produto,
-                'categorias' => $servico->categories(),
+                'modo' => 'editar',
+                'categorias' => $arvore,
+                'categoriasMarcadas' => $marcadas,
+                'subcategoriasMarcadas' => $subcategorias,
+                'tamanhos' => ProductAdminService::SIZES,
+                'tamanhosMarcados' => [],
                 'erros' => $erros,
                 'valores' => $valores,
                 'precos' => $servico->priceTags($produto),
@@ -436,6 +499,80 @@ final class AdminController
                 'voltar' => $this->stockFiltros($_GET),
             ]
         );
+    }
+
+    /**
+     * @param array<string, mixed> $admin
+     * @param list<string> $erros
+     * @param array<string, mixed> $valores
+     */
+    private function renderNewProduct(array $admin, array $erros = [], array $valores = []): void
+    {
+        $this->render('produto', 'Novo modelo — Administração Obsyrium', $admin, 'estoque', [
+            'produto' => null,
+            'modo' => 'novo',
+            'categorias' => $this->products()->categories(),
+            'categoriasMarcadas' => [],
+            'subcategoriasMarcadas' => [],
+            'tamanhos' => ProductAdminService::SIZES,
+            'tamanhosMarcados' => [],
+            'erros' => $erros,
+            'valores' => $valores,
+            'precos' => [],
+            'limiteFotos' => '',
+            'maxFotos' => 0,
+            'voltar' => $this->stockFiltros($_GET),
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $admin
+     * @param list<string> $erros
+     * @param array<string, string> $valores
+     */
+    private function renderCategories(array $admin, array $erros = [], array $valores = []): void
+    {
+        $servico = new CategoryService(Connection::get());
+
+        $this->render('categorias', 'Categorias — Administração Obsyrium', $admin, 'categorias', [
+            'arvore' => $servico->tree(),
+            'raizes' => $servico->roots(),
+            'erros' => $erros,
+            'valores' => $valores,
+        ]);
+    }
+
+    /**
+     * Separa as categorias do produto entre raízes marcadas e subcategorias
+     * escolhidas, no formato que o formulário usa.
+     *
+     * @param list<int> $ids
+     * @param list<array<string, mixed>> $arvore
+     *
+     * @return array{0: list<int>, 1: array<int, int>}
+     */
+    private function estadoCategorias(array $ids, array $arvore): array
+    {
+        $marcadas = [];
+        $subcategorias = [];
+
+        foreach ($arvore as $raiz) {
+            $idRaiz = (int) $raiz['id'];
+
+            if (in_array($idRaiz, $ids, true)) {
+                $marcadas[] = $idRaiz;
+
+                continue;
+            }
+
+            foreach ($raiz['children'] as $filha) {
+                if (in_array((int) $filha['id'], $ids, true)) {
+                    $subcategorias[$idRaiz] = (int) $filha['id'];
+                }
+            }
+        }
+
+        return [$marcadas, $subcategorias];
     }
 
     /**
@@ -475,7 +612,14 @@ final class AdminController
         $adminResumo = $contexto['resumo'] ?? [];
         $adminEstoque = $contexto['estoque'] ?? [];
         $adminProduto = $contexto['produto'] ?? null;
+        $adminModo = $contexto['modo'] ?? 'editar';
         $adminCategorias = $contexto['categorias'] ?? [];
+        $adminCategoriasMarcadas = $contexto['categoriasMarcadas'] ?? [];
+        $adminSubcategoriasMarcadas = $contexto['subcategoriasMarcadas'] ?? [];
+        $adminTamanhos = $contexto['tamanhos'] ?? [];
+        $adminTamanhosMarcados = $contexto['tamanhosMarcados'] ?? [];
+        $adminCategoriasArvore = $contexto['arvore'] ?? [];
+        $adminCategoriasRaiz = $contexto['raizes'] ?? [];
         $adminErros = $contexto['erros'] ?? [];
         $adminValores = $contexto['valores'] ?? [];
         $adminPrecos = $contexto['precos'] ?? [];

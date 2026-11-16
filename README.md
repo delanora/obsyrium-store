@@ -613,3 +613,14 @@ O lápis ao lado da lixeira (e do carrinho, na aba fora de linha) abre `/admin/e
 - O "Voltar" e o retorno depois de salvar preservam aba, coluna, direção e página do estoque.
 - Tamanhos: o saldo de cada tamanho é editável na própria tela do produto (`POST /admin/estoque/produto/{id}/saldo`), com a mesma trava otimista da tela de estoque — se o saldo mudar enquanto a página está aberta, o POST é recusado com aviso e nada é gravado.
 MD
+## 29. Categorias, subcategorias e cadastro de modelo
+
+O estoque ganhou o botão **Novo modelo** e a lateral ganhou **Categorias**.
+
+- **Novo modelo** (`/admin/estoque/novo`) usa a mesma tela do produto, com os tamanhos (PP a GG) e um saldo inicial aplicado a cada tamanho marcado no lugar da galeria. Ao criar, ele cai direto na edição para receber as fotos; o SKU de cada tamanho é gerado como `SLUG-TAMANHO`.
+- **Categorias** (`/admin/categorias`) lista as categorias com os modelos de cada uma, mostra as subcategorias dentro da categoria mãe e cria novas — escolhendo "Subcategoria de" ou deixando em "Categoria principal". São dois níveis: subcategoria não pode ter subcategoria.
+- **Mais de uma categoria por produto**: `product_categories` guarda todos os vínculos. `products.category_id` continua sendo a principal (a primeira marcada), que é o que a vitrine e a página do item mostram — por isso nada mudou nas consultas da loja.
+- **Subcategoria no formulário**: cada categoria raiz marcada abre o seletor "Subcategoria de …"; escolhendo uma, o vínculo é com a subcategoria, sem escolha fica na raiz. `public/assets/js/admin.js` só mostra o seletor quando a categoria está marcada; sem JavaScript ele fica visível e o servidor ignora subcategoria de categoria não marcada.
+- A tela de categorias conta só os vínculos diretos: um produto na subcategoria aparece na subcategoria, não na mãe.
+- Migration `2026_11_16_000013_add_category_tree_and_product_categories.php` cria `categories.parent_id`, a tabela `product_categories` e copia os vínculos antigos de `products.category_id`.
+MD
