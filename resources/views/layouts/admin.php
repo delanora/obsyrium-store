@@ -5,17 +5,26 @@ declare(strict_types=1);
 use App\Support\Csrf;
 
 /*
- * Layout do painel de administração: barra própria, sem cabeçalho nem rodapé
- * da loja. Só entra aqui quem passou pelo login de administrador — o layout
- * apenas desenha a navegação.
+ * Layout do painel: barra no topo (marca e saída) e navegação lateral com
+ * dashboard, pedidos e estoque. No celular a lateral vira uma faixa de abas
+ * que rola na horizontal.
  *
  * @var string $content Caminho da view de conteúdo.
  * @var string|null $title Título do documento.
  * @var array<string, mixed>|null $adminAtual
+ * @var string $adminAba 'dashboard', 'pedidos' ou 'estoque'
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 $flash = App\Support\Session::takeFlash();
+
+$adminAba = $adminAba ?? 'dashboard';
+
+$adminItens = [
+	'dashboard' => ['rotulo' => 'Dashboard', 'href' => '/admin'],
+	'pedidos' => ['rotulo' => 'Pedidos', 'href' => '/admin/pedidos'],
+	'estoque' => ['rotulo' => 'Estoque', 'href' => '/admin/estoque'],
+];
 ?><!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -29,32 +38,41 @@ $flash = App\Support\Session::takeFlash();
 	<link rel="stylesheet" href="/assets/css/admin.css">
 </head>
 <body class="admin-body">
-	<header class="admin-bar">
-		<a class="admin-bar__brand" href="/admin/pedidos">Obsyrium <span>Admin</span></a>
+	<div class="admin-shell">
+		<header class="admin-bar">
+			<a class="admin-bar__brand" href="/admin">Obsyrium <span>Admin</span></a>
+
+			<?php if ($adminAtual !== null): ?>
+				<div class="admin-bar__user">
+					<span class="admin-bar__name"><?= $escape((string) $adminAtual['name']) ?></span>
+
+					<form action="/admin/logout" method="post">
+						<?= Csrf::field() ?>
+						<button class="admin-bar__out" type="submit">Sair</button>
+					</form>
+				</div>
+			<?php endif; ?>
+		</header>
 
 		<?php if ($adminAtual !== null): ?>
-			<nav class="admin-bar__nav" aria-label="Painel">
-				<a class="admin-bar__link" href="/admin/pedidos" aria-current="page">Pedidos</a>
-				<a class="admin-bar__link" href="/" rel="noopener">Ver loja</a>
-			</nav>
+			<aside class="admin-side">
+				<nav class="admin-nav" aria-label="Seções do painel">
+					<?php foreach ($adminItens as $chave => $item): ?>
+						<a class="admin-nav__link" href="<?= $escape($item['href']) ?>"<?= $adminAba === $chave ? ' aria-current="page"' : '' ?>><?= $escape($item['rotulo']) ?></a>
+					<?php endforeach; ?>
+				</nav>
 
-			<div class="admin-bar__user">
-				<span class="admin-bar__name"><?= $escape((string) $adminAtual['name']) ?></span>
-
-				<form action="/admin/logout" method="post">
-					<?= Csrf::field() ?>
-					<button class="admin-bar__out" type="submit">Sair</button>
-				</form>
-			</div>
+				<a class="admin-side__shop" href="/" rel="noopener">Ver loja</a>
+			</aside>
 		<?php endif; ?>
-	</header>
 
-	<?php if ($flash !== null): ?>
-		<p class="admin-flash admin-flash--<?= $escape($flash['type']) ?>" role="status"><?= $escape($flash['message']) ?></p>
-	<?php endif; ?>
+		<main class="admin-main" id="conteudo">
+			<?php if ($flash !== null): ?>
+				<p class="admin-flash admin-flash--<?= $escape($flash['type']) ?>" role="status"><?= $escape($flash['message']) ?></p>
+			<?php endif; ?>
 
-	<main class="admin-main" id="conteudo">
-		<?php require $content; ?>
-	</main>
+			<?php require $content; ?>
+		</main>
+	</div>
 </body>
 </html>

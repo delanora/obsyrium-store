@@ -8,13 +8,14 @@ use App\Database\Connection;
 use App\Repositories\AdminRepository;
 use App\Repositories\LoginAttemptRepository;
 use App\Services\AdminAuthService;
+use App\Services\DashboardService;
 use App\Services\LoginThrottle;
 use App\Services\OrderService;
 use App\Support\Csrf;
 use App\Support\Session;
 
 /**
- * Painel da administração: login e operação de pedidos.
+ * Painel da administração: login, dashboard, pedidos e estoque.
  *
  * Toda rota além do login passa por `admin()`, que confere a sessão de
  * administrador antes de qualquer leitura. Toda escrita exige CSRF e responde
@@ -24,12 +25,10 @@ final class AdminController
 {
     private const TITLE_LOGIN = 'Entrar — Administração Obsyrium';
 
-    private const TITLE_ORDERS = 'Pedidos — Administração Obsyrium';
-
     public function showLogin(): void
     {
         if ($this->auth()->currentAdmin() !== null) {
-            $this->redirect('/admin/pedidos');
+            $this->redirect('/admin');
         }
 
         $this->renderLogin();
@@ -45,7 +44,7 @@ final class AdminController
 
         if ($erro === null) {
             Session::flash('success', 'Painel aberto.');
-            $this->redirect('/admin/pedidos');
+            $this->redirect('/admin');
         }
 
         $this->renderLogin(['credentials' => $erro], (string) ($_POST['email'] ?? ''));
@@ -62,12 +61,21 @@ final class AdminController
         $this->redirect('/admin/login');
     }
 
+    public function dashboard(): void
+    {
+        $admin = $this->admin();
+
+        $this->render('dashboard', 'Dashboard — Administração Obsyrium', $admin, 'dashboard', [
+            'resumo' => (new DashboardService(Connection::get()))->summary(),
+        ]);
+    }
+
     public function orders(): void
     {
         $admin = $this->admin();
         $status = isset($_GET['status']) ? (string) $_GET['status'] : '';
 
-        $this->render('orders', self::TITLE_ORDERS, $admin, [
+        $this->render('orders', 'Pedidos — Administração Obsyrium', $admin, 'pedidos', [
             'pedidos' => (new OrderService(Connection::get()))->adminOrders($status),
             'filtro' => isset(OrderService::STATUS_LABELS[$status]) ? $status : '',
         ]);
@@ -87,7 +95,7 @@ final class AdminController
             $this->redirect('/admin/pedidos');
         }
 
-        $this->render('order', sprintf('Pedido %s — Administração Obsyrium', $numero), $admin, [
+        $this->render('order', sprintf('Pedido %s — Administração Obsyrium', $numero), $admin, 'pedidos', [
             'pedido' => $pedido,
         ]);
     }
@@ -105,8 +113,8 @@ final class AdminController
             return;
         }
 
-        $erro = (new OrderService(Connection::get()))
-            ->changeStatus($numero, (string) ($_POST['status'] ?? ''));
+        $novoStatus = (string) ($_POST['status'] ?? '');
+        $erro = (new OrderService(Connection::get()))->changeStatus($numero, $novoStatus);
 
         if ($erro !== null) {
             Session::flash('error', $erro);
@@ -114,11 +122,20 @@ final class AdminController
             Session::flash('success', sprintf(
                 'Pedido %s agora está como %s.',
                 $numero,
-                mb_strtolower(OrderService::statusLabel((string) ($_POST['status'] ?? '')))
+                mb_strtolower(OrderService::statusLabel($novoStatus))
             ));
         }
 
         $this->redirect('/admin/pedidos/' . rawurlencode($numero));
+    }
+
+    public function stock(): void
+    {
+        $admin = $this->admin();
+
+        $this->render('estoque', 'Estoque — Administração Obsyrium', $admin, 'estoque', [
+            'estoque' => (new DashboardService(Connection::get()))->stock(),
+        ]);
     }
 
     /**
@@ -156,6 +173,7 @@ final class AdminController
         $errors = $erros;
         $old = ['email' => $email];
         $adminAtual = null;
+        $adminAba = 'dashboard';
         $content = $basePath . '/resources/views/admin/login.php';
 
         require $basePath . '/resources/views/layouts/admin.php';
@@ -165,16 +183,19 @@ final class AdminController
      * @param array<string, mixed> $admin
      * @param array<string, mixed> $contexto
      */
-    private function render(string $view, string $title, array $admin, array $contexto): void
+    private function render(string $view, string $title, array $admin, string $aba, array $contexto): void
     {
         http_response_code(200);
         header('Content-Type: text/html; charset=UTF-8');
 
         $basePath = dirname(__DIR__, 2);
         $adminAtual = $admin;
+        $adminAba = $aba;
         $adminPedidos = $contexto['pedidos'] ?? [];
         $adminFiltro = $contexto['filtro'] ?? '';
         $adminPedido = $contexto['pedido'] ?? null;
+        $adminResumo = $contexto['resumo'] ?? [];
+        $adminEstoque = $contexto['estoque'] ?? [];
         $content = $basePath . '/resources/views/admin/' . $view . '.php';
 
         require $basePath . '/resources/views/layouts/admin.php';

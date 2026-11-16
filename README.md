@@ -560,10 +560,21 @@ A administração tem barra, layout e sessão próprios em `/admin` — nada do 
   - `php database/admin.php senha email@daloja.com "nova senha"`
   - `php database/admin.php listar`
 - `App\Services\AdminAuthService` usa Argon2id, rehash automático, o mesmo `LoginThrottle` do cliente (5 falhas por conta ou 20 por IP em 15 minutos) e mensagem de erro genérica. A sessão do painel é a chave `admin_id` (`Session::loginAdmin()`/`adminLogout()`), então abrir o painel não transforma o navegador em cliente logado e sair do painel não derruba a conta da loja.
-- Rotas: `GET /admin` e `GET /admin/pedidos` (lista com filtro por situação), `GET /admin/pedidos/{number}` (detalhe), `POST /admin/pedidos/{number}/status` (troca de situação), `GET|POST /admin/login`, `POST /admin/logout`. Sem sessão de administrador, tudo além do login responde 303 para `/admin/login` com aviso.
+- Rotas: `GET /admin` (dashboard) e `GET /admin/pedidos` (lista com filtro por situação), `GET /admin/pedidos/{number}` (detalhe), `POST /admin/pedidos/{number}/status` (troca de situação), `GET|POST /admin/login`, `POST /admin/logout`. Sem sessão de administrador, tudo além do login responde 303 para `/admin/login` com aviso.
 - `OrderService::adminOrders()` lista os 100 pedidos mais recentes com nome e e-mail do cliente; `adminOrder()` monta o detalhe com itens, endereço decifrado e totais.
 - Transições em `OrderService::NEXT_STATUSES`: aguardando pagamento → pago/cancelado, pago → enviado/cancelado, enviado → entregue, e entregue/cancelado são finais. O formulário só oferece o que o servidor aceita e o servidor confere de novo.
 - `changeStatus()` roda em transação com a linha do pedido travada (`FOR UPDATE`): dois cliques em "cancelar" não somam estoque duas vezes. Cancelar devolve as peças com um `UPDATE stock ... + oi.quantity` a partir de `order_items`, ignorando itens cuja variação já não existe.
 - Views em `resources/views/admin/` (`login`, `orders`, `order`) sobre `layouts/admin.php`; estilos em `public/assets/css/admin.css`. A tabela rola na horizontal abaixo de 56 rem e o detalhe empilha itens e colunas laterais.
 - Situação aparece por extenso; a cor do selo só reforça. O aviso de cancelamento (“Cancelar devolve as peças deste pedido ao estoque.”) fica visível junto do formulário.
 - O painel ainda não cobre produtos, estoque, cupons nem pagamentos — só pedidos, como primeiro passo.
+
+## 25. Dashboard e navegação do painel
+
+`/admin` abre no dashboard e a navegação virou barra lateral com dashboard, pedidos e estoque.
+
+- `App\Services\DashboardService::summary()` devolve os seis últimos meses (meses sem venda entram zerados), o total de peças vendidas, o faturamento acumulado e quantos clientes ativos existem. Pedido `cancelado` fica de fora de todas as contas.
+- Gráficos em SVG montado na view (`resources/views/admin/dashboard.php`), sem biblioteca: barras para pedidos por mês e linha com área para o faturamento mensal, ambos com `viewBox` fixo e valores calculados a partir do dado. Cada ponto tem o valor em texto na legenda abaixo, então o gráfico não depende só da cor nem do traço.
+- Cards numéricos: peças vendidas e clientes, mais o faturamento acumulado. `public/assets/css/admin.css` traz `admin-stats`, `admin-stat`, `admin-charts` e `chart*`.
+- `layouts/admin.php` ganhou `.admin-shell` em grid: barra no topo, lateral de 13 rem e conteúdo. Abaixo de 56 rem a lateral vira faixa de abas que rola na horizontal, com o item atual marcado por `aria-current="page"`.
+- `GET /admin/estoque` lista as variações com saldo, reservado e disponível, e marca a situação: disponível, estoque baixo (até 2) ou esgotado. É só leitura — a edição de saldo entra com o cadastro de produtos.
+- Os estilos de campo (`.field`, `.field__input`, `.field__label`, `.field__hint`, `.field__error`) saíram do `auth.css` para o `components.css`, carregado por todas as páginas: antes o login do painel e o seletor de situação ficavam sem estilo porque o layout admin não carrega `auth.css`.

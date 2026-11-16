@@ -1,9 +1,9 @@
 /*
  * Painel de administração: mesma paleta da loja, densidade maior.
  *
- * A barra do topo é a única navegação; o conteúdo é uma tabela de pedidos e a
- * tela de detalhe com itens à esquerda e situação/cliente/entrega à direita.
- * Abaixo de 56rem a tabela rola na horizontal e o detalhe empilha.
+ * Barra no topo, navegação lateral à esquerda (dashboard, pedidos, estoque) e
+ * conteúdo à direita. Abaixo de 56rem a lateral vira uma faixa de abas que rola
+ * na horizontal, a tabela rola e o detalhe empilha.
  */
 
 .admin-body {
@@ -12,13 +12,24 @@
     color: var(--color-text);
 }
 
+.admin-shell {
+    display: grid;
+    grid-template-areas:
+        "bar"
+        "side"
+        "main";
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 100vh;
+}
+
 .admin-bar {
+    grid-area: bar;
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3) var(--space-5);
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-3) var(--space-5);
+    padding: var(--space-3) var(--space-4);
     border-bottom: 1px solid var(--color-border);
     background-color: var(--color-bg-alt);
 }
@@ -33,25 +44,6 @@
 }
 
 .admin-bar__brand span {
-    color: var(--color-accent);
-}
-
-.admin-bar__nav {
-    display: flex;
-    gap: var(--space-4);
-    align-items: center;
-}
-
-.admin-bar__link {
-    color: var(--color-text-muted);
-    font-size: var(--font-size-xs);
-    letter-spacing: var(--letter-spacing-wide);
-    text-decoration: none;
-    text-transform: uppercase;
-}
-
-.admin-bar__link:hover,
-.admin-bar__link[aria-current="page"] {
     color: var(--color-accent);
 }
 
@@ -82,9 +74,81 @@
     color: var(--color-accent);
 }
 
+/* Navegação lateral */
+
+.admin-side {
+    grid-area: side;
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* A faixa de abas rola de lado no celular sem a barra de rolagem à vista. */
+.admin-nav {
+    display: flex;
+    flex: 1;
+    gap: var(--space-2);
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.admin-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.admin-nav__link {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.admin-nav__link:hover {
+    color: var(--color-text);
+}
+
+.admin-nav__link[aria-current="page"] {
+    border-bottom-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.admin-side__shop {
+    flex-shrink: 0;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.admin-side__shop:hover {
+    color: var(--color-accent);
+}
+
+/* Conteúdo */
+
+.admin-main {
+    grid-area: main;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+    padding: var(--space-5) var(--space-4) var(--space-8);
+}
+
 .admin-flash {
     margin: 0;
-    padding: var(--space-3) var(--space-5);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
     font-size: var(--font-size-sm);
 }
 
@@ -98,17 +162,6 @@
     background-color: rgb(224 87 74 / 12%);
     color: var(--color-danger);
 }
-
-.admin-main {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-5);
-    max-width: 80rem;
-    margin: 0 auto;
-    padding: var(--space-6) var(--space-4) var(--space-8);
-}
-
-/* Cabeçalho de cada tela */
 
 .admin-head {
     display: flex;
@@ -154,6 +207,171 @@
     color: var(--color-accent);
 }
 
+/* Cards numéricos */
+
+.admin-stats {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.admin-stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.admin-stat__label {
+    margin: 0;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.admin-stat__value {
+    margin: 0;
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--font-size-2xl);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-display);
+    line-height: var(--line-height-tight);
+}
+
+.admin-stat__value--money {
+    font-size: var(--font-size-xl);
+}
+
+.admin-stat__note {
+    margin: 0;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+}
+
+/* Gráficos */
+
+.admin-charts {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.admin-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.admin-panel__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.admin-panel__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+}
+
+.admin-panel__text {
+    margin: 0;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+}
+
+.chart {
+    width: 100%;
+    height: auto;
+}
+
+.chart__axis,
+.chart__grid {
+    stroke: var(--color-border);
+    stroke-width: 1;
+}
+
+.chart__bar {
+    fill: var(--color-accent);
+}
+
+.chart__bar:hover {
+    fill: var(--color-accent-hover);
+}
+
+.chart__value {
+    fill: var(--color-text-muted);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.chart__label {
+    fill: var(--color-text-subtle);
+    font-family: var(--font-body);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.chart__area {
+    fill: rgb(201 160 99 / 10%);
+}
+
+.chart__line {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.5;
+}
+
+.chart__dot {
+    fill: var(--color-bg);
+    stroke: var(--color-accent);
+    stroke-width: 2.5;
+}
+
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+    padding: var(--space-3) 0 0;
+    border-top: 1px solid var(--color-border);
+    list-style: none;
+}
+
+.chart-legend__item {
+    display: flex;
+    gap: var(--space-2);
+    align-items: baseline;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.chart-legend__month {
+    color: var(--color-text-subtle);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.chart-legend__value {
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+}
+
 /* Filtro por situação */
 
 .admin-filters {
@@ -186,7 +404,7 @@
     color: var(--color-accent);
 }
 
-/* Tabela de pedidos */
+/* Tabelas */
 
 .admin-table-wrap {
     overflow-x: auto;
@@ -249,7 +467,13 @@
     white-space: nowrap;
 }
 
+.admin-table__sku {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+}
+
 .admin-table__total {
+    color: var(--color-text);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
@@ -278,7 +502,7 @@
     text-align: center;
 }
 
-/* Situação do pedido */
+/* Selos de situação */
 
 .admin-status {
     display: inline-block;
@@ -298,17 +522,20 @@
 }
 
 .admin-status--pago,
-.admin-status--entregue {
+.admin-status--entregue,
+.admin-status--estoque-ok {
     border-color: rgb(98 181 122 / 45%);
     color: var(--color-success);
 }
 
-.admin-status--enviado {
+.admin-status--enviado,
+.admin-status--estoque-baixo {
     border-color: rgb(217 162 74 / 45%);
     color: var(--color-warning);
 }
 
-.admin-status--cancelado {
+.admin-status--cancelado,
+.admin-status--estoque-esgotado {
     border-color: rgb(224 87 74 / 45%);
     color: var(--color-danger);
 }
@@ -320,26 +547,7 @@
     gap: var(--space-4);
 }
 
-.admin-panel {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    padding: var(--space-4);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background-color: var(--color-surface);
-}
-
-.admin-panel__title {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    letter-spacing: var(--letter-spacing-caps);
-    text-transform: uppercase;
-}
-
-.admin-side {
+.admin-side-columns {
     display: grid;
     gap: var(--space-4);
     align-content: start;
@@ -419,6 +627,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    align-items: flex-start;
 }
 
 .admin-info {
@@ -461,7 +670,7 @@
 .admin-login {
     display: flex;
     justify-content: center;
-    padding: var(--space-8) var(--space-4);
+    padding-block: var(--space-7);
 }
 
 .admin-login__card {
@@ -515,7 +724,13 @@
     gap: var(--space-3);
 }
 
+/* Ajustes de tela */
+
 @media (min-width: 40rem) {
+    .admin-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .admin-item {
         grid-template-columns: 1fr auto;
         align-items: baseline;
@@ -527,12 +742,63 @@
 }
 
 @media (min-width: 56rem) {
-    .admin-main {
+    .admin-shell {
+        grid-template-areas:
+            "bar bar"
+            "side main";
+        grid-template-columns: 13rem minmax(0, 1fr);
+        grid-template-rows: auto 1fr;
+    }
+
+    .admin-bar {
         padding-inline: var(--space-5);
+    }
+
+    .admin-side {
+        flex-direction: column;
+        gap: var(--space-5);
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: var(--space-5) var(--space-4);
+        border-right: 1px solid var(--color-border);
+        border-bottom: 0;
+    }
+
+    .admin-nav {
+        flex-direction: column;
+        gap: var(--space-1);
+        overflow: visible;
+        width: 100%;
+    }
+
+    .admin-nav__link {
+        padding: var(--space-2) var(--space-3);
+        border-bottom: 0;
+        border-left: 2px solid transparent;
+    }
+
+    .admin-nav__link[aria-current="page"] {
+        border-left-color: var(--color-accent);
+        border-bottom-color: transparent;
+        background-color: var(--color-accent-soft);
+    }
+
+    .admin-main {
+        padding: var(--space-6) var(--space-6) var(--space-9);
+    }
+
+    .admin-charts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .admin-detail {
         grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr);
         align-items: start;
+    }
+}
+
+@media (min-width: 80rem) {
+    .admin-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }

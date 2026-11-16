@@ -69,7 +69,7 @@ $podeCancelar = array_key_exists('cancelado', $adminPedido['next_statuses']);
 		</dl>
 	</section>
 
-	<aside class="admin-side">
+	<aside class="admin-side-columns">
 		<section class="admin-panel">
 			<h2 class="admin-panel__title">Situação</h2>
 
