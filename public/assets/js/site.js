@@ -604,9 +604,55 @@
             });
         };
 
+        // O campo mostra 01310-100, mas só os dígitos valem: o servidor recebe o
+        // valor com hífen e descarta tudo que não é número.
+        var apenasDigitosCep = function (texto) {
+            return texto.replace(/\D+/g, '').slice(0, 8);
+        };
+
+        var formatarCep = function (digitos) {
+            return digitos.length > 5 ? digitos.slice(0, 5) + '-' + digitos.slice(5) : digitos;
+        };
+
+        if (campoCep.value !== '') {
+            campoCep.value = formatarCep(apenasDigitosCep(campoCep.value));
+        }
+
         campoCep.addEventListener('input', function () {
-            if (campoCep.value.replace(/\D+/g, '').length === 8) {
+            var digitos = apenasDigitosCep(campoCep.value);
+            var formatado = formatarCep(digitos);
+
+            if (campoCep.value !== formatado) {
+                var cursor = campoCep.selectionStart;
+
+                if (typeof cursor !== 'number') {
+                    cursor = campoCep.value.length;
+                }
+
+                var digitosAntesDoCursor = apenasDigitosCep(campoCep.value.slice(0, cursor)).length;
+
+                campoCep.value = formatado;
+
+                var alvo = digitosAntesDoCursor > 5 ? digitosAntesDoCursor + 1 : digitosAntesDoCursor;
+                campoCep.setSelectionRange(alvo, alvo);
+            }
+
+            if (digitos.length === 8) {
                 consultarCep();
+            }
+        });
+
+        // Backspace logo depois do hífen apaga o quinto dígito: o hífen é enfeite
+        // e não pode prender o cursor.
+        campoCep.addEventListener('keydown', function (evento) {
+            if (evento.key !== 'Backspace' || campoCep.selectionStart !== campoCep.selectionEnd) {
+                return;
+            }
+
+            if (campoCep.selectionStart === 6 && campoCep.value.charAt(5) === '-') {
+                evento.preventDefault();
+                campoCep.value = formatarCep(apenasDigitosCep(campoCep.value).slice(0, 5));
+                campoCep.setSelectionRange(5, 5);
             }
         });
 
