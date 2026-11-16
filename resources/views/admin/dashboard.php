@@ -68,7 +68,7 @@ $area = sprintf('30,170 %s 570,170', $linha);
 <header class="admin-head">
 	<p class="admin-head__eyebrow">Painel</p>
 	<h1 class="admin-head__title">Dashboard</h1>
-	<p class="admin-head__text">Vendas dos últimos seis meses, peças e clientes. Pedido cancelado não entra na conta.</p>
+	<p class="admin-head__text">Vendas dos últimos seis meses, peças e clientes. Só entra na conta o pedido pago, enviado ou entregue — aguardando pagamento e cancelado ficam fora.</p>
 </header>
 
 <section class="admin-stats" aria-label="Números da loja">

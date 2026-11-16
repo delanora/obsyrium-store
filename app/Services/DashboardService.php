@@ -10,12 +10,20 @@ use PDO;
 /**
  * Indicadores do painel.
  *
- * Pedido cancelado não conta como venda: nem na quantidade, nem no faturamento,
- * nem nas peças. Os meses vêm do próprio banco; os meses sem venda entram com
+ * Só contam como venda os pedidos pagos, enviados e entregues: nem faturamento,
+ * nem peças, nem quantidade de pedidos incluem o que ainda aguarda pagamento ou
+ * foi cancelado. Os meses vêm do próprio banco; os meses sem venda entram com
  * zero para o gráfico não ter buraco.
  */
 final class DashboardService
 {
+    /**
+     * Situações que contam como venda: o dinheiro já entrou (pago) ou a peça já
+     * saiu (enviado, entregue). Fora delas ficam `aguardando_pagamento` e
+     * `cancelado`.
+     */
+    private const VENDIDOS = "('pago', 'enviado', 'entregue')";
+
     private const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
     public function __construct(private readonly PDO $pdo)
@@ -42,7 +50,7 @@ final class DashboardService
                     COUNT(*) AS pedidos,
                     COALESCE(SUM(total_cents), 0) AS faturamento
                FROM orders
-              WHERE status <> 'cancelado'
+              WHERE status IN " . self::VENDIDOS . "
                 AND created_at >= :inicio
               GROUP BY mes"
         );
@@ -79,7 +87,7 @@ final class DashboardService
                     COALESCE(SUM(pieces), 0) AS pecas,
                     COALESCE(SUM(total_cents), 0) AS faturamento
                FROM orders
-              WHERE status <> 'cancelado'"
+              WHERE status IN " . self::VENDIDOS . ""
         )->fetch();
 
         $clientes = (int) $this->pdo->query(

@@ -572,7 +572,7 @@ A administração tem barra, layout e sessão próprios em `/admin` — nada do 
 
 `/admin` abre no dashboard e a navegação virou barra lateral com dashboard, pedidos e estoque.
 
-- `App\Services\DashboardService::summary()` devolve os seis últimos meses (meses sem venda entram zerados), o total de peças vendidas, o faturamento acumulado e quantos clientes ativos existem. Pedido `cancelado` fica de fora de todas as contas.
+- `App\Services\DashboardService::summary()` devolve os seis últimos meses (meses sem venda entram zerados), o total de peças vendidas, o faturamento acumulado e quantos clientes ativos existem. Só entra nas contas o pedido `pago`, `enviado` ou `entregue` (lista em `DashboardService::VENDIDOS`): `aguardando_pagamento` e `cancelado` ficam de fora do faturamento, das peças e da contagem de pedidos, tanto no total quanto no mês.
 - Gráficos em SVG montado na view (`resources/views/admin/dashboard.php`), sem biblioteca: barras para pedidos por mês e linha com área para o faturamento mensal, ambos com `viewBox` fixo e valores calculados a partir do dado. Cada ponto tem o valor em texto na legenda abaixo, então o gráfico não depende só da cor nem do traço.
 - Cards numéricos: peças vendidas e clientes, mais o faturamento acumulado. `public/assets/css/admin.css` traz `admin-stats`, `admin-stat`, `admin-charts` e `chart*`.
 - `layouts/admin.php` ganhou `.admin-shell` em grid: barra no topo, lateral de 13 rem e conteúdo. Abaixo de 56 rem a lateral vira faixa de abas que rola na horizontal, com o item atual marcado por `aria-current="page"`.
