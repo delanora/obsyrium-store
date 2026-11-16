@@ -19,8 +19,9 @@ use App\Support\Session;
  *
  * A página mostra o resumo do carrinho, o total e o endereço de entrega
  * escolhido entre os que o cliente guardou no perfil. Confirmar grava o pedido
- * (OrderService), esvazia o carrinho e leva para a aba Compras. O pagamento
- * entra na próxima etapa: o pedido nasce aguardando pagamento.
+ * (OrderService), esvazia o carrinho e leva para a tela de confirmação, com o
+ * número, o resumo gravado e os próximos passos. O pagamento entra na próxima
+ * etapa: o pedido nasce aguardando pagamento.
  */
 final class CheckoutController
 {
@@ -47,12 +48,39 @@ final class CheckoutController
             $this->redirect('/checkout');
         }
 
-        Session::flash('success', sprintf(
-            'Pedido %s registrado. Ele já aparece em Compras e o pagamento entra na próxima etapa.',
-            $pedido['number']
-        ));
+        $this->redirect('/pedido/' . $pedido['number'] . '/confirmacao');
+    }
 
-        $this->redirect('/conta/compras');
+    /**
+     * Confirmação do pedido recém-fechado: resumo do que ficou gravado, o que
+     * acontece agora e o atalho para Compras. Só abre para o dono do pedido.
+     *
+     * @param array<string, string> $params
+     */
+    public function confirmation(array $params): void
+    {
+        if (Session::userId() === null) {
+            Session::flash('error', 'Entre na sua conta para ver o pedido.');
+            $this->redirect('/login');
+        }
+
+        $numero = (string) ($params['number'] ?? '');
+        $pedido = (new OrderService(Connection::get()))
+            ->orderForUser((int) Session::userId(), $numero);
+
+        if ($pedido === null) {
+            $this->naoEncontrado();
+        }
+
+        http_response_code(200);
+        header('Content-Type: text/html; charset=UTF-8');
+
+        $basePath = dirname(__DIR__, 2);
+        $title = sprintf('Pedido %s confirmado — Obsyrium Store', $numero);
+        $confirmacaoPedido = $pedido;
+        $content = $basePath . '/resources/views/checkout/confirmation.php';
+
+        require $basePath . '/resources/views/layouts/site.php';
     }
 
     /**
@@ -145,6 +173,16 @@ final class CheckoutController
         require dirname(__DIR__, 2) . '/resources/views/errors/403.php';
 
         return false;
+    }
+
+    private function naoEncontrado(): never
+    {
+        http_response_code(404);
+        header('Content-Type: text/html; charset=UTF-8');
+
+        require dirname(__DIR__, 2) . '/resources/views/errors/404.php';
+
+        exit;
     }
 
     private function redirect(string $path): never

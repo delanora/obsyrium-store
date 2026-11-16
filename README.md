@@ -399,7 +399,7 @@ A estrutura da página inicial segue a da referência Crown Training — a refer
 
 ### 17.1 Ordem das seções
 
-1. **Cabeçalho** (`.site-header`): barra em largura total (sem `.container`), com margem lateral de `--gutter`, em três colunas — emblema e nome "Obsyrium" à esquerda, menu (Lançamentos, Camisetas, Sobre, Contato) centralizado e busca, conta e carrinho à direita.
+1. **Cabeçalho** (`.site-header`): barra em largura total (sem `.container`), com margem lateral de `--gutter`, em três colunas — emblema e nome "Obsyrium" à esquerda, menu (Lançamentos, Catálogo, Sobre e Contato) centralizado e busca, conta e carrinho à direita.
 2. **Hero** (`.hero`): dois slides em faixa horizontal com `scroll-snap` e marcadores (`.hero__dot`) que ancoram em cada slide. Sem JavaScript.
 3. **Vitrine "Lançamentos"** (`.section` + `.product-grid`): oito cards com selo, cor, preço, valor no Pix e parcelamento, seguidos da `.pagination`.
 4. **Bloco de conteúdo** (`.section--alt` + `.content-block`): H2 e dois parágrafos institucionais.
@@ -532,7 +532,7 @@ O ícone de pessoa no cabeçalho aponta para `/conta` quando há sessão aberta;
 `/checkout` deixou de ser só um portão de login e virou página: resumo dos itens, totais e escolha do endereço de entrega.
 
 - `GET /checkout` exige carrinho com itens (senão volta para `/carrinho` com aviso) e cliente logado (senão vai para `/login`). A página mostra cada linha do carrinho com imagem, nome, tamanho, quantidade e valor da linha, o resumo de valores (peças, subtotal, frete “a calcular” e total) e os endereços salvos no perfil em cartões de rádio, com o principal marcado.
-- `POST /checkout` confere o CSRF e se o endereço escolhido pertence ao cliente; endereço de outra conta ou inexistente volta com “Escolha um endereço de entrega da sua conta.” e mantém a escolha anterior. Confirmar grava o pedido (seção 23), esvazia o carrinho e leva para `/conta/compras`. Sem endereço salvo, a página mostra o estado vazio com link para `/conta/enderecos`.
+- `POST /checkout` confere o CSRF e se o endereço escolhido pertence ao cliente; endereço de outra conta ou inexistente volta com “Escolha um endereço de entrega da sua conta.” e mantém a escolha anterior. Confirmar grava o pedido (seção 23), esvazia o carrinho e leva para a confirmação em `/pedido/{número}/confirmacao` (seção 31). Sem endereço salvo, a página mostra o estado vazio com link para `/conta/enderecos`.
 - `CheckoutController` monta os dados: `CartService::itemsForDisplay()` para as linhas, `AccountService::addressesFor()` para os endereços, e o total somando `price_cents × quantity`. O endereço principal já vem marcado; na falta dele, o primeiro da lista.
 - Layout em `public/assets/css/checkout.css`: uma coluna no celular e duas no computador (conteúdo à esquerda, resumo de valores numa coluna de 20 rem que acompanha a rolagem). O endereço marcado ganha a borda dourada e o fundo do acento.
 - Pagamento não existe ainda: o botão grava o pedido como `aguardando_pagamento` e o texto avisa que nada é cobrado agora. Carrinho e checkout continuam sem frete calculado.
@@ -546,8 +546,8 @@ O fechamento do carrinho virou pedido: o checkout grava `orders` + `order_items`
 - `order_items` copia nome, slug, tamanho, SKU, preço unitário e total da linha. `variant_id` aceita `NULL` (`ON DELETE SET NULL`) para o histórico sobreviver à exclusão de uma variação.
 - `App\Services\OrderService::place()` cuida do fechamento dentro da transação: trava as linhas do carrinho (`FOR UPDATE`, em ordem de `variant_id` para não cruzar com o `CartService`), confere produto ativo e estoque disponível, grava pedido e itens, debita `stock.quantity` com a mesma condição no `WHERE` e apaga os itens do carrinho. Qualquer falha desfaz tudo e o aviso diz qual item precisa de ajuste.
 - Preço, quantidade e estoque saem sempre do banco; o formulário só manda o `address_id`, conferido contra o dono. Somamos sempre em centavos inteiros.
-- `POST /checkout` virou `CheckoutController::place()`: grava o pedido, avisa com o número e manda para `/conta/compras`. O pedido nasce `aguardando_pagamento` — nada é cobrado.
-- `GET /conta/compras` usa `OrderService::ordersForUser()` (50 mais recentes, itens em uma consulta só) e mostra um cartão por pedido com número, data, peças, situação, itens, endereço de entrega e totais. A situação aparece por extenso (“Aguardando pagamento”) e a cor só reforça.
+- `POST /checkout` virou `CheckoutController::place()`: grava o pedido e manda para a confirmação em `/pedido/{número}/confirmacao`, com o número e o resumo. O pedido nasce `aguardando_pagamento` — nada é cobrado.
+- `GET /conta/compras` usa `OrderService::ordersForUser()` (50 mais recentes, itens em uma consulta só) e mostra um cartão por pedido com número, data, peças, situação, itens, endereço de entrega e totais. O cartão fica no partial `resources/views/partials/order-card.php`, reaproveitado pela confirmação do checkout. A situação aparece por extenso (“Aguardando pagamento”) e a cor só reforça.
 - Estilos em `public/assets/css/account.css` (bloco `order*`): cartões no mesmo desenho dos endereços, itens em lista e endereço/totais lado a lado a partir de 40 rem.
 - O estoque é baixado na hora da compra. Reserva que expira e pagamento pendente ficaram para as próximas etapas.
 
@@ -637,3 +637,20 @@ MD
 - **Celular**: a barra de filtros é um `<details>` que nasce recolhida (`site.js` fecha quando não há filtro ativo) e abre com o toque; com filtro ligado já vem aberta e mostra um selo com a quantidade.
 - O card da vitrine virou o partial `resources/views/partials/product-card.php` e o formato do card saiu para `App\Support\ProductCard`, usados pela home e pelo catálogo.
 - O menu ganhou **Catálogo** (marcado como página atual) e o "Ver todos" da vitrine aponta para ele. `Navegacao` passou a aceitar `/catalogo` como origem, então adicionar ao carrinho a partir do catálogo devolve o cliente para o catálogo.
+
+## 31. Confirmação do pedido e páginas institucionais
+
+Fechar a compra termina numa página própria: `/pedido/OBS-000004/confirmacao`.
+
+- `POST /checkout` responde 303 para `/pedido/{número}/confirmacao`; o aviso de sucesso que antes aparecia em Compras virou a própria página.
+- `GET /pedido/{number}/confirmacao` (`CheckoutController::confirmation()`) exige cliente logado (senão 303 para `/login`) e procura o pedido com `OrderService::orderForUser()`, que filtra por `user_id` **e** pelo número. Pedido de outra conta responde 404 igual a um número inexistente, sem revelar de quem é.
+- A página traz o número em destaque, o mesmo cartão de pedido de Compras (`partials/order-card.php`) com itens, endereço e totais, a lista de próximos passos (pagamento, separação e envio, acompanhamento em Compras) e os atalhos "Ir para Compras" e "Continuar comprando".
+- `public/assets/css/checkout.css` ganhou o bloco `confirm*`: uma coluna no celular e duas no computador (resumo à esquerda, passos numa coluna de 20 rem à direita), com o check dourado no topo.
+- O cartão de pedido saiu de `resources/views/account/orders.php` para o partial, usado pelas duas telas — mesmo desenho, uma fonte só.
+
+### Páginas Sobre e Contato
+
+- `GET /sobre` e `GET /contato` (`App\Controllers\PageController`) montam páginas fixas no layout do site: `resources/views/pages/about.php` e `resources/views/pages/contact.php`.
+- Sobre apresenta a marca, o trabalho em lotes pequenos, como a compra funciona e o cuidado com a estampa; Contato reúne o horário de atendimento (segunda a sexta, 9h às 18h) e os atalhos que já funcionam (Compras, endereços e catálogo). O e-mail e os perfis oficiais entram quando o domínio estiver no ar.
+- O menu do topo ganhou os links reais, com `aria-current` nas duas páginas, e o "Fale conosco" do rodapé aponta para `/contato`. Nenhum link do menu ficou em `#`.
+- Estilos em `public/assets/css/pages.css`, carregado no layout do site: blocos em duas colunas a partir de 48 rem.

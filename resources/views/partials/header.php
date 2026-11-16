@@ -17,8 +17,8 @@ $caminhoAtual = (string) (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH
 $menu = [
     ['label' => 'Lançamentos', 'href' => '/#lancamentos', 'current' => $caminhoAtual === '/'],
     ['label' => 'Catálogo', 'href' => '/catalogo', 'current' => $caminhoAtual === '/catalogo'],
-    ['label' => 'Sobre', 'href' => '#'],
-    ['label' => 'Contato', 'href' => '#'],
+    ['label' => 'Sobre', 'href' => '/sobre', 'current' => $caminhoAtual === '/sobre'],
+    ['label' => 'Contato', 'href' => '/contato', 'current' => $caminhoAtual === '/contato'],
 ];
 
 $conectado = Session::userId() !== null;

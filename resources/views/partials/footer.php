@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 /*
  * Rodapé: colunas de políticas, atendimento, redes sociais, formas de
- * pagamento e linha legal. Links institucionais entram quando as páginas
- * existirem.
+ * pagamento e linha legal. Só "Fale conosco" aponta para uma página que já
+ * existe (/contato); as políticas e as redes entram quando essas páginas e
+ * perfis estiverem no ar.
  */
 
 $columns = [
@@ -16,7 +17,7 @@ $columns = [
     ],
     'Atendimento' => [
         ['label' => 'Perguntas frequentes', 'href' => '#'],
-        ['label' => 'Fale conosco', 'href' => '#'],
+        ['label' => 'Fale conosco', 'href' => '/contato'],
         ['label' => 'Segunda a sexta, 9h às 18h', 'href' => null],
     ],
     'Redes sociais' => [

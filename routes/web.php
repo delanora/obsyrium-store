@@ -9,6 +9,7 @@ use App\Controllers\CartController;
 use App\Controllers\CatalogController;
 use App\Controllers\CheckoutController;
 use App\Controllers\HomeController;
+use App\Controllers\PageController;
 use App\Controllers\ProductController;
 use App\Routing\Router;
 
@@ -24,6 +25,9 @@ return static function (Router $router): void {
     $router->get('/catalogo', [CatalogController::class, 'index']);
     $router->get('/produto/{slug}', [ProductController::class, 'show']);
 
+    $router->get('/sobre', [PageController::class, 'about']);
+    $router->get('/contato', [PageController::class, 'contact']);
+
     $router->get('/carrinho', [CartController::class, 'show']);
 
     $router->post('/carrinho/adicionar', [CartController::class, 'add']);
@@ -32,6 +36,7 @@ return static function (Router $router): void {
 
     $router->get('/checkout', [CheckoutController::class, 'show']);
     $router->post('/checkout', [CheckoutController::class, 'place']);
+    $router->get('/pedido/{number}/confirmacao', [CheckoutController::class, 'confirmation']);
 
     $router->get('/conta', [AccountController::class, 'show']);
     $router->post('/conta', [AccountController::class, 'saveProfile']);

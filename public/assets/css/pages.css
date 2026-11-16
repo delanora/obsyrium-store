@@ -1,0 +1,105 @@
+/*
+ * Páginas institucionais: Sobre e Contato.
+ *
+ * Mesmo vocabulário visual do resto da loja — superfície escura, borda fina e
+ * dourado só no sobretítulo e nos atalhos. Os blocos viram duas colunas a
+ * partir de 48 rem e uma só no celular.
+ */
+
+.page {
+    padding-block: var(--section-space);
+}
+
+.page__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.page__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-width: var(--container-narrow);
+}
+
+.page__eyebrow {
+    margin: 0;
+    color: var(--color-accent);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.page__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-display);
+    letter-spacing: var(--letter-spacing-display);
+    line-height: var(--line-height-tight);
+    text-transform: uppercase;
+}
+
+.page__text {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+}
+
+.page__blocks {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+    .page__blocks {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.page__block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.page__block p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+}
+
+.page__block-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+}
+
+.page__link {
+    color: var(--color-accent);
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 0.1rem;
+}
+
+.page__link:hover,
+.page__link:focus-visible {
+    color: var(--color-text);
+}
+
+.page__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}

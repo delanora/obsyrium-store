@@ -181,6 +181,42 @@ final class OrderService
     }
 
     /**
+     * Um pedido do próprio cliente, para a tela de confirmação. Pedido de outra
+     * pessoa responde null, igual a um número que não existe — a tela não conta
+     * se o pedido é de outro cliente.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function orderForUser(int $userId, string $number): ?array
+    {
+        if ($userId <= 0 || $number === '') {
+            return null;
+        }
+
+        $consulta = $this->pdo->prepare(
+            'SELECT ' . self::ORDER_COLUMNS . '
+               FROM orders o
+              WHERE o.user_id = :user
+                AND o.number = :numero
+              LIMIT 1'
+        );
+
+        $consulta->bindValue(':user', $userId, PDO::PARAM_INT);
+        $consulta->bindValue(':numero', $number);
+        $consulta->execute();
+
+        $linha = $consulta->fetch();
+
+        if ($linha === false) {
+            return null;
+        }
+
+        $itens = $this->itemsForOrders([(int) $linha['id']]);
+
+        return $this->hydrateOrder($linha, $itens[(int) $linha['id']] ?? []);
+    }
+
+    /**
      * Lista do painel: todos os pedidos, opcionalmente filtrados por situação,
      * com o nome e o e-mail do cliente.
      *
