@@ -1351,3 +1351,15 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* Respiro nas pontas da tabela de estoque */
+
+.admin-table--estoque th:first-child,
+.admin-table--estoque td:first-child {
+    padding-inline-start: var(--space-4);
+}
+
+.admin-table--estoque th:last-child,
+.admin-table--estoque td:last-child {
+    padding-inline-end: var(--space-4);
+}
