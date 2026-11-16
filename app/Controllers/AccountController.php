@@ -137,10 +137,9 @@ final class AccountController
 
     public function orders(): void
     {
-        $usuario = $this->usuario();
+        $this->usuario();
 
         $this->render('orders', self::TITLES['compras'], [
-            'usuario' => $usuario,
             'aba' => 'compras',
         ]);
     }
@@ -175,7 +174,6 @@ final class AccountController
         $servico = $this->service();
 
         $this->render('addresses', self::TITLES['enderecos'], [
-            'usuario' => $usuario,
             'aba' => 'enderecos',
             'enderecos' => $servico->addressesFor($usuario['id']),
             'ufs' => $servico->ufs(),
@@ -233,7 +231,7 @@ final class AccountController
         $basePath = dirname(__DIR__, 2);
         $errors = $contexto['errors'] ?? [];
         $old = $contexto['old'] ?? [];
-        $contaUsuario = $contexto['usuario'];
+        $contaUsuario = $contexto['usuario'] ?? null;
         $contaAba = $contexto['aba'];
         $contaCpf = $contexto['cpf'] ?? '';
         $contaTelefone = $contexto['telefone'] ?? '';

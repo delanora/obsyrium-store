@@ -172,12 +172,6 @@ final class AccountService
         return $phone;
     }
 
-    public function postalCodeLabel(string $postalCode): string
-    {
-        $digitos = preg_replace('/\D+/', '', $postalCode) ?? '';
-
-        return strlen($digitos) === 8 ? substr($digitos, 0, 5) . '-' . substr($digitos, 5) : $postalCode;
-    }
 
     /**
      * O CPF nunca volta inteiro para a tela: só os dois últimos dígitos.

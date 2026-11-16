@@ -27,7 +27,8 @@ return static function (Router $router): void {
     $router->post('/carrinho/atualizar', [CartController::class, 'update']);
     $router->post('/carrinho/remover', [CartController::class, 'remove']);
 
-    $router->get('/checkout', [CheckoutController::class, 'start']);
+    $router->get('/checkout', [CheckoutController::class, 'show']);
+    $router->post('/checkout', [CheckoutController::class, 'confirmAddress']);
 
     $router->get('/conta', [AccountController::class, 'show']);
     $router->post('/conta', [AccountController::class, 'saveProfile']);

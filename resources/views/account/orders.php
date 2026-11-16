@@ -9,7 +9,6 @@ declare(strict_types=1);
  * do roadmap). Até lá a aba mostra o estado vazio — ela já faz parte do menu
  * para o cliente saber que o histórico vai morar neste lugar.
  *
- * @var array<string, mixed> $contaUsuario
  * @var string $contaAba
  */
 ?>

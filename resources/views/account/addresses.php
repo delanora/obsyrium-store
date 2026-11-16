@@ -11,7 +11,6 @@ use App\Support\Csrf;
  * cadastrar e para editar: quando $contaEdicao não é null ele abre preenchido e
  * manda o address_id junto, e o controller confere o dono antes de gravar.
  *
- * @var array<string, mixed> $contaUsuario
  * @var string $contaAba
  * @var array<int, array<string, mixed>> $contaEnderecos
  * @var array<int, string> $contaUfs
