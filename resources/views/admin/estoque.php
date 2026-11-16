@@ -101,7 +101,7 @@ $voltar = ['aba' => $aba, 'ordem' => $ordem, 'direcao' => $direcao, 'pagina' => 
 		<?= $aba === 'fora' ? 'Nenhum produto fora de linha.' : 'Nenhuma variação nesta situação.' ?>
 	</p>
 <?php else: ?>
-	<div class="admin-table-wrap">
+	<div class="admin-table-wrap admin-table-wrap--cards">
 		<table class="admin-table admin-table--estoque">
 			<thead>
 				<tr>

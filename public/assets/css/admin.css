@@ -1571,3 +1571,326 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+/* ============ Celular ============ */
+
+@media (max-width: 39.99rem) {
+    /* Sem esticar as linhas: barra e navegação ficam coladas no conteúdo. */
+    .admin-shell {
+        align-content: start;
+    }
+
+    .admin-bar {
+        flex-wrap: nowrap;
+        gap: var(--space-2) var(--space-3);
+        padding: var(--space-2) var(--space-4);
+    }
+
+    .admin-bar__brand {
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+    .admin-bar__user {
+        gap: var(--space-2);
+        min-width: 0;
+    }
+
+    .admin-bar__name {
+        max-width: 24vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .admin-side {
+        flex-wrap: wrap;
+        gap: var(--space-1) var(--space-3);
+        padding: var(--space-2) var(--space-4);
+    }
+
+    /* A navegação quebra em duas linhas em vez de cortar o último item. */
+    .admin-nav {
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        gap: 0 var(--space-1);
+        overflow: visible;
+    }
+
+    .admin-nav__link {
+        padding: var(--space-2) var(--space-2);
+        font-size: 0.7rem;
+        letter-spacing: 0.06em;
+    }
+
+    .admin-side__shop {
+        margin-left: auto;
+        font-size: 0.65rem;
+    }
+
+    .admin-main {
+        gap: var(--space-4);
+        padding: var(--space-4) var(--space-4) var(--space-8);
+    }
+
+    .admin-filters {
+        scrollbar-width: none;
+    }
+
+    .admin-filters::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Os gráficos encolhem junto com a tela: rótulos maiores continuam legíveis. */
+    .chart__label,
+    .chart__value {
+        font-size: 18px;
+    }
+
+    .admin-empty {
+        padding: var(--space-4);
+    }
+
+    /* Formulários de uma coluna, com o botão ocupando a largura toda. */
+    .admin-cats__novo {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-cats__novo .button,
+    .admin-cats__check {
+        width: 100%;
+    }
+
+    .admin-cats__novo .button {
+        justify-content: center;
+    }
+
+    .admin-cats__count {
+        display: block;
+        margin: var(--space-1) 0 0;
+    }
+}
+
+/* ============ Tabelas em cartões ============ */
+
+@media (max-width: 47.99rem) {
+    .admin-table-wrap--cards {
+        border: 0;
+        background: none;
+        overflow: visible;
+    }
+
+    .admin-table--estoque,
+    .admin-table--estoque tbody,
+    .admin-table--estoque tr,
+    .admin-table--estoque td,
+    .admin-table--pedidos,
+    .admin-table--pedidos tbody,
+    .admin-table--pedidos tr,
+    .admin-table--pedidos td {
+        display: block;
+    }
+
+    .admin-table--estoque thead,
+    .admin-table--pedidos thead {
+        display: none;
+    }
+
+    .admin-table--estoque tbody,
+    .admin-table--pedidos tbody {
+        display: grid;
+        gap: var(--space-2);
+    }
+
+    .admin-table--estoque tr,
+    .admin-table--pedidos tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: var(--space-1) var(--space-3);
+        padding: var(--space-3);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background-color: var(--color-surface);
+    }
+
+    .admin-table--estoque tbody tr:hover,
+    .admin-table--pedidos tbody tr:hover {
+        background-color: var(--color-surface);
+    }
+
+    .admin-table--estoque td,
+    .admin-table--pedidos td {
+        padding: 0;
+        border: 0;
+        font-size: var(--font-size-xs);
+    }
+
+    /* Estoque: nome, tamanho e SKU no topo; saldo e ações embaixo. */
+    .admin-table--estoque td:nth-child(1) {
+        grid-area: 1 / 1 / 2 / 3;
+        color: var(--color-text);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+    }
+
+    .admin-table--estoque td:nth-child(2) {
+        grid-area: 2 / 1;
+        align-self: center;
+        color: var(--color-text-muted);
+    }
+
+    .admin-table--estoque td:nth-child(3) {
+        grid-area: 2 / 2;
+        justify-self: end;
+        font-size: 0.63rem;
+    }
+
+    .admin-table--estoque td:nth-child(4) {
+        grid-area: 3 / 1;
+    }
+
+    .admin-table--estoque td:nth-child(5) {
+        grid-area: 4 / 1 / 5 / 3;
+    }
+
+    .admin-table--estoque td:nth-child(5)::before {
+        content: "Promocional ";
+    }
+
+    .admin-table--estoque td:nth-child(6) {
+        grid-area: 5 / 1;
+    }
+
+    .admin-table--estoque td:nth-child(8) {
+        grid-area: 5 / 2;
+        justify-self: end;
+    }
+
+    .admin-table--estoque td:nth-child(7) {
+        grid-area: 6 / 1 / 7 / 3;
+        padding-top: var(--space-2);
+    }
+
+    .admin-table--estoque td:nth-child(9) {
+        grid-area: 7 / 1;
+        align-self: center;
+    }
+
+    .admin-table--estoque td:nth-child(10) {
+        grid-area: 7 / 2;
+        justify-self: end;
+    }
+
+    .admin-table--estoque td:nth-child(4)::before {
+        content: "Preço ";
+    }
+
+    .admin-table--estoque td:nth-child(5)::before,
+    .admin-table--estoque td:nth-child(4)::before {
+        color: var(--color-text-subtle);
+        letter-spacing: var(--letter-spacing-wide);
+        text-transform: uppercase;
+    }
+
+    .admin-table--estoque td:nth-child(6)::before {
+        content: "Reservado ";
+    }
+
+    .admin-table--estoque td:nth-child(8)::before {
+        content: "Disponível ";
+    }
+
+    .admin-table--estoque td:nth-child(4)::before,
+    .admin-table--estoque td:nth-child(6)::before,
+    .admin-table--estoque td:nth-child(8)::before {
+        color: var(--color-text-subtle);
+        letter-spacing: var(--letter-spacing-wide);
+        text-transform: uppercase;
+    }
+
+    .admin-table--estoque .stock-form {
+        width: 100%;
+    }
+
+    .admin-table--estoque .stock-form__input {
+        flex: 1 1 auto;
+        width: auto;
+        max-width: 7rem;
+    }
+
+    .admin-table--estoque .stock-form__save {
+        flex: 0 0 auto;
+    }
+
+    /* Pedidos: número e situação no topo; cliente, data e total abaixo. */
+    .admin-table--pedidos td:nth-child(1) {
+        grid-area: 1 / 1;
+    }
+
+    .admin-table--pedidos td:nth-child(6) {
+        grid-area: 1 / 2;
+        justify-self: end;
+    }
+
+    .admin-table--pedidos td:nth-child(2) {
+        grid-area: 2 / 1 / 3 / 3;
+        font-size: var(--font-size-sm);
+    }
+
+    .admin-table--pedidos td:nth-child(3) {
+        grid-area: 3 / 1;
+        align-self: center;
+    }
+
+    .admin-table--pedidos td:nth-child(4) {
+        grid-area: 3 / 2;
+        justify-self: end;
+    }
+
+    .admin-table--pedidos td:nth-child(4)::before {
+        content: "Peças ";
+        color: var(--color-text-subtle);
+        letter-spacing: var(--letter-spacing-wide);
+        text-transform: uppercase;
+    }
+
+    .admin-table--pedidos td:nth-child(5) {
+        grid-area: 4 / 1;
+        font-size: var(--font-size-sm);
+    }
+
+    .admin-table--pedidos td:nth-child(7) {
+        grid-area: 4 / 2;
+        justify-self: end;
+    }
+
+    /* Categorias e tamanhos do produto: menos respiro e sem o SKU. */
+    .admin-table--cats th,
+    .admin-table--cats td {
+        padding-inline: var(--space-2);
+    }
+
+    .admin-table--cats th:first-child,
+    .admin-table--cats td:first-child {
+        padding-left: var(--space-3);
+    }
+
+    .admin-table--cats th:last-child,
+    .admin-table--cats td:last-child {
+        padding-right: var(--space-3);
+    }
+
+    .admin-product__variants .admin-table th,
+    .admin-product__variants .admin-table td {
+        padding-inline: var(--space-2);
+    }
+
+    .admin-product__variants .admin-table th:first-child,
+    .admin-product__variants .admin-table td:first-child {
+        padding-left: var(--space-3);
+    }
+
+    .admin-product__variants .admin-table th:nth-child(2),
+    .admin-product__variants .admin-table td:nth-child(2) {
+        display: none;
+    }
+}

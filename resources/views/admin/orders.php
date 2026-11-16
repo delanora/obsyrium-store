@@ -32,8 +32,8 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 <?php if ($adminPedidos === []): ?>
 	<p class="admin-empty"><?= $adminFiltro === '' ? 'Nenhum pedido ainda.' : 'Nenhum pedido nesta situação.' ?></p>
 <?php else: ?>
-	<div class="admin-table-wrap">
-		<table class="admin-table">
+	<div class="admin-table-wrap admin-table-wrap--cards">
+		<table class="admin-table admin-table--pedidos">
 			<thead>
 				<tr>
 					<th scope="col">Pedido</th>
