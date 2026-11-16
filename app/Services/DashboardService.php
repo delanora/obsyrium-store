@@ -18,8 +18,6 @@ final class DashboardService
 {
     private const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
-    private const ESTOQUE_BAIXO = 2;
-
     public function __construct(private readonly PDO $pdo)
     {
     }
@@ -96,50 +94,5 @@ final class DashboardService
             'faturamento_label' => Price::format((int) $totais['faturamento']),
             'clientes' => $clientes,
         ];
-    }
-
-    /**
-     * Estoque por variação, com o saldo disponível e a situação de cada uma.
-     *
-     * @return list<array<string, mixed>>
-     */
-    public function stock(): array
-    {
-        $consulta = $this->pdo->query(
-            'SELECT p.name,
-                    p.slug,
-                    v.id AS variant_id,
-                    v.size,
-                    v.sku,
-                    COALESCE(s.quantity, 0) AS quantity,
-                    COALESCE(s.reserved, 0) AS reserved
-               FROM product_variants v
-               INNER JOIN products p ON p.id = v.product_id
-               LEFT JOIN stock s ON s.variant_id = v.id
-              ORDER BY p.name, v.id'
-        );
-
-        $linhas = [];
-
-        foreach ($consulta->fetchAll() as $linha) {
-            $disponivel = max(0, (int) $linha['quantity'] - (int) $linha['reserved']);
-
-            $linhas[] = [
-                'product' => (string) $linha['name'],
-                'slug' => (string) $linha['slug'],
-                'size' => (string) $linha['size'],
-                'sku' => (string) $linha['sku'],
-                'quantity' => (int) $linha['quantity'],
-                'reserved' => (int) $linha['reserved'],
-                'available' => $disponivel,
-                'situation' => match (true) {
-                    $disponivel === 0 => 'esgotado',
-                    $disponivel <= self::ESTOQUE_BAIXO => 'baixo',
-                    default => 'ok',
-                },
-            ];
-        }
-
-        return $linhas;
     }
 }

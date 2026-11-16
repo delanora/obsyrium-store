@@ -578,3 +578,14 @@ A administração tem barra, layout e sessão próprios em `/admin` — nada do 
 - `layouts/admin.php` ganhou `.admin-shell` em grid: barra no topo, lateral de 13 rem e conteúdo. Abaixo de 56 rem a lateral vira faixa de abas que rola na horizontal, com o item atual marcado por `aria-current="page"`.
 - `GET /admin/estoque` lista as variações com saldo, reservado e disponível, e marca a situação: disponível, estoque baixo (até 2) ou esgotado. É só leitura — a edição de saldo entra com o cadastro de produtos.
 - Os estilos de campo (`.field`, `.field__input`, `.field__label`, `.field__hint`, `.field__error`) saíram do `auth.css` para o `components.css`, carregado por todas as páginas: antes o login do painel e o seletor de situação ficavam sem estilo porque o layout admin não carrega `auth.css`.
+
+## 26. Estoque editável
+
+`/admin/estoque` deixou de ser só leitura: cada variação tem um campo com o saldo e um botão `Salvar`.
+
+- `POST /admin/estoque/saldo` recebe `variant_id`, `quantity` e `atual` (o saldo que estava na tela). Exige sessão de administrador e CSRF, e o redirecionamento é 303.
+- `App\Services\StockService::update()` valida no servidor: variação existente, saldo em inteiro de 0 a 99999 e nunca abaixo das peças reservadas (a tabela `stock` também tem o `CHECK reserved <= quantity`). O ajuste é absoluto — o administrador digita o saldo, não a diferença.
+- Concorrência: a linha é travada (`FOR UPDATE`) e a gravação só acontece se o saldo do banco ainda for o `atual` enviado. Se uma compra mudou o saldo enquanto a página estava aberta, o painel avisa “O saldo mudou enquanto você editava. Recarregue a página e tente de novo.” em vez de sobrescrever a venda.
+- `INSERT … ON DUPLICATE KEY UPDATE` cobre a variação que ainda não tem linha em `stock`.
+- A leitura do estoque passou de `DashboardService` para `StockService::all()`; o dashboard ficou só com os indicadores.
+- Cada campo tem `label` associado (visualmente escondido, porque a coluna já diz o que é), e o formulário manda o token CSRF junto.

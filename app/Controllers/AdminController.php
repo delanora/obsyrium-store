@@ -11,6 +11,7 @@ use App\Services\AdminAuthService;
 use App\Services\DashboardService;
 use App\Services\LoginThrottle;
 use App\Services\OrderService;
+use App\Services\StockService;
 use App\Support\Csrf;
 use App\Support\Session;
 
@@ -134,8 +135,35 @@ final class AdminController
         $admin = $this->admin();
 
         $this->render('estoque', 'Estoque — Administração Obsyrium', $admin, 'estoque', [
-            'estoque' => (new DashboardService(Connection::get()))->stock(),
+            'estoque' => (new StockService(Connection::get()))->all(),
         ]);
+    }
+
+    public function saveStock(): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $variacaoId = (int) ($_POST['variant_id'] ?? 0);
+        $esperado = (int) ($_POST['atual'] ?? 0);
+        $saldo = trim((string) ($_POST['quantity'] ?? ''));
+
+        if (preg_match('/^\d{1,5}$/', $saldo) !== 1) {
+            Session::flash('error', sprintf(
+                'Informe o saldo em número inteiro, de 0 a %d.',
+                StockService::MAX_QUANTITY
+            ));
+            $this->redirect('/admin/estoque');
+        }
+
+        $erro = (new StockService(Connection::get()))->update($variacaoId, (int) $saldo, $esperado);
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Saldo atualizado.');
+
+        $this->redirect('/admin/estoque');
     }
 
     /**
