@@ -11,6 +11,7 @@ use App\Services\AdminAuthService;
 use App\Services\DashboardService;
 use App\Services\LoginThrottle;
 use App\Services\OrderService;
+use App\Services\ProductAdminService;
 use App\Services\StockService;
 use App\Support\Csrf;
 use App\Support\Session;
@@ -220,6 +221,86 @@ final class AdminController
     }
 
     /**
+     * Editor do produto. É a tela do item da loja, com todos os campos
+     * editáveis e as fotos sendo enviadas por ela.
+     *
+     * @param array<string, string> $params
+     */
+    public function product(array $params): void
+    {
+        $admin = $this->admin();
+
+        $this->renderProduct((int) ($params['id'] ?? 0), $admin);
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    public function saveProduct(array $params): void
+    {
+        $admin = $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $resultado = (new ProductAdminService(Connection::get()))->save($id, $_POST);
+
+        if ($resultado['errors'] !== []) {
+            $this->renderProduct($id, $admin, $resultado['errors'], $resultado['values']);
+
+            return;
+        }
+
+        Session::flash('success', 'Produto atualizado.');
+
+        $this->redirect($this->stockUrl($_POST));
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    public function uploadPhoto(array $params): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $arquivo = isset($_FILES['imagem']) && is_array($_FILES['imagem']) ? $_FILES['imagem'] : [];
+        $resultado = (new ProductAdminService(Connection::get()))->upload($id, $arquivo);
+
+        Session::flash(
+            isset($resultado['error']) ? 'error' : 'success',
+            $resultado['error'] ?? 'Foto enviada. Ela já aparece na página do produto.'
+        );
+
+        $this->redirect($this->productUrl($id, $_POST));
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    public function removePhoto(array $params): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $erro = (new ProductAdminService(Connection::get()))->removeImage($id, (int) ($_POST['image_id'] ?? 0));
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Foto apagada.');
+
+        $this->redirect($this->productUrl($id, $_POST));
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function admin(): array
@@ -249,16 +330,67 @@ final class AdminController
      */
     private function stockUrl(array $dados): string
     {
+        return '/admin/estoque?' . http_build_query($this->stockFiltros($dados));
+    }
+
+    /**
+     * @param array<string, mixed> $dados
+     */
+    private function productUrl(int $id, array $dados): string
+    {
+        return '/admin/estoque/produto/' . $id . '?' . http_build_query($this->stockFiltros($dados));
+    }
+
+    /**
+     * @param array<string, mixed> $dados
+     *
+     * @return array<string, int|string>
+     */
+    private function stockFiltros(array $dados): array
+    {
         $aba = (string) ($dados['aba'] ?? 'todos');
         $ordem = (string) ($dados['ordem'] ?? 'produto');
         $direcao = (string) ($dados['direcao'] ?? 'asc');
 
-        return '/admin/estoque?' . http_build_query([
+        return [
             'aba' => isset(StockService::TABS[$aba]) ? $aba : 'todos',
             'ordem' => isset(StockService::SORTABLE[$ordem]) ? $ordem : 'produto',
             'direcao' => strtolower($direcao) === 'desc' ? 'desc' : 'asc',
             'pagina' => max(1, (int) ($dados['pagina'] ?? 1)),
-        ]);
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $admin
+     * @param list<string> $erros
+     * @param array<string, string> $valores
+     */
+    private function renderProduct(int $id, array $admin, array $erros = [], array $valores = []): void
+    {
+        $servico = new ProductAdminService(Connection::get());
+        $produto = $id > 0 ? $servico->find($id) : null;
+
+        if ($produto === null) {
+            Session::flash('error', 'Produto não encontrado.');
+            $this->redirect($this->stockUrl($_GET));
+        }
+
+        $this->render(
+            'produto',
+            sprintf('%s — Administração Obsyrium', (string) $produto['name']),
+            $admin,
+            'estoque',
+            [
+                'produto' => $produto,
+                'categorias' => $servico->categories(),
+                'erros' => $erros,
+                'valores' => $valores,
+                'precos' => $servico->priceTags($produto),
+                'limiteFotos' => $servico->photoLimitLabel(),
+                'maxFotos' => ProductAdminService::MAX_IMAGES,
+                'voltar' => $this->stockFiltros($_GET),
+            ]
+        );
     }
 
     /**
@@ -297,6 +429,14 @@ final class AdminController
         $adminPedido = $contexto['pedido'] ?? null;
         $adminResumo = $contexto['resumo'] ?? [];
         $adminEstoque = $contexto['estoque'] ?? [];
+        $adminProduto = $contexto['produto'] ?? null;
+        $adminCategorias = $contexto['categorias'] ?? [];
+        $adminErros = $contexto['erros'] ?? [];
+        $adminValores = $contexto['valores'] ?? [];
+        $adminPrecos = $contexto['precos'] ?? [];
+        $adminVoltar = $contexto['voltar'] ?? [];
+        $adminLimiteFotos = $contexto['limiteFotos'] ?? '';
+        $adminMaxFotos = $contexto['maxFotos'] ?? 0;
         $content = $basePath . '/resources/views/admin/' . $view . '.php';
 
         require $basePath . '/resources/views/layouts/admin.php';

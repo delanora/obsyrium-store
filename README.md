@@ -600,3 +600,15 @@ A administração tem barra, layout e sessão próprios em `/admin` — nada do 
 - Colunas de preço: **Preço** = valor cheio (`compare_price_cents`, ou `price_cents` quando não há comparação) e **Promocional** = valor cobrado (`price_cents`), com o selo de desconto quando os dois diferem. É o mesmo par que a loja usa no produto.
 - A lixeira de cada linha age no **modelo**: `products.is_active = 0`. O produto sai da loja e das abas de produtos ativos, e o saldo não muda. Na aba Fora de linha o ícone vira **carrinho**, que devolve o produto (`is_active = 1`): se não houver saldo ele volta esgotado, como esperado.
 - Ações em `POST /admin/estoque/fora-de-linha` e `POST /admin/estoque/voltar`, com CSRF e redirecionamento 303 para a mesma aba/ordem/página de origem (reconstruída só com valores da lista branca).
+## 28. Edição do produto e fotos
+
+O lápis ao lado da lixeira (e do carrinho, na aba fora de linha) abre `/admin/estoque/produto/{id}`: a mesma composição da página do item na loja — galeria à esquerda, informações à direita — só que com tudo editável.
+
+- Campos: nome, endereço (slug), categoria, cor, material, descrição, preço promocional, preço cheio e o interruptor "na loja" (o mesmo `products.is_active` da lixeira). O slug em branco é gerado pelo nome; endereço repetido é recusado.
+- Preços entram em reais, com vírgula (`129,90`), e são gravados em centavos. O preço cheio é opcional e precisa ser maior que o promocional — é ele que vira o "de" na loja.
+- Erros de validação voltam para a mesma tela com a lista de problemas e os valores digitados preservados; nada é gravado pela metade.
+- Fotos: upload em `public/uploads/produtos` (JPG, PNG ou WebP, até o limite do PHP — 2 MB neste servidor), com nome sorteado por nós, conferência de conteúdo por `getimagesize` + `finfo` e gravação em `product_images` (`path`, `alt`, `position`). A primeira da lista é a foto principal da vitrine e da página do item.
+- A primeira foto de verdade apaga a linha do placeholder compartilhado (`/assets/images/placeholder.svg`), que nunca é removido do disco; o placeholder também nunca é apagado como arquivo, só a linha dele.
+- Remover foto apaga a linha e o arquivo — apenas quando o caminho está dentro de `/uploads/produtos/`.
+- O "Voltar" e o retorno depois de salvar preservam aba, coluna, direção e página do estoque.
+MD
