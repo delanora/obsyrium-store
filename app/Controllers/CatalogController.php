@@ -36,6 +36,8 @@ final class CatalogController
 
         $categorias = $servico->categories();
         $tamanhos = $servico->sizes();
+        $cores = $servico->colors();
+        $precos = $servico->priceBounds();
         $totalDaLoja = $servico->totalProducts();
 
         $title = 'Catálogo — Obsyrium Store';

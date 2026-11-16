@@ -672,8 +672,8 @@
 
         campoCep.addEventListener('change', consultarCep);
     }
-    // Catálogo: no celular a barra de filtros nasce recolhida. Com filtro
-    // ativo ela continua aberta, para dar para ajustar o que está ligado.
+    // Catálogo: no celular o painel de filtros nasce recolhido. Com filtro
+    // ativo ele continua aberto, para dar para ajustar o que está ligado.
     var filtros = document.querySelector('[data-catalog-filters]');
 
     if (
@@ -682,6 +682,44 @@
         !filtros.hasAttribute('data-active')
     ) {
         filtros.open = false;
+    }
+
+    // Com JavaScript o formulário de filtros se envia sozinho quando um campo
+    // muda; o botão "Aplicar filtros" continua lá para quem está sem script.
+    var formFiltros = document.querySelector('[data-filter-form]');
+
+    if (formFiltros) {
+        formFiltros.addEventListener('change', function () {
+            if (typeof formFiltros.requestSubmit === 'function') {
+                formFiltros.requestSubmit();
+            } else {
+                formFiltros.submit();
+            }
+        });
+    }
+
+    // Menus recolhidos (a ordenação do catálogo) fecham ao clicar fora ou com
+    // Escape. Sem script o próprio <details> abre e fecha pelo resumo.
+    var menus = document.querySelectorAll('details[data-menu]');
+
+    if (menus.length > 0) {
+        document.addEventListener('click', function (evento) {
+            menus.forEach(function (menu) {
+                if (menu.open && !menu.contains(evento.target)) {
+                    menu.open = false;
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function (evento) {
+            if (evento.key !== 'Escape') {
+                return;
+            }
+
+            menus.forEach(function (menu) {
+                menu.open = false;
+            });
+        });
     }
 
     // Marca para o script inline que o comportamento carregou.

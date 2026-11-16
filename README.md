@@ -628,13 +628,16 @@ MD
 
 ## 30. Catálogo
 
-`/catalogo` lista todos os produtos ativos, sem depender da vitrine de oito da home.
+`/catalogo` lista todos os produtos ativos, sem depender da vitrine de oito da home. Cabeçalho centrado — título, sem sobretítulo, e um texto sobre a marca (lotes pequenos, estoque real) — e, no computador, filtros numa coluna de 17 rem à esquerda com a grade à direita.
 
-- **Filtros**: categoria e subcategoria (a categoria traz também o que está nas filhas), tamanho com saldo, disponibilidade (disponível/esgotado) e faixa de preço. Cada opção é um link com a contagem de produtos; clicar de novo no filtro ligado desliga ele.
-- **Ordenação**: novidades (padrão), menor preço, maior preço e nome de A a Z.
-- **Estado na URL**: `/catalogo?categoria=camisetas&sub=oversized&tamanho=M&preco=100-149&ordem=preco-asc&pagina=2`. Valores padrão não entram na URL, então `/catalogo` é o catálogo inteiro. O servidor valida tudo: categoria, subcategoria (precisa ser filha da escolhida), tamanho, faixa e ordenação que não existem são ignorados.
+- **Filtros** num formulário `GET`: categoria e subcategoria em `select` (a subcategoria só aparece quando a categoria escolhida tem filhas), **cor** em `select` com a contagem de cada uma, tamanho e disponibilidade em pílulas de rádio e **faixa de preço digitada** em dois campos (De/Até, em reais, cada ponta opcional). O botão "Aplicar filtros" funciona sem JavaScript; com script, o formulário se envia sozinho ao mudar um campo (`data-filter-form` em `site.js`).
+- **Ordenação**: novidades (padrão), menor preço, maior preço e nome de A a Z, num menu recolhível com ícone que mostra a ordem atual; clicar escolhe a ordem e o menu fecha ao clicar fora ou com Escape.
+- **Filtros ativos**: uma faixa de pílulas removíveis acima da grade — cada uma tira só aquele filtro — mais o atalho "Limpar tudo".
+- **Estado na URL**: `/catalogo?categoria=camisetas&cor=Preta&tamanho=M&preco_min=100&preco_max=149.90&ordem=preco-asc&pagina=2`. Valores padrão não entram na URL, então `/catalogo` é o catálogo inteiro. O servidor valida tudo: categoria, subcategoria (precisa ser filha da escolhida), tamanho, cor (comparada sem diferenciar maiúsculas, só entre as cores existentes), preço (convertido de reais para centavos, com vírgula ou ponto, teto de R$ 100 mil) e ordenação que não existem são ignorados. Faixa invertida é trocada de lado.
+- **Cor** sai da coluna `products.color` (já existia, preenchida no painel em Produto → Cor); o filtro só lista cores de produtos ativos.
 - **Paginação** de 12 por página, com a faixa "1–12 de 14" e o resumo das páginas (primeira, atual, última e vizinhas).
-- **Celular**: a barra de filtros é um `<details>` que nasce recolhida (`site.js` fecha quando não há filtro ativo) e abre com o toque; com filtro ligado já vem aberta e mostra um selo com a quantidade.
+- **Contagem das categorias** usa `COUNT(DISTINCT ...)` com as filhas na mesma subconsulta: produto ligado à categoria e a uma subcategoria conta uma vez só.
+- **Celular**: o painel de filtros é um `<details>` que nasce recolhido (`site.js` fecha quando não há filtro ativo) e abre com o toque; com filtro ligado já vem aberto e mostra um selo com a quantidade.
 - O card da vitrine virou o partial `resources/views/partials/product-card.php` e o formato do card saiu para `App\Support\ProductCard`, usados pela home e pelo catálogo.
 - O menu ganhou **Catálogo** (marcado como página atual) e o "Ver todos" da vitrine aponta para ele. `Navegacao` passou a aceitar `/catalogo` como origem, então adicionar ao carrinho a partir do catálogo devolve o cliente para o catálogo.
 

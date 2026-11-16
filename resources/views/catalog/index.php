@@ -5,18 +5,24 @@ declare(strict_types=1);
 use App\Services\CatalogService;
 
 /*
- * Catálogo: filtros (categoria, subcategoria, tamanho, disponibilidade e faixa
- * de preço), ordenação e paginação. Todo o estado vem da URL e cada opção é um
- * link que devolve o estado novo — sem JavaScript o catálogo funciona igual.
+ * Catálogo: cabeçalho centrado, filtros numa coluna à esquerda no computador e
+ * a grade à direita.
  *
- * No celular a barra de filtros nasce recolhida (site.js) e abre pelo resumo;
- * com filtro ativo ela já vem aberta, para dar para ajustar o que está ligado.
+ * Os filtros são um formulário GET: categoria, subcategoria e cor em
+ * `select`, tamanho e disponibilidade em botões de rádio, preço digitado em
+ * dois campos. O botão "Aplicar filtros" funciona sem JavaScript; com JS, o
+ * formulário se envia sozinho quando um campo muda (site.js).
+ *
+ * O estado continua na URL — cada filtro ativo aparece numa faixa de chips
+ * removíveis, e a ordenação é um menu recolhido que também é um link.
  *
  * @var list<array<string, mixed>> $produtos
  * @var array<string, mixed> $estado
  * @var array<string, mixed> $resultado
  * @var list<array<string, mixed>> $categorias
  * @var list<string> $tamanhos
+ * @var list<array{name: string, total: int}> $cores
+ * @var array{min: int, max: int} $precos
  * @var int $totalDaLoja
  */
 
@@ -27,7 +33,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 $url = static function (array $mudancas = []) use ($estado): string {
     $query = [];
 
-    foreach (['categoria', 'sub', 'tamanho', 'disponibilidade', 'preco', 'ordem', 'pagina'] as $chave) {
+    foreach (['categoria', 'sub', 'tamanho', 'cor', 'disponibilidade', 'preco_min', 'preco_max', 'ordem', 'pagina'] as $chave) {
         $valor = array_key_exists($chave, $mudancas) ? $mudancas[$chave] : ($estado[$chave] ?? '');
 
         if ($valor === '' || $valor === null) {
@@ -42,19 +48,17 @@ $url = static function (array $mudancas = []) use ($estado): string {
             continue;
         }
 
+        // O estado guarda centavos; a URL mostra reais.
+        if ($chave === 'preco_min' || $chave === 'preco_max') {
+            $query[$chave] = number_format((int) $valor / 100, 2, '.', '');
+            continue;
+        }
+
         $query[$chave] = $valor;
     }
 
     return '/catalogo' . ($query === [] ? '' : '?' . http_build_query($query));
 };
-
-$filtrosAtivos = 0;
-
-foreach (['categoria', 'sub', 'tamanho', 'disponibilidade', 'preco'] as $chave) {
-    if (($estado[$chave] ?? '') !== '') {
-        $filtrosAtivos++;
-    }
-}
 
 $categoriaAtual = null;
 
@@ -63,6 +67,64 @@ foreach ($categorias as $categoria) {
         $categoriaAtual = $categoria;
     }
 }
+
+// Chips dos filtros ligados: cada um leva de volta ao catálogo sem ele.
+$ativos = [];
+
+if ($categoriaAtual !== null) {
+    $ativos[] = [
+        'rotulo' => (string) $categoriaAtual['name'],
+        'href' => $url(['categoria' => '', 'sub' => '', 'pagina' => 1]),
+    ];
+}
+
+if ($categoriaAtual !== null && $estado['sub'] !== '') {
+    foreach ($categoriaAtual['children'] as $filha) {
+        if ($filha['slug'] === $estado['sub']) {
+            $ativos[] = [
+                'rotulo' => (string) $filha['name'],
+                'href' => $url(['sub' => '', 'pagina' => 1]),
+            ];
+        }
+    }
+}
+
+if ($estado['tamanho'] !== '') {
+    $ativos[] = ['rotulo' => 'Tamanho ' . $estado['tamanho'], 'href' => $url(['tamanho' => '', 'pagina' => 1])];
+}
+
+if ($estado['cor'] !== '') {
+    $ativos[] = ['rotulo' => (string) $estado['cor'], 'href' => $url(['cor' => '', 'pagina' => 1])];
+}
+
+if ($estado['disponibilidade'] !== '') {
+    $ativos[] = [
+        'rotulo' => CatalogService::AVAILABILITY[(string) $estado['disponibilidade']],
+        'href' => $url(['disponibilidade' => '', 'pagina' => 1]),
+    ];
+}
+
+if ($estado['preco_min'] !== '' || $estado['preco_max'] !== '') {
+    $de = (int) ($estado['preco_min'] ?: 0);
+    $ate = (int) ($estado['preco_max'] ?: 0);
+
+    if ($de > 0 && $ate > 0) {
+        $rotulo = sprintf('R$ %s a %s', number_format($de / 100, 0, ',', '.'), number_format($ate / 100, 0, ',', '.'));
+    } elseif ($de > 0) {
+        $rotulo = sprintf('A partir de R$ %s', number_format($de / 100, 0, ',', '.'));
+    } else {
+        $rotulo = sprintf('Até R$ %s', number_format($ate / 100, 0, ',', '.'));
+    }
+
+    $ativos[] = ['rotulo' => $rotulo, 'href' => $url(['preco_min' => '', 'preco_max' => '', 'pagina' => 1])];
+}
+
+$filtrosAtivos = count($ativos);
+
+// Preço digitado volta para o campo em reais, com ponto decimal.
+$valorPreco = static fn (mixed $centavos): string => $centavos === '' || $centavos === null
+    ? ''
+    : number_format((int) $centavos / 100, 2, '.', '');
 
 // Paginação: até 7 páginas aparecem todas; acima disso entra a primeira, a
 // atual, a última e as vizinhas, com reticências no lugar do resto.
@@ -91,181 +153,248 @@ if ($resultado['paginas'] <= 7) {
 <section class="section catalog">
 	<div class="container">
 		<header class="catalog__head">
-			<p class="catalog__eyebrow">Loja</p>
 			<h1 class="catalog__title">Catálogo</h1>
 			<p class="catalog__lead">
-				<?= $totalDaLoja ?> camiseta<?= $totalDaLoja === 1 ? '' : 's' ?> em linha, em tiragem limitada.
-				Escolha por categoria, tamanho e preço.
+				Camisetas de estampa autoral, feitas em lotes pequenos e conferidas peça a peça antes de sair.
+				Nada de catálogo infinito: quando o lote acaba, o tamanho sai do ar.
 			</p>
 		</header>
 
-		<details class="catalog-filters" data-catalog-filters open<?= $filtrosAtivos > 0 ? ' data-active' : '' ?>>
-			<summary class="catalog-filters__summary">
-				<span class="catalog-filters__summary-label">Filtros</span>
+		<div class="catalog__layout">
+			<details class="catalog-filters" data-catalog-filters open<?= $filtrosAtivos > 0 ? ' data-active' : '' ?>>
+				<summary class="catalog-filters__summary">
+					<span class="catalog-filters__summary-label">Filtros</span>
 
-				<?php if ($filtrosAtivos > 0): ?>
-					<span class="catalog-filters__badge"><?= $filtrosAtivos ?></span>
-				<?php endif; ?>
+					<?php if ($filtrosAtivos > 0): ?>
+						<span class="catalog-filters__badge"><?= $filtrosAtivos ?></span>
+					<?php endif; ?>
 
-				<span class="catalog-filters__chevron" aria-hidden="true"></span>
-			</summary>
+					<span class="catalog-filters__chevron" aria-hidden="true"></span>
+				</summary>
 
-			<div class="catalog-filters__body">
-				<div class="catalog-filters__group">
-					<p class="catalog-filters__title" id="filtro-categoria">Categoria</p>
-					<ul class="catalog-filters__list" aria-labelledby="filtro-categoria">
-						<li>
-							<a class="filter-chip<?= $estado['categoria'] === '' ? ' filter-chip--active' : '' ?>" href="<?= $escape($url(['categoria' => '', 'sub' => '', 'pagina' => 1])) ?>"<?= $estado['categoria'] === '' ? ' aria-current="true"' : '' ?>>
-								Todas
-								<span class="filter-chip__count"><?= $totalDaLoja ?></span>
-							</a>
-						</li>
+				<form class="catalog-filters__body" action="/catalogo" method="get" data-filter-form>
+					<?php if ($estado['ordem'] !== 'novidades'): ?>
+						<input type="hidden" name="ordem" value="<?= $escape((string) $estado['ordem']) ?>">
+					<?php endif; ?>
 
-						<?php foreach ($categorias as $categoria): ?>
-							<li>
-								<a class="filter-chip<?= $categoria['slug'] === $estado['categoria'] ? ' filter-chip--active' : '' ?>" href="<?= $escape($url(['categoria' => (string) $categoria['slug'], 'sub' => '', 'pagina' => 1])) ?>"<?= $categoria['slug'] === $estado['categoria'] ? ' aria-current="true"' : '' ?>>
-									<?= $escape((string) $categoria['name']) ?>
-									<span class="filter-chip__count"><?= (int) $categoria['total'] ?></span>
-								</a>
-							</li>
-						<?php endforeach; ?>
-					</ul>
+					<div class="catalog-field">
+						<label class="catalog-field__label" for="filtro-categoria">Categoria</label>
+
+						<select class="catalog-field__select" id="filtro-categoria" name="categoria">
+							<option value="">Todas as camisetas (<?= $totalDaLoja ?>)</option>
+
+							<?php foreach ($categorias as $categoria): ?>
+								<option value="<?= $escape((string) $categoria['slug']) ?>"<?= $categoria['slug'] === $estado['categoria'] ? ' selected' : '' ?>>
+									<?= $escape((string) $categoria['name']) ?> (<?= (int) $categoria['total'] ?>)
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</div>
 
 					<?php if ($categoriaAtual !== null && $categoriaAtual['children'] !== []): ?>
-						<p class="catalog-filters__title catalog-filters__title--sub" id="filtro-subcategoria">Subcategoria</p>
-						<ul class="catalog-filters__list" aria-labelledby="filtro-subcategoria">
-							<li>
-								<a class="filter-chip filter-chip--small<?= $estado['sub'] === '' ? ' filter-chip--active' : '' ?>" href="<?= $escape($url(['sub' => '', 'pagina' => 1])) ?>"<?= $estado['sub'] === '' ? ' aria-current="true"' : '' ?>>
-									Todas de <?= $escape((string) $categoriaAtual['name']) ?>
-								</a>
-							</li>
+						<div class="catalog-field">
+							<label class="catalog-field__label" for="filtro-subcategoria">Subcategoria</label>
 
-							<?php foreach ($categoriaAtual['children'] as $filha): ?>
-								<li>
-									<a class="filter-chip filter-chip--small<?= $filha['slug'] === $estado['sub'] ? ' filter-chip--active' : '' ?>" href="<?= $escape($url(['sub' => (string) $filha['slug'], 'pagina' => 1])) ?>"<?= $filha['slug'] === $estado['sub'] ? ' aria-current="true"' : '' ?>>
-										<?= $escape((string) $filha['name']) ?>
-										<span class="filter-chip__count"><?= (int) $filha['total'] ?></span>
-									</a>
-								</li>
-							<?php endforeach; ?>
-						</ul>
+							<select class="catalog-field__select" id="filtro-subcategoria" name="sub">
+								<option value="">Todas de <?= $escape((string) $categoriaAtual['name']) ?></option>
+
+								<?php foreach ($categoriaAtual['children'] as $filha): ?>
+									<option value="<?= $escape((string) $filha['slug']) ?>"<?= $filha['slug'] === $estado['sub'] ? ' selected' : '' ?>>
+										<?= $escape((string) $filha['name']) ?> (<?= (int) $filha['total'] ?>)
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
 					<?php endif; ?>
+
+					<?php if ($cores !== []): ?>
+						<div class="catalog-field">
+							<label class="catalog-field__label" for="filtro-cor">Cor</label>
+
+							<select class="catalog-field__select" id="filtro-cor" name="cor">
+								<option value="">Todas as cores</option>
+
+								<?php foreach ($cores as $cor): ?>
+									<option value="<?= $escape($cor['name']) ?>"<?= $cor['name'] === $estado['cor'] ? ' selected' : '' ?>>
+										<?= $escape($cor['name']) ?> (<?= (int) $cor['total'] ?>)
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+					<?php endif; ?>
+
+					<?php if ($tamanhos !== []): ?>
+						<fieldset class="catalog-field catalog-field--chips">
+							<legend class="catalog-field__label">Tamanho</legend>
+
+							<div class="catalog-chips">
+								<label class="catalog-chip">
+									<input type="radio" name="tamanho" value=""<?= $estado['tamanho'] === '' ? ' checked' : '' ?>>
+									<span class="catalog-chip__text">Todos</span>
+								</label>
+
+								<?php foreach ($tamanhos as $tamanho): ?>
+									<label class="catalog-chip">
+										<input type="radio" name="tamanho" value="<?= $escape($tamanho) ?>"<?= $tamanho === $estado['tamanho'] ? ' checked' : '' ?>>
+										<span class="catalog-chip__text"><?= $escape($tamanho) ?></span>
+									</label>
+								<?php endforeach; ?>
+							</div>
+						</fieldset>
+					<?php endif; ?>
+
+					<fieldset class="catalog-field catalog-field--chips">
+						<legend class="catalog-field__label">Disponibilidade</legend>
+
+						<div class="catalog-chips">
+							<label class="catalog-chip">
+								<input type="radio" name="disponibilidade" value=""<?= $estado['disponibilidade'] === '' ? ' checked' : '' ?>>
+								<span class="catalog-chip__text">Todos</span>
+							</label>
+
+							<?php foreach (CatalogService::AVAILABILITY as $chave => $rotulo): ?>
+								<label class="catalog-chip">
+									<input type="radio" name="disponibilidade" value="<?= $escape($chave) ?>"<?= $chave === $estado['disponibilidade'] ? ' checked' : '' ?>>
+									<span class="catalog-chip__text"><?= $escape($rotulo) ?></span>
+								</label>
+							<?php endforeach; ?>
+						</div>
+					</fieldset>
+
+					<div class="catalog-field">
+						<span class="catalog-field__label" id="filtro-preco">Faixa de preço</span>
+
+						<div class="catalog-price" role="group" aria-labelledby="filtro-preco">
+							<label class="catalog-price__field">
+								<span class="catalog-price__text">De</span>
+								<input class="catalog-price__input" type="number" name="preco_min" inputmode="decimal" min="0" step="1" placeholder="<?= $precos['min'] > 0 ? number_format($precos['min'] / 100, 0, ',', '.') : '0' ?>" value="<?= $escape($valorPreco($estado['preco_min'])) ?>">
+							</label>
+
+							<label class="catalog-price__field">
+								<span class="catalog-price__text">Até</span>
+								<input class="catalog-price__input" type="number" name="preco_max" inputmode="decimal" min="0" step="1" placeholder="<?= $precos['max'] > 0 ? number_format($precos['max'] / 100, 0, ',', '.') : '0' ?>" value="<?= $escape($valorPreco($estado['preco_max'])) ?>">
+							</label>
+						</div>
+
+						<p class="catalog-field__hint">Em reais. Deixe um dos campos vazio para não limitar.</p>
+					</div>
+
+					<div class="catalog-filters__actions">
+						<button class="button catalog-filters__apply" type="submit">Aplicar filtros</button>
+
+						<?php if ($filtrosAtivos > 0): ?>
+							<a class="catalog-filters__clear" href="/catalogo">Limpar tudo</a>
+						<?php endif; ?>
+					</div>
+				</form>
+			</details>
+
+			<div class="catalog__main">
+				<div class="catalog__toolbar">
+					<p class="catalog__count" role="status">
+						<?php if ($resultado['total'] === 0): ?>
+							Nenhum produto
+						<?php elseif ($resultado['total'] === 1): ?>
+							1 produto
+						<?php else: ?>
+							<?= (int) $resultado['total'] ?> produtos
+						<?php endif; ?>
+
+						<?php if ($resultado['paginas'] > 1): ?>
+							<span class="catalog__range">· <?= (int) $resultado['inicio'] ?>–<?= (int) $resultado['fim'] ?></span>
+						<?php endif; ?>
+					</p>
+
+					<details class="catalog-sort" data-menu>
+						<summary class="catalog-sort__toggle">
+							<svg class="catalog-sort__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16"/><path d="M4 17l3 3 3-3"/><path d="M17 20V4"/><path d="M14 7l3-3 3 3"/></svg>
+							<span class="catalog-sort__label">Ordenar</span>
+							<span class="catalog-sort__current"><?= $escape(CatalogService::SORTS[(string) $estado['ordem']]) ?></span>
+							<span class="catalog-sort__chevron" aria-hidden="true"></span>
+						</summary>
+
+						<div class="catalog-sort__menu">
+							<p class="catalog-sort__title">Ordenar por</p>
+
+							<ul class="catalog-sort__list">
+								<?php foreach (CatalogService::SORTS as $chave => $rotulo): ?>
+									<?php $atual = $chave === $estado['ordem']; ?>
+
+									<li>
+										<a class="catalog-sort__option<?= $atual ? ' catalog-sort__option--active' : '' ?>" href="<?= $escape($url(['ordem' => $chave, 'pagina' => 1])) ?>"<?= $atual ? ' aria-current="true"' : '' ?>>
+											<span><?= $escape($rotulo) ?></span>
+
+											<?php if ($atual): ?>
+												<svg class="catalog-sort__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+											<?php endif; ?>
+										</a>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+						</div>
+					</details>
 				</div>
 
-				<?php if ($tamanhos !== []): ?>
-					<div class="catalog-filters__group">
-						<p class="catalog-filters__title" id="filtro-tamanho">Tamanho</p>
-						<ul class="catalog-filters__list" aria-labelledby="filtro-tamanho">
-							<?php foreach ($tamanhos as $tamanho): ?>
-								<li>
-									<a class="filter-chip filter-chip--size<?= $tamanho === $estado['tamanho'] ? ' filter-chip--active' : '' ?>" href="<?= $escape($url(['tamanho' => $tamanho === $estado['tamanho'] ? '' : $tamanho, 'pagina' => 1])) ?>"<?= $tamanho === $estado['tamanho'] ? ' aria-current="true"' : '' ?>>
-										<?= $escape($tamanho) ?>
-									</a>
-								</li>
-							<?php endforeach; ?>
-						</ul>
-					</div>
+				<?php if ($ativos !== []): ?>
+					<ul class="catalog-active" aria-label="Filtros aplicados">
+						<?php foreach ($ativos as $ativo): ?>
+							<li>
+								<a class="catalog-active__chip" href="<?= $escape($ativo['href']) ?>">
+									<?= $escape($ativo['rotulo']) ?>
+									<span class="catalog-active__remove" aria-hidden="true">×</span>
+									<span class="visually-hidden">Remover filtro</span>
+								</a>
+							</li>
+						<?php endforeach; ?>
+
+						<li>
+							<a class="catalog-active__clear" href="/catalogo">Limpar tudo</a>
+						</li>
+					</ul>
 				<?php endif; ?>
 
-				<div class="catalog-filters__group">
-					<p class="catalog-filters__title" id="filtro-disponibilidade">Disponibilidade</p>
-					<ul class="catalog-filters__list" aria-labelledby="filtro-disponibilidade">
-						<?php foreach (CatalogService::AVAILABILITY as $chave => $rotulo): ?>
-							<li>
-								<a class="filter-chip<?= $chave === $estado['disponibilidade'] ? ' filter-chip--active' : '' ?>" href="<?= $escape($url(['disponibilidade' => $chave === $estado['disponibilidade'] ? '' : $chave, 'pagina' => 1])) ?>"<?= $chave === $estado['disponibilidade'] ? ' aria-current="true"' : '' ?>>
-									<?= $escape($rotulo) ?>
-								</a>
+				<?php if ($produtos === []): ?>
+					<div class="catalog__empty">
+						<p class="catalog__empty-title">Nenhuma camiseta com esses filtros.</p>
+						<p class="catalog__empty-text">Tente uma faixa de preço mais ampla ou veja o catálogo inteiro.</p>
+						<a class="button button--ghost" href="/catalogo">Ver o catálogo inteiro</a>
+					</div>
+				<?php else: ?>
+					<ul class="product-grid">
+						<?php foreach ($produtos as $product): ?>
+							<li data-reveal>
+								<?php require dirname(__DIR__) . '/partials/product-card.php'; ?>
 							</li>
 						<?php endforeach; ?>
 					</ul>
-				</div>
 
-				<div class="catalog-filters__group">
-					<p class="catalog-filters__title" id="filtro-preco">Faixa de preço</p>
-					<ul class="catalog-filters__list" aria-labelledby="filtro-preco">
-						<?php foreach (CatalogService::PRICE_RANGES as $chave => $faixa): ?>
-							<li>
-								<a class="filter-chip<?= $chave === $estado['preco'] ? ' filter-chip--active' : '' ?>" href="<?= $escape($url(['preco' => $chave === $estado['preco'] ? '' : $chave, 'pagina' => 1])) ?>"<?= $chave === $estado['preco'] ? ' aria-current="true"' : '' ?>>
-									<?= $escape($faixa['label']) ?>
-								</a>
-							</li>
-						<?php endforeach; ?>
-					</ul>
-				</div>
+					<?php if ($resultado['paginas'] > 1): ?>
+						<nav class="pagination" aria-label="Paginação do catálogo">
+							<?php if ($resultado['pagina'] > 1): ?>
+								<a class="pagination__item pagination__item--wide" href="<?= $escape($url(['pagina' => (int) $resultado['pagina'] - 1])) ?>" rel="prev">Anterior</a>
+							<?php else: ?>
+								<span class="pagination__item pagination__item--wide pagination__item--off">Anterior</span>
+							<?php endif; ?>
 
-				<?php if ($filtrosAtivos > 0): ?>
-					<p class="catalog-filters__clear">
-						<a class="section__link" href="/catalogo">Limpar filtros</a>
-					</p>
+							<?php foreach ($paginasVisiveis as $numero): ?>
+								<?php if ($numero === null): ?>
+									<span class="pagination__gap" aria-hidden="true">…</span>
+								<?php elseif ($numero === (int) $resultado['pagina']): ?>
+									<span class="pagination__item" aria-current="page"><?= $numero ?></span>
+								<?php else: ?>
+									<a class="pagination__item" href="<?= $escape($url(['pagina' => $numero])) ?>"><?= $numero ?></a>
+								<?php endif; ?>
+							<?php endforeach; ?>
+
+							<?php if ($resultado['pagina'] < (int) $resultado['paginas']): ?>
+								<a class="pagination__item pagination__item--wide" href="<?= $escape($url(['pagina' => (int) $resultado['pagina'] + 1])) ?>" rel="next">Próxima</a>
+							<?php else: ?>
+								<span class="pagination__item pagination__item--wide pagination__item--off">Próxima</span>
+							<?php endif; ?>
+						</nav>
+					<?php endif; ?>
 				<?php endif; ?>
 			</div>
-		</details>
-
-		<div class="catalog__toolbar">
-			<p class="catalog__count" role="status">
-				<?php if ($resultado['total'] === 0): ?>
-					Nenhum produto
-				<?php elseif ($resultado['total'] === 1): ?>
-					1 produto
-				<?php else: ?>
-					<?= (int) $resultado['total'] ?> produtos
-				<?php endif; ?>
-
-				<?php if ($resultado['paginas'] > 1): ?>
-					<span class="catalog__range">· <?= (int) $resultado['inicio'] ?>–<?= (int) $resultado['fim'] ?></span>
-				<?php endif; ?>
-			</p>
-
-			<nav class="catalog-sort" aria-label="Ordenar o catálogo">
-				<span class="catalog-sort__label">Ordenar</span>
-
-				<?php foreach (CatalogService::SORTS as $chave => $rotulo): ?>
-					<a class="catalog-sort__link<?= $chave === $estado['ordem'] ? ' catalog-sort__link--active' : '' ?>" href="<?= $escape($url(['ordem' => $chave, 'pagina' => 1])) ?>"<?= $chave === $estado['ordem'] ? ' aria-current="true"' : '' ?>>
-						<?= $escape($rotulo) ?>
-					</a>
-				<?php endforeach; ?>
-			</nav>
 		</div>
-
-		<?php if ($produtos === []): ?>
-			<p class="catalog__empty">
-				Nenhum produto com esses filtros.
-				<a class="catalog__empty-link" href="/catalogo">Ver o catálogo inteiro</a>
-			</p>
-		<?php else: ?>
-			<ul class="product-grid">
-				<?php foreach ($produtos as $product): ?>
-					<li data-reveal>
-						<?php require dirname(__DIR__) . '/partials/product-card.php'; ?>
-					</li>
-				<?php endforeach; ?>
-			</ul>
-
-			<?php if ($resultado['paginas'] > 1): ?>
-				<nav class="pagination" aria-label="Paginação do catálogo">
-					<?php if ($resultado['pagina'] > 1): ?>
-						<a class="pagination__item pagination__item--wide" href="<?= $escape($url(['pagina' => (int) $resultado['pagina'] - 1])) ?>" rel="prev">Anterior</a>
-					<?php else: ?>
-						<span class="pagination__item pagination__item--wide pagination__item--off">Anterior</span>
-					<?php endif; ?>
-
-					<?php foreach ($paginasVisiveis as $numero): ?>
-						<?php if ($numero === null): ?>
-							<span class="pagination__gap" aria-hidden="true">…</span>
-						<?php elseif ($numero === (int) $resultado['pagina']): ?>
-							<span class="pagination__item" aria-current="page"><?= $numero ?></span>
-						<?php else: ?>
-							<a class="pagination__item" href="<?= $escape($url(['pagina' => $numero])) ?>"><?= $numero ?></a>
-						<?php endif; ?>
-					<?php endforeach; ?>
-
-					<?php if ($resultado['pagina'] < (int) $resultado['paginas']): ?>
-						<a class="pagination__item pagination__item--wide" href="<?= $escape($url(['pagina' => (int) $resultado['pagina'] + 1])) ?>" rel="next">Próxima</a>
-					<?php else: ?>
-						<span class="pagination__item pagination__item--wide pagination__item--off">Próxima</span>
-					<?php endif; ?>
-				</nav>
-			<?php endif; ?>
-		<?php endif; ?>
 	</div>
 </section>

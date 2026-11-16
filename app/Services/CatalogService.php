@@ -12,23 +12,19 @@ use PDO;
  *
  * O vínculo do produto com a categoria vem de `product_categories` — a mesma
  * tabela do painel —, então escolher uma categoria traz também o que está nas
- * subcategorias dela. Preço e estoque saem do banco: nada é confiado à URL.
+ * subcategorias dela. Cor, preço e estoque saem do banco: nada é confiado à
+ * URL. O preço vem do que o cliente digita, em reais, e é convertido para
+ * centavos aqui — cada ponta é opcional.
  */
 final class CatalogService
 {
     public const PER_PAGE = 12;
 
     /**
-     * Faixas de preço em centavos. O teto vazio é a última faixa.
-     *
-     * @var array<string, array{label: string, min: int, max: int|null}>
+     * Teto de sanidade para o preço digitado (R$ 100.000), para uma URL
+     * estranha não virar consulta absurda.
      */
-    public const PRICE_RANGES = [
-        'ate-99' => ['label' => 'Até R$ 99', 'min' => 0, 'max' => 9999],
-        '100-149' => ['label' => 'R$ 100 a 149', 'min' => 10000, 'max' => 14999],
-        '150-199' => ['label' => 'R$ 150 a 199', 'min' => 15000, 'max' => 19999],
-        '200-mais' => ['label' => 'R$ 200 ou mais', 'min' => 20000, 'max' => null],
-    ];
+    private const PRECO_MAXIMO = 10000000;
 
     /** @var array<string, string> */
     public const SORTS = [
@@ -50,7 +46,7 @@ final class CatalogService
 
     /**
      * Estado dos filtros: aceita só o que existe no banco (categoria, tamanho,
-     * faixa de preço e ordenação) e cai no padrão quando vem coisa estranha.
+     * cor, preço e ordenação) e cai no padrão quando vem coisa estranha.
      *
      * @param array<string, mixed> $query
      *
@@ -64,8 +60,10 @@ final class CatalogService
             'sub' => '',
             'sub_id' => null,
             'tamanho' => '',
+            'cor' => '',
             'disponibilidade' => '',
-            'preco' => '',
+            'preco_min' => '',
+            'preco_max' => '',
             'ordem' => 'novidades',
             'pagina' => 1,
         ];
@@ -111,11 +109,26 @@ final class CatalogService
             $estado['disponibilidade'] = $disponibilidade;
         }
 
-        $preco = $this->texto($query['preco'] ?? '');
+        $cor = $this->texto($query['cor'] ?? '');
 
-        if (array_key_exists($preco, self::PRICE_RANGES)) {
-            $estado['preco'] = $preco;
+        if ($cor !== '') {
+            foreach ($this->colors() as $disponivel) {
+                if (mb_strtolower($disponivel['name'], 'UTF-8') === mb_strtolower($cor, 'UTF-8')) {
+                    $estado['cor'] = $disponivel['name'];
+                    break;
+                }
+            }
         }
+
+        $minimo = $this->dinheiro($query['preco_min'] ?? null);
+        $maximo = $this->dinheiro($query['preco_max'] ?? null);
+
+        if ($minimo !== null && $maximo !== null && $minimo > $maximo) {
+            [$minimo, $maximo] = [$maximo, $minimo];
+        }
+
+        $estado['preco_min'] = $minimo ?? '';
+        $estado['preco_max'] = $maximo ?? '';
 
         $ordem = $this->texto($query['ordem'] ?? '');
 
@@ -191,8 +204,9 @@ final class CatalogService
 
     /**
      * Categorias principais com as subcategorias e quantos produtos ativos há
-     * em cada uma. A contagem da principal soma as filhas, porque o filtro por
-     * categoria também traz o que está dentro delas.
+     * em cada uma. A contagem da principal já inclui as filhas, porque o filtro
+     * por categoria também traz o que está dentro delas — e usa DISTINCT, então
+     * um produto ligado à categoria e a uma filha conta uma vez só.
      *
      * @return list<array<string, mixed>>
      */
@@ -205,12 +219,15 @@ final class CatalogService
         $contagens = [];
 
         foreach ($this->pdo->query(
-            'SELECT pc.category_id, COUNT(DISTINCT pc.product_id) AS total
-               FROM product_categories pc
-               INNER JOIN products p ON p.id = pc.product_id AND p.is_active = 1
-              GROUP BY pc.category_id'
+            'SELECT c.id,
+                    (SELECT COUNT(DISTINCT pc.product_id)
+                       FROM product_categories pc
+                       INNER JOIN products p ON p.id = pc.product_id AND p.is_active = 1
+                      WHERE pc.category_id = c.id
+                         OR pc.category_id IN (SELECT f.id FROM categories f WHERE f.parent_id = c.id)) AS total
+               FROM categories c'
         )->fetchAll() as $linha) {
-            $contagens[(int) $linha['category_id']] = (int) $linha['total'];
+            $contagens[(int) $linha['id']] = (int) $linha['total'];
         }
 
         $filhas = [];
@@ -234,19 +251,13 @@ final class CatalogService
             }
 
             $id = (int) $categoria['id'];
-            $lista = $filhas[$id] ?? [];
-            $total = $contagens[$id] ?? 0;
-
-            foreach ($lista as $filha) {
-                $total += $filha['total'];
-            }
 
             $arvore[] = [
                 'id' => $id,
                 'name' => (string) $categoria['name'],
                 'slug' => (string) $categoria['slug'],
-                'total' => $total,
-                'children' => $lista,
+                'total' => $contagens[$id] ?? 0,
+                'children' => $filhas[$id] ?? [],
             ];
         }
 
@@ -269,6 +280,53 @@ final class CatalogService
         )->fetchAll(PDO::FETCH_COLUMN);
 
         return array_values(array_map('strval', $linhas));
+    }
+
+    /**
+     * Cores que existem em produtos ativos, em ordem alfabética, com quantos
+     * produtos há em cada uma. A cor é uma coluna de `products`, preenchida no
+     * painel.
+     *
+     * @return list<array{name: string, total: int}>
+     */
+    public function colors(): array
+    {
+        $linhas = $this->pdo->query(
+            "SELECT p.color, COUNT(*) AS total
+               FROM products p
+              WHERE p.is_active = 1
+                AND p.color <> ''
+              GROUP BY p.color
+              ORDER BY p.color"
+        )->fetchAll();
+
+        return array_map(
+            static fn (array $linha): array => [
+                'name' => (string) $linha['color'],
+                'total' => (int) $linha['total'],
+            ],
+            $linhas
+        );
+    }
+
+    /**
+     * Menor e maior preço entre os produtos ativos, para os exemplos dos
+     * campos de preço do filtro.
+     *
+     * @return array{min: int, max: int}
+     */
+    public function priceBounds(): array
+    {
+        $linha = $this->pdo->query(
+            'SELECT MIN(price_cents) AS minimo, MAX(price_cents) AS maximo
+               FROM products
+              WHERE is_active = 1'
+        )->fetch();
+
+        return [
+            'min' => (int) ($linha['minimo'] ?? 0),
+            'max' => (int) ($linha['maximo'] ?? 0),
+        ];
     }
 
     /**
@@ -325,16 +383,19 @@ final class CatalogService
             $where[] = $estoque . ' = 0';
         }
 
-        if ($estado['preco'] !== '') {
-            $faixa = self::PRICE_RANGES[(string) $estado['preco']];
+        if ($estado['cor'] !== '') {
+            $where[] = 'p.color = :cor';
+            $params[':cor'] = (string) $estado['cor'];
+        }
 
+        if ($estado['preco_min'] !== '') {
             $where[] = 'p.price_cents >= :preco_min';
-            $params[':preco_min'] = (int) $faixa['min'];
+            $params[':preco_min'] = (int) $estado['preco_min'];
+        }
 
-            if ($faixa['max'] !== null) {
-                $where[] = 'p.price_cents <= :preco_max';
-                $params[':preco_max'] = (int) $faixa['max'];
-            }
+        if ($estado['preco_max'] !== '') {
+            $where[] = 'p.price_cents <= :preco_max';
+            $params[':preco_max'] = (int) $estado['preco_max'];
         }
 
         return [$where, $params];
@@ -417,5 +478,37 @@ final class CatalogService
         }
 
         return mb_substr(trim($valor), 0, 60, 'UTF-8');
+    }
+
+    /**
+     * Converte o preço digitado ("150", "150,90", "150.90") em centavos.
+     * Vazio ou zero quer dizer "sem limite", que é `null`.
+     */
+    private function dinheiro(mixed $valor): ?int
+    {
+        if (!is_string($valor) && !is_int($valor) && !is_float($valor)) {
+            return null;
+        }
+
+        $limpo = preg_replace('/[^0-9.,]/', '', (string) $valor) ?? '';
+
+        if ($limpo === '') {
+            return null;
+        }
+
+        if (!str_contains($limpo, ',')) {
+            $limpo = str_replace('.', ',', $limpo);
+        } else {
+            $limpo = str_replace('.', '', $limpo);
+        }
+
+        [$inteiro, $decimal] = array_pad(explode(',', $limpo, 2), 2, '');
+        $centavos = ((int) $inteiro * 100) + (int) substr(str_pad($decimal, 2, '0'), 0, 2);
+
+        if ($centavos <= 0) {
+            return null;
+        }
+
+        return min($centavos, self::PRECO_MAXIMO);
     }
 }
