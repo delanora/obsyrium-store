@@ -72,6 +72,28 @@ final class UserRepository
         return $this->find('id = :valor', $id);
     }
 
+    /**
+     * Nome e telefone mudam pelo perfil do cliente. O telefone continua cifrado
+     * e pode ser apagado (null) quando o cliente limpa o campo.
+     */
+    public function updateProfile(int $id, string $name, ?string $phone): void
+    {
+        $consulta = $this->pdo->prepare(
+            'UPDATE users SET name = :name, phone_encrypted = :phone WHERE id = :id'
+        );
+
+        $consulta->bindValue(':name', $name);
+
+        if ($phone === null) {
+            $consulta->bindValue(':phone', null, PDO::PARAM_NULL);
+        } else {
+            $consulta->bindValue(':phone', Crypto::encrypt($phone));
+        }
+
+        $consulta->bindValue(':id', $id, PDO::PARAM_INT);
+        $consulta->execute();
+    }
+
     public function touchLastLogin(int $id): void
     {
         $consulta = $this->pdo->prepare('UPDATE users SET last_login_at = NOW() WHERE id = :id');

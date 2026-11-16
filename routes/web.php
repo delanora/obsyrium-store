@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Controllers\AccountController;
 use App\Controllers\AuthController;
 use App\Controllers\CartController;
 use App\Controllers\CheckoutController;
@@ -27,6 +28,17 @@ return static function (Router $router): void {
     $router->post('/carrinho/remover', [CartController::class, 'remove']);
 
     $router->get('/checkout', [CheckoutController::class, 'start']);
+
+    $router->get('/conta', [AccountController::class, 'show']);
+    $router->post('/conta', [AccountController::class, 'saveProfile']);
+
+    $router->get('/conta/enderecos', [AccountController::class, 'addresses']);
+    $router->post('/conta/enderecos/salvar', [AccountController::class, 'saveAddress']);
+    $router->post('/conta/enderecos/remover', [AccountController::class, 'removeAddress']);
+    $router->post('/conta/enderecos/padrao', [AccountController::class, 'defaultAddress']);
+    $router->get('/conta/enderecos/{id}', [AccountController::class, 'editAddress']);
+
+    $router->get('/conta/compras', [AccountController::class, 'orders']);
 
     $router->get('/cadastro', [AuthController::class, 'showRegister']);
     $router->post('/cadastro', [AuthController::class, 'register']);

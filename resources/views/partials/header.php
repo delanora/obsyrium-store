@@ -21,6 +21,9 @@ $menu = [
 
 $conectado = Session::userId() !== null;
 
+// O ícone de pessoa fica marcado enquanto o cliente está na área dele.
+$naConta = str_starts_with((string) (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/'), '/conta');
+
 $carrinhoDoCliente = App\Services\CartService::forCurrentUser(App\Database\Connection::get());
 $itensDoCarrinho = $carrinhoDoCliente->itemsForDisplay();
 $itensNoCarrinho = array_sum(array_column($itensDoCarrinho, 'quantity'));
@@ -60,10 +63,14 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 			</button>
 
 			<?php if ($conectado): ?>
+				<a class="icon-button<?= $naConta ? ' icon-button--active' : '' ?>" href="/conta" aria-label="Minha conta">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
+				</a>
+
 				<form class="site-header__account-form" action="/logout" method="post">
 					<?= Csrf::field() ?>
-					<button class="icon-button icon-button--active" type="submit" aria-label="Sair da conta">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
+					<button class="icon-button" type="submit" aria-label="Sair da conta">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v8"/><path d="M8.4 7.2a6 6 0 1 0 7.2 0"/></svg>
 					</button>
 				</form>
 			<?php else: ?>

@@ -1,0 +1,335 @@
+/*
+ * Área do cliente: perfil, endereços e compras.
+ *
+ * Mesmo desenho dos outros blocos da loja: superfície escura, borda fina e o
+ * dourado só no estado atual e nos detalhes. No computador o menu é uma coluna
+ * à esquerda; abaixo de 64rem ele vira uma faixa de abas que rola de lado.
+ */
+
+.account {
+    padding-block: var(--section-space);
+}
+
+.account__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.account__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-width: var(--container-narrow);
+}
+
+.account__eyebrow {
+    margin: 0;
+    color: var(--color-accent);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.account__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-display);
+    letter-spacing: var(--letter-spacing-display);
+    line-height: var(--line-height-tight);
+    text-transform: uppercase;
+}
+
+.account__text {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+}
+
+.account__layout {
+    display: grid;
+    gap: var(--space-5);
+}
+
+/* Menu: faixa de abas rolável no celular */
+
+.account-nav__list {
+    display: flex;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0 0 var(--space-1);
+    overflow-x: auto;
+    list-style: none;
+    scrollbar-width: thin;
+}
+
+.account-nav__item {
+    flex: 0 0 auto;
+}
+
+.account-nav__link {
+    display: inline-flex;
+    min-height: var(--target-min);
+    align-items: center;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+        border-color var(--duration-fast) var(--ease-standard),
+        color var(--duration-fast) var(--ease-standard),
+        background-color var(--duration-fast) var(--ease-standard);
+}
+
+.account-nav__link:hover {
+    border-color: var(--color-border-strong);
+    color: var(--color-text);
+}
+
+.account-nav__link[aria-current="page"] {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent);
+}
+
+/* Menu: coluna fixa no computador */
+
+@media (min-width: 64rem) {
+    .account__layout {
+        grid-template-columns: 15rem minmax(0, 1fr);
+        align-items: start;
+        gap: var(--space-7);
+    }
+
+    .account-nav__list {
+        flex-direction: column;
+        gap: var(--space-1);
+        padding: var(--space-2);
+        overflow: visible;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background-color: var(--color-surface);
+    }
+
+    .account-nav__link {
+        width: 100%;
+        border-color: transparent;
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-base);
+    }
+}
+
+/* Painel de conteúdo */
+
+.account__panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.account__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.account__section--form {
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+}
+
+.account__section-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+}
+
+.account__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    max-width: 34rem;
+}
+
+.account__row {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (min-width: 40rem) {
+    .account__row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.account__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+/* E-mail e CPF: leitura, sem edição */
+
+.account__info {
+    display: grid;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+.account__info-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 0;
+}
+
+.account__info-label {
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.account__info-value {
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.account__info-note {
+    margin: 0;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+}
+
+/* Cartões de endereço */
+
+.address-list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.address-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg-alt);
+}
+
+.address-card--principal {
+    border-color: var(--color-border-strong);
+}
+
+.address-card__top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.address-card__label {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+}
+
+.address-card__badge {
+    padding: 0.15rem var(--space-2);
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius-pill);
+    color: var(--color-accent);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.address-card__text {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-snug);
+}
+
+.address-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    align-items: center;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-border);
+}
+
+.link-button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-text-subtle);
+    font: inherit;
+    font-size: var(--font-size-sm);
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.link-button:hover {
+    color: var(--color-accent);
+}
+
+.link-button--danger:hover {
+    color: var(--color-danger);
+}
+
+/* Estados vazios */
+
+.account__empty {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-6) 0;
+}
+
+.account__empty-title,
+.account__empty-text {
+    margin: 0;
+}
+
+.account__empty-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-md);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+}
+
+.account__empty-text {
+    max-width: 34rem;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+}
