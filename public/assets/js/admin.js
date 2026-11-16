@@ -1,19 +1,20 @@
 /*
- * Painel: mostra o seletor de subcategoria só quando a categoria está marcada.
+ * Painel: os seletores de subcategoria só aparecem quando a categoria está
+ * marcada — no produto, por categoria; no cadastro de categoria, pela marca
+ * "Subcategoria".
  *
- * Sem este script o seletor fica visível o tempo todo e o servidor ignora
- * subcategoria de categoria não marcada — o formulário continua funcionando.
+ * Sem este script os seletores ficam visíveis o tempo todo e o servidor ignora
+ * o que não foi marcado — o formulário continua funcionando.
  */
 (function () {
     'use strict';
 
-    var alternadores = document.querySelectorAll('[data-category-toggle]');
+    var cada = function (lista, acao) {
+        Array.prototype.forEach.call(lista, acao);
+    };
 
-    if (!alternadores.length) {
-        return;
-    }
-
-    var atualizar = function (caixa) {
+    // Produto: mostra a subcategoria de cada categoria marcada.
+    cada(document.querySelectorAll('[data-category-toggle]'), function (caixa) {
         var bloco = caixa.closest('[data-category]');
         var sub = bloco ? bloco.querySelector('[data-category-sub]') : null;
 
@@ -21,22 +22,35 @@
             return;
         }
 
-        sub.hidden = !caixa.checked;
+        var atualizar = function () {
+            sub.hidden = !caixa.checked;
 
-        if (!caixa.checked) {
-            var seletor = sub.querySelector('select');
+            if (!caixa.checked) {
+                var seletor = sub.querySelector('select');
 
-            if (seletor) {
-                seletor.value = '';
+                if (seletor) {
+                    seletor.value = '';
+                }
             }
+        };
+
+        caixa.addEventListener('change', atualizar);
+        atualizar();
+    });
+
+    // Categoria: a marca de subcategoria abre o "Subcategoria de".
+    cada(document.querySelectorAll('[data-subcategory-toggle]'), function (marca) {
+        var campo = document.querySelector('[data-subcategory-field]');
+
+        if (!campo) {
+            return;
         }
-    };
 
-    Array.prototype.forEach.call(alternadores, function (caixa) {
-        caixa.addEventListener('change', function () {
-            atualizar(caixa);
-        });
+        var atualizar = function () {
+            campo.hidden = !marca.checked;
+        };
 
-        atualizar(caixa);
+        marca.addEventListener('change', atualizar);
+        atualizar();
     });
 })();

@@ -533,13 +533,46 @@ final class AdminController
     private function renderCategories(array $admin, array $erros = [], array $valores = []): void
     {
         $servico = new CategoryService(Connection::get());
+        $arvore = $servico->tree();
+        $escolhida = $this->categoriaSelecionada($arvore, (int) ($_GET['categoria'] ?? 0));
 
         $this->render('categorias', 'Categorias — Administração Obsyrium', $admin, 'categorias', [
-            'arvore' => $servico->tree(),
+            'arvore' => $arvore,
             'raizes' => $servico->roots(),
+            'categoria' => $escolhida['categoria'],
+            'categoriaRaiz' => $escolhida['raiz'],
             'erros' => $erros,
             'valores' => $valores,
         ]);
+    }
+
+    /**
+     * Categoria escolhida nas abas: vale raiz ou subcategoria; sem escolha ou
+     * com um id que não existe, cai na primeira categoria.
+     *
+     * @param list<array<string, mixed>> $arvore
+     *
+     * @return array{categoria: array<string, mixed>|null, raiz: array<string, mixed>|null}
+     */
+    private function categoriaSelecionada(array $arvore, int $id): array
+    {
+        if ($arvore === []) {
+            return ['categoria' => null, 'raiz' => null];
+        }
+
+        foreach ($arvore as $raiz) {
+            if ((int) $raiz['id'] === $id) {
+                return ['categoria' => $raiz, 'raiz' => $raiz];
+            }
+
+            foreach ($raiz['children'] as $filha) {
+                if ((int) $filha['id'] === $id) {
+                    return ['categoria' => $filha, 'raiz' => $raiz];
+                }
+            }
+        }
+
+        return ['categoria' => $arvore[0], 'raiz' => $arvore[0]];
     }
 
     /**
@@ -620,6 +653,8 @@ final class AdminController
         $adminTamanhosMarcados = $contexto['tamanhosMarcados'] ?? [];
         $adminCategoriasArvore = $contexto['arvore'] ?? [];
         $adminCategoriasRaiz = $contexto['raizes'] ?? [];
+        $adminCategoria = $contexto['categoria'] ?? null;
+        $adminCategoriaRaiz = $contexto['categoriaRaiz'] ?? null;
         $adminErros = $contexto['erros'] ?? [];
         $adminValores = $contexto['valores'] ?? [];
         $adminPrecos = $contexto['precos'] ?? [];

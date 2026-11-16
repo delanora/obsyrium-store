@@ -136,11 +136,23 @@ final class CategoryService
     public function create(array $dados): array
     {
         $nome = trim((string) ($dados['name'] ?? ''));
-        $paiBruto = (string) ($dados['parent_id'] ?? '');
+        $ehSubcategoria = (string) ($dados['is_subcategory'] ?? '') === '1';
+
+        // Sem a marca de subcategoria a categoria é principal: o seletor de
+        // mãe é ignorado, mesmo que o formulário o envie.
+        $paiBruto = $ehSubcategoria ? trim((string) ($dados['parent_id'] ?? '')) : '';
         $pai = $paiBruto === '' ? null : (int) $paiBruto;
-        $valores = ['name' => $nome, 'parent_id' => $paiBruto];
+        $valores = [
+            'name' => $nome,
+            'parent_id' => $paiBruto,
+            'is_subcategory' => $ehSubcategoria ? '1' : '',
+        ];
 
         $erros = [];
+
+        if ($ehSubcategoria && $pai === null) {
+            $erros[] = 'Escolha a categoria principal da subcategoria.';
+        }
 
         if (mb_strlen($nome) < 2 || mb_strlen($nome) > self::MAX_NAME) {
             $erros[] = sprintf('O nome precisa ter de 2 a %d caracteres.', self::MAX_NAME);

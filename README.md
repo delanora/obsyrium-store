@@ -618,7 +618,8 @@ MD
 O estoque ganhou o botão **Novo modelo** e a lateral ganhou **Categorias**.
 
 - **Novo modelo** (`/admin/estoque/novo`) usa a mesma tela do produto, com os tamanhos (PP a GG) e um saldo inicial aplicado a cada tamanho marcado no lugar da galeria. Ao criar, ele cai direto na edição para receber as fotos; o SKU de cada tamanho é gerado como `SLUG-TAMANHO`.
-- **Categorias** (`/admin/categorias`) lista as categorias com os modelos de cada uma, mostra as subcategorias dentro da categoria mãe e cria novas — escolhendo "Subcategoria de" ou deixando em "Categoria principal". São dois níveis: subcategoria não pode ter subcategoria.
+- **Categorias** (`/admin/categorias`) segue o desenho do estoque: abas por categoria, os modelos da categoria escolhida em tabela (com situação e atalho para a edição) e, quando a categoria tem filhas, uma segunda linha de abas para cada subcategoria. A escolha fica na URL (`?categoria=ID`).
+- O formulário de nova categoria tem a marca **Subcategoria**: marcada, aparece o "Subcategoria de", que só lista categorias principais (subcategoria não pode ter subcategoria); desmarcada, a categoria é criada como principal e o seletor é ignorado pelo servidor.
 - **Mais de uma categoria por produto**: `product_categories` guarda todos os vínculos. `products.category_id` continua sendo a principal (a primeira marcada), que é o que a vitrine e a página do item mostram — por isso nada mudou nas consultas da loja.
 - **Subcategoria no formulário**: cada categoria raiz marcada abre o seletor "Subcategoria de …"; escolhendo uma, o vínculo é com a subcategoria, sem escolha fica na raiz. `public/assets/js/admin.js` só mostra o seletor quando a categoria está marcada; sem JavaScript ele fica visível e o servidor ignora subcategoria de categoria não marcada.
 - A tela de categorias conta só os vínculos diretos: um produto na subcategoria aparece na subcategoria, não na mãe.
