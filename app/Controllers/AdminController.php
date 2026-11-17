@@ -413,6 +413,27 @@ final class AdminController
     }
 
     /**
+     * Apaga uma cor do seletor. Se houver camisa em estoque com ela, nada muda.
+     *
+     * @param array<string, string> $params
+     */
+    public function deleteColor(array $params = []): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $erro = $this->products()->deleteColor((string) ($_POST['color'] ?? ''));
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Cor apagada da lista.');
+
+        $this->redirect($id > 0 ? $this->productUrl($id, $_POST) : '/admin/estoque/novo');
+    }
+
+    /**
      * Saldo de um tamanho salvo pela própria tela do produto.
      *
      * @param array<string, string> $params

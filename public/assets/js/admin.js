@@ -118,8 +118,17 @@
             return;
         }
 
+        // O × apaga a cor escolhida. Sem JavaScript ele continua enviando o
+        // formulário; aqui só pede confirmação e some quando não há cor.
+        var apagar = campo.querySelector('[data-color-delete]');
+
         var atualizar = function () {
             bloco.hidden = seletor.value !== campo.getAttribute('data-color-field');
+
+            if (apagar) {
+                apagar.disabled = seletor.value === ''
+                    || seletor.value === campo.getAttribute('data-color-field');
+            }
         };
 
         seletor.addEventListener('change', function () {
@@ -129,6 +138,16 @@
                 entrada.focus();
             }
         });
+
+        if (apagar) {
+            apagar.addEventListener('click', function (evento) {
+                var aviso = 'Apagar a cor "' + seletor.value + '"? Ela sai da lista do seletor.';
+
+                if (!window.confirm(aviso)) {
+                    evento.preventDefault();
+                }
+            });
+        }
 
         atualizar();
     });

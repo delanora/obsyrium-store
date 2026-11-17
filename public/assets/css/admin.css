@@ -1424,7 +1424,53 @@
     align-self: start;
 }
 
-/* Cor do produto: seletor com a seta do tema e o campo da cor nova */
+/* Cor do produto: seletor com a seta do tema, o × ao lado e o campo da cor nova */
+
+.field__color-row {
+    display: flex;
+    gap: var(--space-2);
+    align-items: stretch;
+}
+
+.field__color-row .field__select {
+    flex: 1 1 auto;
+    min-width: 0;
+    align-self: stretch;
+}
+
+.field__color-delete {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    padding: 0;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.field__color-delete svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.field__color-delete:hover {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.field__color-delete:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
+.field__color-delete:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
 
 .field__select {
     appearance: none;

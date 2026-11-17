@@ -278,13 +278,27 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 		<div class="admin-field-row">
 			<div class="field" data-color-field="<?= $escape(ProductAdminService::NEW_COLOR) ?>">
 				<label class="field__label" for="color">Cor</label>
-				<select class="field__input field__select" id="color" name="color" required data-color-select>
-					<option value="">Escolha uma cor</option>
-					<?php foreach ($coresSugeridas as $cor): ?>
-						<option value="<?= $escape($cor) ?>" <?= $novaCor === '' && $cor === $corAtual ? 'selected' : '' ?>><?= $escape($cor) ?></option>
-					<?php endforeach; ?>
-					<option value="<?= $escape(ProductAdminService::NEW_COLOR) ?>" <?= $novaCor !== '' ? 'selected' : '' ?>>+ adicionar nova cor</option>
-				</select>
+				<div class="field__color-row">
+					<select class="field__input field__select" id="color" name="color" required data-color-select>
+						<option value="">Escolha uma cor</option>
+						<?php foreach ($coresSugeridas as $cor): ?>
+							<option value="<?= $escape($cor) ?>" <?= $novaCor === '' && $cor === $corAtual ? 'selected' : '' ?>><?= $escape($cor) ?></option>
+						<?php endforeach; ?>
+						<option value="<?= $escape(ProductAdminService::NEW_COLOR) ?>" <?= $novaCor !== '' ? 'selected' : '' ?>>+ adicionar nova cor</option>
+					</select>
+
+					<button
+						class="field__color-delete"
+						type="submit"
+						formaction="<?= $escape($urlDoProduto . '/cor/apagar') ?>"
+						formnovalidate
+						data-color-delete
+						aria-label="Apagar a cor escolhida"
+						title="Apagar a cor escolhida"
+					>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+					</button>
+				</div>
 
 				<div class="field__new-color" data-color-new>
 					<label class="field__label" for="nova_cor">Nova cor</label>
@@ -300,7 +314,7 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 					>
 				</div>
 
-				<p class="field__hint">Cor nova? Use "+ adicionar nova cor": ela entra na lista.</p>
+				<p class="field__hint">Cor nova? Use "+ adicionar nova cor": ela entra na lista. O × apaga a cor escolhida — só se não houver peça em estoque com ela.</p>
 			</div>
 
 			<div class="field">

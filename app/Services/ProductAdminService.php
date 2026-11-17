@@ -505,6 +505,48 @@ final class ProductAdminService
     }
 
     /**
+     * Apaga uma cor da lista do seletor. Cor presa a camisa em estoque fica.
+     *
+     * @return string|null Mensagem de erro, ou null quando a cor saiu da lista.
+     */
+    public function deleteColor(string $nome): ?string
+    {
+        $nome = trim($nome);
+
+        if ($nome === '') {
+            return 'Escolha a cor que deseja apagar.';
+        }
+
+        $emEstoque = $this->pdo->prepare(
+            'SELECT COALESCE(SUM(s.quantity), 0)
+               FROM products p
+               JOIN product_variants v ON v.product_id = p.id
+               JOIN stock s ON s.variant_id = v.id
+              WHERE p.color = :name'
+        );
+        $emEstoque->execute([':name' => $nome]);
+        $pecas = (int) $emEstoque->fetchColumn();
+
+        if ($pecas > 0) {
+            return sprintf(
+                'A cor "%s" não pode ser apagada: há %d %s em estoque com ela.',
+                $nome,
+                $pecas,
+                $pecas === 1 ? 'camisa' : 'camisas'
+            );
+        }
+
+        $apagar = $this->pdo->prepare('DELETE FROM product_colors WHERE name = :name');
+        $apagar->execute([':name' => $nome]);
+
+        if ($apagar->rowCount() === 0) {
+            return sprintf('A cor "%s" não está na lista.', $nome);
+        }
+
+        return null;
+    }
+
+    /**
      * Cores oferecidas no campo de cor, na ordem em que aparecem no seletor.
      *
      * @return list<string>
