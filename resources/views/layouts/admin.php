@@ -44,6 +44,10 @@ $adminItens = [
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title><?= $escape($title ?? 'Administração Obsyrium') ?></title>
 	<meta name="robots" content="noindex, nofollow">
+	<link rel="icon" href="/favicon.ico" sizes="any">
+	<link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16.png">
+	<link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
 	<link rel="stylesheet" href="<?= $asset('/assets/css/tokens.css') ?>">
 	<link rel="stylesheet" href="<?= $asset('/assets/css/base.css') ?>">
 	<link rel="stylesheet" href="<?= $asset('/assets/css/components.css') ?>">

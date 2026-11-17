@@ -372,6 +372,8 @@ A identidade parte do emblema da marca: disco escuro com textura de mármore e u
 
 Arquivos do logo em `public/assets/images/`: `logo-512.png` e `logo-128.png`, ambos derivados do arquivo original de 1254×1254, que permanece fora do repositório. Cabeçalho usa a versão de 128px; o emblema grande usa a de 512px.
 
+O favicon saiu do mesmo emblema: `public/favicon.ico` (16, 32 e 48px embutidos), `public/assets/images/favicon-16.png`, `favicon-32.png`, `favicon-48.png` e `apple-touch-icon.png` (180px, com fundo `--color-bg` para o iOS não pintar a transparência de preto). As tags `icon` e `apple-touch-icon` entram no `<head>` dos layouts do site e do painel.
+
 ### 16.2 Tipografia
 
 - `--font-display`: display lapidada em caixa alta com tracking largo — `Cinzel`, `Trajan Pro`, `Cormorant Garamond`, `Playfair Display`, `Bodoni MT`, `Georgia`. Usada em títulos e no seletor de tamanho.
