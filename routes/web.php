@@ -29,6 +29,12 @@ return static function (Router $router): void {
     $router->get('/contato', [PageController::class, 'contact']);
     $router->post('/contato', [PageController::class, 'sendMessage']);
 
+    $router->get('/perguntas-frequentes', [PageController::class, 'faq']);
+    $router->get('/entrega', [PageController::class, 'delivery']);
+    $router->get('/pagamento', [PageController::class, 'payment']);
+    $router->get('/termos', [PageController::class, 'terms']);
+    $router->get('/privacidade', [PageController::class, 'privacy']);
+
     $router->get('/carrinho', [CartController::class, 'show']);
 
     $router->post('/carrinho/adicionar', [CartController::class, 'add']);

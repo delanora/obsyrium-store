@@ -76,6 +76,95 @@
     line-height: var(--line-height-base);
 }
 
+.page__block ul {
+    margin: 0;
+    padding-inline-start: var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+}
+
+.page__block li + li {
+    margin-top: var(--space-1);
+}
+
+/* Lembrete no fim das páginas institucionais: o que ainda não está definido e
+   vai entrar no texto antes da abertura da loja. */
+.page__note {
+    max-width: var(--container-narrow);
+    margin: 0;
+    padding: var(--space-4) var(--space-5);
+    border-inline-start: 2px solid var(--color-accent);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-base);
+}
+
+/* Perguntas frequentes: cada pergunta é um <details>, então abre e fecha sem
+   JavaScript e o teclado alcança pelo próprio summary. A resposta fica na
+   mesma coluna estreita do cabeçalho da página. */
+.faq {
+    display: grid;
+    gap: var(--space-2);
+    max-width: var(--container-narrow);
+}
+
+.faq__item {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.faq__question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--font-size-sm);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+    cursor: pointer;
+    list-style: none;
+}
+
+.faq__question::-webkit-details-marker {
+    display: none;
+}
+
+.faq__question::after {
+    content: "+";
+    color: var(--color-accent);
+    font-size: var(--font-size-md);
+    line-height: 1;
+}
+
+.faq__item[open] .faq__question::after {
+    content: "−";
+}
+
+.faq__question:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
+.faq__answer {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0 var(--space-5) var(--space-4);
+}
+
+.faq__answer p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+}
+
 .page__block-title {
     margin: 0;
     font-family: var(--font-display);

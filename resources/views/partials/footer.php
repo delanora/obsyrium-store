@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 /*
  * Rodapé: colunas de políticas, atendimento, redes sociais, formas de
- * pagamento e linha legal. Só "Fale conosco" aponta para uma página que já
- * existe (/contato); as políticas e as redes entram quando essas páginas e
- * perfis estiverem no ar.
+ * pagamento e linha legal. Políticas e atendimento já têm página própria; as
+ * redes sociais ainda apontam para `#` até os perfis existirem.
  */
 
 $columns = [
     'Políticas' => [
-        ['label' => 'Política de entrega', 'href' => '#'],
-        ['label' => 'Termos de privacidade', 'href' => '#'],
-        ['label' => 'Formas de pagamento', 'href' => '#'],
+        ['label' => 'Política de entrega', 'href' => '/entrega'],
+        ['label' => 'Formas de pagamento', 'href' => '/pagamento'],
+        ['label' => 'Termos de uso', 'href' => '/termos'],
+        ['label' => 'Política de privacidade', 'href' => '/privacidade'],
     ],
     'Atendimento' => [
-        ['label' => 'Perguntas frequentes', 'href' => '#'],
+        ['label' => 'Perguntas frequentes', 'href' => '/perguntas-frequentes'],
         ['label' => 'Fale conosco', 'href' => '/contato'],
         ['label' => 'Segunda a sexta, 9h às 18h', 'href' => null],
     ],

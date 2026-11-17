@@ -10,7 +10,8 @@ use App\Support\Csrf;
 use App\Support\Session;
 
 /**
- * Páginas institucionais: Sobre e Contato.
+ * Páginas institucionais: Sobre, Contato e as do rodapé (perguntas frequentes,
+ * entrega, pagamento, termos e privacidade).
  *
  * O texto mora na view, sem banco: são páginas que mudam com o projeto, não com
  * a operação da loja. A exceção é o Contato, que lê do banco os canais
@@ -26,6 +27,31 @@ final class PageController
     public function contact(): void
     {
         $this->renderContact();
+    }
+
+    public function faq(): void
+    {
+        $this->render('Perguntas frequentes — Obsyrium Store', 'pages/faq.php');
+    }
+
+    public function delivery(): void
+    {
+        $this->render('Política de entrega — Obsyrium Store', 'pages/delivery.php');
+    }
+
+    public function payment(): void
+    {
+        $this->render('Formas de pagamento — Obsyrium Store', 'pages/payment.php');
+    }
+
+    public function terms(): void
+    {
+        $this->render('Termos de uso — Obsyrium Store', 'pages/terms.php');
+    }
+
+    public function privacy(): void
+    {
+        $this->render('Política de privacidade — Obsyrium Store', 'pages/privacy.php');
     }
 
     /**

@@ -678,3 +678,20 @@ Fechar a compra termina numa página própria: `/pedido/OBS-000004/confirmacao`.
 - Migrations: `2026_11_17_000015_create_settings_and_contact_messages.php` cria `settings` (chave/valor, já com os dois canais vazios) e `contact_messages`; `2026_11_17_000016_add_contact_message_status.php` acrescenta `phone`, `is_read` e `deleted_at` com índice para as abas; `2026_11_17_000017_create_contact_attempts_table.php` cria `contact_attempts` (`ip_hash`, `created_at`).
 - O menu do topo ganhou os links reais, com `aria-current` nas duas páginas, e o "Fale conosco" do rodapé aponta para `/contato`. Nenhum link do menu ficou em `#`.
 - Estilos em `public/assets/css/pages.css`, carregado no layout do site: blocos em duas colunas a partir de 48 rem, canais de contato lado a lado e formulário com nome, e-mail e telefone na mesma linha no computador (mensagem e botão ocupam a largura toda). O painel usa `admin-contact*` em `admin.css`.
+
+### Páginas institucionais do rodapé
+
+Cinco páginas fixas, com o texto na view e sem consulta ao banco, atendem os links do rodapé:
+
+| Rota | View | Método |
+| --- | --- | --- |
+| `/perguntas-frequentes` | `pages/faq.php` | `PageController::faq()` |
+| `/entrega` | `pages/delivery.php` | `PageController::delivery()` |
+| `/pagamento` | `pages/payment.php` | `PageController::payment()` |
+| `/termos` | `pages/terms.php` | `PageController::terms()` |
+| `/privacidade` | `pages/privacy.php` | `PageController::privacy()` |
+
+- **Perguntas frequentes** monta as perguntas num array e desenha cada uma como `<details class="faq__item">`: abre e fecha sem JavaScript, o `summary` recebe foco pelo teclado e a primeira já vem aberta. Cada resposta aponta para a página que tem o texto completo, em vez de repetir as regras.
+- **Entrega, pagamento, termos e privacidade** usam os mesmos blocos de Sobre/Contato (`page__block`, `page__blocks` em duas colunas a partir de 48 rem) e fecham com `page__note`, um lembrete do que ainda falta definir. O texto não inventa prazo, valor, CNPJ nem e-mail: frete e prazo aparecem como confirmação pelo atendimento, os meios de pagamento como previstos, e a privacidade descreve o que o código realmente faz (senha com Argon2id, CPF/telefone/endereço com AES-256-GCM, IP só como hash no limite do contato e no bloqueio de login, cookie apenas de sessão).
+- O rodapé passou a apontar para as rotas reais e ganhou **Termos de uso** e **Política de privacidade** separados; só os três perfis de rede social continuam em `#`, até existirem.
+- `pages.css` ganhou o bloco `faq*` (pergunta com `+`/`−` desenhado pelo CSS), `page__note` e a lista dentro de `page__block`.
