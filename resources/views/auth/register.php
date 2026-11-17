@@ -37,7 +37,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 				<div class="field">
 					<label class="field__label" for="cpf">CPF</label>
-					<input class="field__input" id="cpf" name="cpf" type="text" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required value="<?= $valor('cpf') ?>">
+					<input class="field__input" id="cpf" name="cpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" data-cpf-mask required value="<?= $valor('cpf') ?>">
 					<?php if (isset($errors['cpf'])): ?>
 						<p class="field__error"><?= $escape($errors['cpf']) ?></p>
 					<?php endif; ?>

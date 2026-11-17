@@ -475,6 +475,7 @@ Rota `GET /produto/{slug}`, atendida por `App\Controllers\ProductController::sho
 - `App\Controllers\AuthController` é fino: valida CSRF, chama `App\Services\AuthService` e renderiza. A regra fica no serviço, o acesso ao banco em `App\Repositories\UserRepository`.
 - Cadastro exige nome, CPF válido, telefone com DDD, e-mail, senha de 8+ caracteres, confirmação e aceite dos termos. O aceite é gravado em `terms_accepted_at`.
 - CPF e telefone são normalizados (só dígitos) e cifrados antes de ir para o banco; o CPF ganha um índice cego para a regra de unicidade.
+- No formulário, os dois campos têm máscara aplicada por `site.js` enquanto a pessoa digita: `data-cpf-mask` mostra `000.000.000-00` e `data-phone-mask` monta `(11) 99999-9999`. Os separadores são só enfeite — o valor formatado vai no POST e o servidor fica com os dígitos.
 - Login compara a senha com `password_verify` e reaproveita `password_needs_rehash` para atualizar o hash Argon2id quando necessário. Mensagem de erro é sempre "E-mail ou senha inválidos." — não revela se o e-mail existe.
 - `App\Support\Session` cuida do cookie (`HttpOnly`, `SameSite=Lax`, `Secure` sob HTTPS) e regenera o identificador no login. Contas com `is_active = 0` ou `deleted_at` preenchido não entram.
 - O token CSRF é trocado no login (`Csrf::rotate()` dentro de `Session::login`): um token obtido no formulário de login não vale para o logout depois de autenticado.
