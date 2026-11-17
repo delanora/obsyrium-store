@@ -106,49 +106,102 @@
         });
     });
 
-    // Cor: "+ adicionar nova cor" abre o campo da cor nova e o esconde de novo
-    // quando uma cor da lista é escolhida. Sem este script o campo fica sempre
-    // visível e o servidor usa o que estiver preenchido.
+    // Cor: o próprio campo é o drop down — ao focar, mostra a lista das cores
+    // dentro dele. Cada linha preenche o campo e o × da linha apaga aquela cor.
+    // Digitar um nome que não está na lista já vale como cor nova: nada de
+    // campo separado. Sem este script o campo continua sendo um texto comum.
     cada(document.querySelectorAll('[data-color-field]'), function (campo) {
-        var seletor = campo.querySelector('[data-color-select]');
-        var bloco = campo.querySelector('[data-color-new]');
-        var entrada = campo.querySelector('[data-color-new-input]');
+        var entrada = campo.querySelector('[data-color-input]');
+        var painel = campo.querySelector('[data-color-panel]');
+        var botao = campo.querySelector('[data-color-toggle]');
+        var vazio = campo.querySelector('[data-color-empty]');
 
-        if (!seletor || !bloco || !entrada) {
+        if (!entrada || !painel) {
             return;
         }
 
-        // O × apaga a cor escolhida. Sem JavaScript ele continua enviando o
-        // formulário; aqui só pede confirmação e some quando não há cor.
-        var apagar = campo.querySelector('[data-color-delete]');
+        var opcoes = painel.querySelectorAll('[data-color-pick]');
 
-        var atualizar = function () {
-            bloco.hidden = seletor.value !== campo.getAttribute('data-color-field');
+        var abrir = function (aberto) {
+            painel.hidden = !aberto;
+            entrada.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+        };
 
-            if (apagar) {
-                apagar.disabled = seletor.value === ''
-                    || seletor.value === campo.getAttribute('data-color-field');
+        var filtrar = function () {
+            var termo = entrada.value.trim().toLowerCase();
+            var achou = 0;
+
+            cada(opcoes, function (opcao) {
+                var nome = opcao.getAttribute('data-color-pick').toLowerCase();
+                var mostra = termo === '' || nome.indexOf(termo) !== -1;
+
+                opcao.parentNode.hidden = !mostra;
+                achou += mostra ? 1 : 0;
+            });
+
+            if (vazio) {
+                vazio.hidden = achou > 0;
             }
         };
 
-        seletor.addEventListener('change', function () {
-            atualizar();
-
-            if (!bloco.hidden) {
-                entrada.focus();
-            }
+        entrada.addEventListener('focus', function () {
+            filtrar();
+            abrir(true);
         });
 
-        if (apagar) {
-            apagar.addEventListener('click', function (evento) {
-                var aviso = 'Apagar a cor "' + seletor.value + '"? Ela sai da lista do seletor.';
+        entrada.addEventListener('input', function () {
+            filtrar();
+            abrir(true);
+        });
+
+        if (botao) {
+            botao.addEventListener('click', function () {
+                filtrar();
+                abrir(painel.hidden);
+
+                if (!painel.hidden) {
+                    entrada.focus();
+                }
+            });
+        }
+
+        cada(opcoes, function (opcao) {
+            opcao.addEventListener('click', function () {
+                entrada.value = opcao.getAttribute('data-color-pick');
+
+                // Focar abre a lista; fechar vem depois para ela não reabrir.
+                entrada.focus();
+                abrir(false);
+            });
+        });
+
+        // O × apaga a cor da linha. Sem JavaScript ele já envia o formulário;
+        // aqui só pede confirmação.
+        cada(campo.querySelectorAll('[data-color-remove]'), function (remover) {
+            remover.addEventListener('click', function (evento) {
+                var aviso = 'Apagar a cor "' + remover.value + '"? Ela sai da lista do seletor.';
 
                 if (!window.confirm(aviso)) {
                     evento.preventDefault();
                 }
             });
-        }
+        });
 
-        atualizar();
+        campo.addEventListener('keydown', function (evento) {
+            if (evento.key === 'Enter' && evento.target === entrada && !painel.hidden) {
+                evento.preventDefault();
+            }
+
+            if (evento.key === 'Escape') {
+                entrada.focus();
+                abrir(false);
+            }
+        });
+
+        document.addEventListener('click', function (evento) {
+            if (!campo.contains(evento.target)) {
+                abrir(false);
+            }
+        });
     });
 })();

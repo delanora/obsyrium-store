@@ -1424,82 +1424,115 @@
     align-self: start;
 }
 
-/* Cor do produto: seletor com a seta do tema, o × ao lado e o campo da cor nova */
+/* Cor do produto: campo que abre a lista das cores dentro do próprio drop down,
+   com o × em cada linha. */
 
-.field__color-row {
+.field__combo {
+    position: relative;
+}
+
+.field__combo__input {
+    padding-inline-end: 2.5rem;
+}
+
+.field__combo__toggle {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-accent);
+    cursor: pointer;
+}
+
+.field__combo__toggle svg {
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
+.field__combo__panel {
+    position: absolute;
+    z-index: 20;
+    inset-inline: 0;
+    inset-block-start: calc(100% + var(--space-2));
+    max-height: 16rem;
+    margin: 0;
+    padding: var(--space-1) 0;
+    overflow-y: auto;
+    list-style: none;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    box-shadow: 0 1rem 2rem rgb(0 0 0 / 45%);
+}
+
+.field__combo__panel[hidden] {
+    display: none;
+}
+
+.field__combo__item {
     display: flex;
-    gap: var(--space-2);
     align-items: stretch;
 }
 
-.field__color-row .field__select {
-    flex: 1 1 auto;
-    min-width: 0;
-    align-self: stretch;
+/* A lista filtra pelo que está digitado; `hidden` precisa vencer o display. */
+.field__combo__item[hidden] {
+    display: none;
 }
 
-.field__color-delete {
+.field__combo__pick {
+    flex: 1 1 auto;
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    background: none;
+    color: var(--color-text);
+    cursor: pointer;
+    font: inherit;
+    text-align: start;
+}
+
+.field__combo__pick:hover,
+.field__combo__remove:hover {
+    background-color: var(--color-accent-soft);
+}
+
+.field__combo__pick:focus-visible,
+.field__combo__remove:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: calc(var(--focus-ring-offset) * -1);
+}
+
+.field__combo__remove {
     display: inline-flex;
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    width: 2.75rem;
-    padding: 0;
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-sm);
+    width: 2.25rem;
+    border: 0;
     background: none;
-    color: var(--color-text-muted);
+    color: var(--color-text-subtle);
     cursor: pointer;
 }
 
-.field__color-delete svg {
-    width: 1rem;
-    height: 1rem;
+.field__combo__remove svg {
+    width: 0.85rem;
+    height: 0.85rem;
 }
 
-.field__color-delete:hover {
-    border-color: var(--color-danger);
+.field__combo__remove:hover {
     color: var(--color-danger);
 }
 
-.field__color-delete:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
-    outline-offset: var(--focus-ring-offset);
-}
-
-.field__color-delete:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-}
-
-.field__select {
-    appearance: none;
-    padding-inline-end: 2.5rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23c9a063' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right var(--space-4) center;
-    background-size: 0.75rem;
-    cursor: pointer;
-}
-
-.field__new-color {
-    display: grid;
-    gap: var(--space-2);
-    padding: var(--space-3);
-    border: 1px dashed var(--color-accent-strong);
-    border-radius: var(--radius-sm);
-    background-color: var(--color-bg);
-}
-
-/* O bloco nasce visível (sem JavaScript dá para cadastrar a cor); o script o
-   esconde quando o seletor não está em "+ adicionar nova cor". */
-.field__new-color[hidden] {
-    display: none;
-}
-
-/* Com o campo da cor nova aberto, a dica do seletor sai de cena. */
-.field__new-color:not([hidden]) ~ .field__hint {
-    display: none;
+.field__combo__item--empty {
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-sm);
 }
 
 /* Foto principal na célula do produto, no estoque */

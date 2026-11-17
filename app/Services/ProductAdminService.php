@@ -31,11 +31,6 @@ final class ProductAdminService
     public const SIZES = ['PP', 'P', 'M', 'G', 'GG'];
 
     /**
-     * Valor do item "+ adicionar nova cor" no seletor de cor.
-     */
-    public const NEW_COLOR = '__nova';
-
-    /**
      * Cores de fábrica, semeadas em `product_colors` pela migration. Depois disso
      * a lista vem do banco e cresce pelo próprio painel.
      */
@@ -481,6 +476,23 @@ final class ProductAdminService
     }
 
     /**
+     * Nome já cadastrado da cor, sem diferenciar maiúsculas, ou null.
+     */
+    private function corCadastrada(string $nome): ?string
+    {
+        if ($nome === '') {
+            return null;
+        }
+
+        $consulta = $this->pdo->prepare('SELECT name FROM product_colors WHERE name = :name LIMIT 1');
+        $consulta->execute([':name' => $nome]);
+
+        $encontrada = $consulta->fetchColumn();
+
+        return $encontrada === false ? null : (string) $encontrada;
+    }
+
+    /**
      * Guarda a cor usada no produto na lista do seletor, quando ela é nova.
      */
     private function guardarCor(string $nome): void
@@ -572,14 +584,16 @@ final class ProductAdminService
         $nome = trim((string) ($dados['name'] ?? ''));
         $slug = trim((string) ($dados['slug'] ?? ''));
         $cor = trim((string) ($dados['color'] ?? ''));
-        $novaCor = trim((string) ($dados['nova_cor'] ?? ''));
         $material = trim((string) ($dados['material'] ?? ''));
 
-        // "+ adicionar nova cor" manda o valor especial e a cor de verdade vem em
-        // `nova_cor`; uma cor nova digitada tem prioridade sobre a da lista.
-        if ($novaCor !== '' || $cor === self::NEW_COLOR) {
-            $cor = $novaCor;
+        // A cor é texto livre: se o que foi digitado já existe na lista (o
+        // banco compara sem diferenciar maiúsculas), vale o nome já cadastrado.
+        $cadastrada = $this->corCadastrada($cor);
+
+        if ($cadastrada !== null) {
+            $cor = $cadastrada;
         }
+
         $descricao = trim((string) ($dados['description'] ?? ''));
         $precoBruto = trim((string) ($dados['price'] ?? ''));
         $comparativoBruto = trim((string) ($dados['compare_price'] ?? ''));
@@ -588,11 +602,10 @@ final class ProductAdminService
         $categorias = $this->resolverCategorias($dados);
         $erros = $categorias['errors'];
 
-                    $valores = [
-              'name' => $nome,
-              'slug' => $slug,
-              'color' => $cor,
-              'nova_cor' => $novaCor,
+        $valores = [
+            'name' => $nome,
+            'slug' => $slug,
+            'color' => $cor,
             'material' => $material,
             'description' => $descricao,
             'price' => $precoBruto,
@@ -618,7 +631,7 @@ final class ProductAdminService
         }
 
         if (mb_strlen($cor) < 2 || mb_strlen($cor) > 40) {
-            $erros[] = 'Escolha uma cor da lista ou cadastre uma nova, com 2 a 40 caracteres.';
+            $erros[] = 'Informe a cor do produto, com 2 a 40 caracteres.';
         }
 
         if (mb_strlen($material) < 2 || mb_strlen($material) > 80) {

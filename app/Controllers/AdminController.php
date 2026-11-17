@@ -426,7 +426,7 @@ final class AdminController
         }
 
         $id = (int) ($params['id'] ?? 0);
-        $erro = $this->products()->deleteColor((string) ($_POST['color'] ?? ''));
+        $erro = $this->products()->deleteColor((string) ($_POST['cor_apagar'] ?? $_POST['color'] ?? ''));
 
         Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Cor apagada da lista.');
 

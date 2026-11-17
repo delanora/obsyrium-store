@@ -69,14 +69,8 @@ if ($novo && $tamanhosMarcados === []) {
 	$tamanhosMarcados = $adminTamanhos;
 }
 
-// A cor atual entra na frente da lista de sugestões quando ainda não está nela.
+// A cor é digitada no próprio campo, que abre a lista das cores cadastradas.
 $corAtual = $valor('color', $novo ? '' : (string) $adminProduto['color']);
-$novaCor = (string) ($adminValores['nova_cor'] ?? '');
-$coresSugeridas = $adminCores;
-
-if ($corAtual !== '' && !in_array($corAtual, $coresSugeridas, true)) {
-	array_unshift($coresSugeridas, $corAtual);
-}
 
 $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 	if (in_array($raiz, $marcadas, true)) {
@@ -276,45 +270,68 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 		</fieldset>
 
 		<div class="admin-field-row">
-			<div class="field" data-color-field="<?= $escape(ProductAdminService::NEW_COLOR) ?>">
+			<div class="field" data-color-field>
 				<label class="field__label" for="color">Cor</label>
-				<div class="field__color-row">
-					<select class="field__input field__select" id="color" name="color" required data-color-select>
-						<option value="">Escolha uma cor</option>
-						<?php foreach ($coresSugeridas as $cor): ?>
-							<option value="<?= $escape($cor) ?>" <?= $novaCor === '' && $cor === $corAtual ? 'selected' : '' ?>><?= $escape($cor) ?></option>
-						<?php endforeach; ?>
-						<option value="<?= $escape(ProductAdminService::NEW_COLOR) ?>" <?= $novaCor !== '' ? 'selected' : '' ?>>+ adicionar nova cor</option>
-					</select>
-
-					<button
-						class="field__color-delete"
-						type="submit"
-						formaction="<?= $escape($urlDoProduto . '/cor/apagar') ?>"
-						formnovalidate
-						data-color-delete
-						aria-label="Apagar a cor escolhida"
-						title="Apagar a cor escolhida"
-					>
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
-					</button>
-				</div>
-
-				<div class="field__new-color" data-color-new>
-					<label class="field__label" for="nova_cor">Nova cor</label>
+				<div class="field__combo">
 					<input
-						class="field__input"
-						id="nova_cor"
-						name="nova_cor"
+						class="field__input field__combo__input"
+						id="color"
+						name="color"
 						type="text"
 						maxlength="40"
 						autocomplete="off"
-						value="<?= $escape($novaCor) ?>"
-						data-color-new-input
+						placeholder="Escolha ou digite uma cor"
+						required
+						value="<?= $escape($corAtual) ?>"
+						role="combobox"
+						aria-expanded="false"
+						aria-controls="color-list"
+						data-color-input
 					>
+
+					<button
+						class="field__combo__toggle"
+						type="button"
+						tabindex="-1"
+						aria-label="Mostrar as cores"
+						data-color-toggle
+					>
+						<svg viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+					</button>
+
+					<ul class="field__combo__panel" id="color-list" role="listbox" aria-label="Cores cadastradas" data-color-panel hidden>
+						<?php foreach ($adminCores as $cor): ?>
+							<li class="field__combo__item">
+								<button
+									class="field__combo__pick"
+									type="button"
+									role="option"
+									data-color-pick="<?= $escape($cor) ?>"
+								>
+									<?= $escape($cor) ?>
+								</button>
+
+								<button
+									class="field__combo__remove"
+									type="submit"
+									formaction="<?= $escape($urlDoProduto . '/cor/apagar') ?>"
+									formnovalidate
+									name="cor_apagar"
+									value="<?= $escape($cor) ?>"
+									aria-label="Apagar a cor <?= $escape($cor) ?>"
+									title="Apagar <?= $escape($cor) ?>"
+									data-color-remove
+								>
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+								</button>
+							</li>
+						<?php endforeach; ?>
+
+						<li class="field__combo__item field__combo__item--empty" data-color-empty hidden>Nenhuma cor encontrada — o texto digitado vira uma cor nova.</li>
+					</ul>
 				</div>
 
-				<p class="field__hint">Cor nova? Use "+ adicionar nova cor": ela entra na lista. O × apaga a cor escolhida — só se não houver peça em estoque com ela.</p>
+				<p class="field__hint">Digite para escolher ou criar uma cor. O × apaga a cor da lista — só se não houver peça em estoque com ela.</p>
 			</div>
 
 			<div class="field">
