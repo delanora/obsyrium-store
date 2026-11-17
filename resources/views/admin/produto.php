@@ -155,6 +155,7 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 						form="produto-form"
 					>
 					<p class="field__hint">
+						Arraste as fotos para cá ou escolha os arquivos.
 						JPG, PNG ou WebP, até <?= $escape($adminLimiteFotos) ?>, no máximo <?= (int) $adminMaxFotos ?> fotos.
 						A primeira da lista é a que aparece na vitrine.
 					</p>
@@ -210,6 +211,7 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 					required
 				>
 				<p class="field__hint">
+					Arraste a foto para cá ou escolha o arquivo.
 					JPG, PNG ou WebP, até <?= $escape($adminLimiteFotos) ?>, no máximo <?= (int) $adminMaxFotos ?> fotos.
 					A primeira da lista é a que aparece na vitrine.
 				</p>

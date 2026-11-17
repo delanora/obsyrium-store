@@ -54,6 +54,58 @@
         atualizar();
     });
 
+    // Fotos: o bloco de envio aceita a imagem arrastada do computador. O arquivo
+    // solto entra no mesmo <input type="file">, então o envio continua sendo o do
+    // formulário — sem um segundo caminho no servidor e sem JavaScript obrigatório.
+    cada(document.querySelectorAll('.admin-upload'), function (bloco) {
+        var campo = bloco.querySelector('input[type="file"]');
+
+        if (!campo || typeof DataTransfer !== 'function') {
+            return;
+        }
+
+        var marcar = function (ligado) {
+            bloco.classList.toggle('is-dragover', ligado);
+        };
+
+        bloco.addEventListener('dragover', function (evento) {
+            evento.preventDefault();
+            marcar(true);
+        });
+
+        bloco.addEventListener('dragleave', function (evento) {
+            if (!bloco.contains(evento.relatedTarget)) {
+                marcar(false);
+            }
+        });
+
+        bloco.addEventListener('drop', function (evento) {
+            evento.preventDefault();
+            marcar(false);
+
+            var arquivos = Array.prototype.filter.call(evento.dataTransfer.files, function (arquivo) {
+                return arquivo.type.indexOf('image/') === 0;
+            });
+
+            if (arquivos.length === 0) {
+                return;
+            }
+
+            if (!campo.multiple) {
+                arquivos = arquivos.slice(0, 1);
+            }
+
+            var sacola = new DataTransfer();
+
+            cada(arquivos, function (arquivo) {
+                sacola.items.add(arquivo);
+            });
+
+            campo.files = sacola.files;
+            campo.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+
     // Cor do produto: o que foi digitado e ainda não estava na lista passa a ser
     // sugerido nela, sem sair do campo e sem recarregar a página.
     cada(document.querySelectorAll('[data-color-input]'), function (campo) {

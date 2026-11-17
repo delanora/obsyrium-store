@@ -1298,6 +1298,14 @@
     border-top: 1px dashed var(--color-border);
 }
 
+/* Área de soltar: a imagem arrastada é aceita no bloco inteiro. */
+.admin-upload.is-dragover {
+    border-radius: var(--radius-sm);
+    background-color: var(--color-accent-soft);
+    outline: 1px dashed var(--color-accent);
+    outline-offset: var(--space-1);
+}
+
 .admin-upload__input {
     width: 100%;
     font-size: var(--font-size-xs);
