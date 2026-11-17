@@ -57,7 +57,7 @@ $valores = $contatoValores ?? ['name' => '', 'email' => '', 'phone' => '', 'mess
 
 		<section class="contact__form" aria-labelledby="contato-form-titulo">
 			<h2 class="page__block-title" id="contato-form-titulo">Enviar mensagem</h2>
-			<p class="page__text">Conte o que você precisa e respondemos no e-mail informado.</p>
+			<p class="page__text">Conte o que você precisa e respondemos no e-mail informado. Você pode enviar até <?= App\Services\ContactService::MAX_SENDS_PER_WINDOW ?> mensagens por hora.</p>
 
 			<?php if ($erros !== []): ?>
 				<div class="contact__alert" role="alert">
@@ -71,6 +71,12 @@ $valores = $contatoValores ?? ['name' => '', 'email' => '', 'phone' => '', 'mess
 
 			<form class="contact__fields" action="/contato" method="post">
 				<?= Csrf::field() ?>
+
+				<?php /* Armadilha para robô: gente não vê, robô preenche. */ ?>
+				<div class="contact__honeypot" aria-hidden="true">
+					<label for="contato-website">Não preencha este campo</label>
+					<input id="contato-website" name="website" type="text" tabindex="-1" autocomplete="off">
+				</div>
 
 				<div class="field">
 					<label class="field__label" for="contato-nome">Nome</label>

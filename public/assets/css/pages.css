@@ -179,3 +179,13 @@
     margin: 0;
     padding-left: var(--space-4);
 }
+
+/* Campo armadilha: fora da tela, sem ocupar espaço nem receber foco. */
+
+.contact__honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}

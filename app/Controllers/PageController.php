@@ -43,10 +43,19 @@ final class PageController
             return;
         }
 
-        $resultado = (new ContactService(Connection::get()))->send($_POST);
+        $resultado = (new ContactService(Connection::get()))->send(
+            $_POST,
+            (string) ($_SERVER['REMOTE_ADDR'] ?? '')
+        );
 
-        if ($resultado['errors'] !== []) {
-            $this->renderContact($resultado['errors'], $resultado['values'], 422);
+        // Robô que preencheu o campo armadilha recebe a mesma resposta de
+        // sucesso, mas nada é gravado.
+        if (!$resultado['spam'] && $resultado['errors'] !== []) {
+            $this->renderContact(
+                $resultado['errors'],
+                $resultado['values'],
+                $resultado['throttled'] ? 429 : 422
+            );
 
             return;
         }

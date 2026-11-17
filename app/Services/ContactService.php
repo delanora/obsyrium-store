@@ -17,6 +17,11 @@ use PDO;
  * As mensagens do formulário vivem em `contact_messages` e são lidas na aba
  * Mensagens. `is_read` é o "lida" e `deleted_at` é a lixeira: apagar só marca a
  * data, então dá para restaurar; a exclusão definitiva só vale a partir dela.
+ *
+ * O formulário público tem duas defesas contra robô: o campo armadilha
+ * `website`, que gente não vê e robô preenche, e o limite de envios por IP em
+ * `contact_attempts` (o IP entra só como hash). Os links de resposta são
+ * montados aqui para a view não repetir a formatação de e-mail e WhatsApp.
  */
 final class ContactService
 {
@@ -40,6 +45,14 @@ final class ContactService
 
     /** Quantas mensagens cada aba mostra, das mais novas para as mais antigas. */
     private const LIST_LIMIT = 100;
+
+    /** Envios aceitos por IP dentro da janela abaixo. */
+    public const MAX_SENDS_PER_WINDOW = 5;
+
+    public const WINDOW_MINUTES = 60;
+
+    /** Campo escondido que só robô preenche. */
+    public const HONEYPOT_FIELD = 'website';
 
     public function __construct(private readonly PDO $pdo)
     {
@@ -123,11 +136,14 @@ final class ContactService
     }
 
     /**
+     * Recebe o formulário. `spam` é o robô que caiu na armadilha (o controlador
+     * finge sucesso e não grava nada) e `throttled` é o IP que passou do limite.
+     *
      * @param array<string, mixed> $dados
      *
-     * @return array{errors: list<string>, values: array{name: string, email: string, phone: string, message: string}}
+     * @return array{errors: list<string>, values: array{name: string, email: string, phone: string, message: string}, spam: bool, throttled: bool}
      */
-    public function send(array $dados): array
+    public function send(array $dados, string $ip = ''): array
     {
         $nome = trim((string) ($dados['name'] ?? ''));
         $email = trim((string) ($dados['email'] ?? ''));
@@ -135,6 +151,10 @@ final class ContactService
         $mensagem = trim((string) ($dados['message'] ?? ''));
         $valores = ['name' => $nome, 'email' => $email, 'phone' => $telefone, 'message' => $mensagem];
         $erros = [];
+
+        if (trim((string) ($dados[self::HONEYPOT_FIELD] ?? '')) !== '') {
+            return ['errors' => [], 'values' => $valores, 'spam' => true, 'throttled' => false];
+        }
 
         if (mb_strlen($nome) < 2 || mb_strlen($nome) > self::MAX_NAME) {
             $erros[] = 'Nome: escreva de 2 a 120 caracteres.';
@@ -155,7 +175,16 @@ final class ContactService
         }
 
         if ($erros !== []) {
-            return ['errors' => $erros, 'values' => $valores];
+            return ['errors' => $erros, 'values' => $valores, 'spam' => false, 'throttled' => false];
+        }
+
+        if ($this->tooManyAttempts($ip)) {
+            return [
+                'errors' => ['Muitas mensagens em pouco tempo. Aguarde alguns minutos e tente de novo.'],
+                'values' => $valores,
+                'spam' => false,
+                'throttled' => true,
+            ];
         }
 
         $this->pdo->prepare(
@@ -167,7 +196,14 @@ final class ContactService
             ':mensagem' => $mensagem,
         ]);
 
-        return ['errors' => [], 'values' => ['name' => '', 'email' => '', 'phone' => '', 'message' => '']];
+        $this->recordAttempt($ip);
+
+        return [
+            'errors' => [],
+            'values' => ['name' => '', 'email' => '', 'phone' => '', 'message' => ''],
+            'spam' => false,
+            'throttled' => false,
+        ];
     }
 
     /**
@@ -281,6 +317,75 @@ final class ContactService
         $consulta->execute([':id' => $id]);
 
         return $consulta->rowCount() === 1 ? null : 'Mensagem não encontrada na lixeira.';
+    }
+
+    /**
+     * Links de resposta com a mensagem já citada, para o painel.
+     *
+     * O texto é cortado para a URL não virar um romance: quem responde já tem a
+     * mensagem inteira na tela. O WhatsApp só existe quando há telefone.
+     *
+     * @return array{mail: string, whatsapp: string|null}
+     */
+    public static function replyLinks(string $nome, string $email, string $telefone, string $mensagem): array
+    {
+        $primeiro = explode(' ', trim($nome))[0];
+        $saudacao = $primeiro === '' ? 'Olá!' : 'Olá, ' . $primeiro . '!';
+        $resumo = mb_strlen($mensagem) > 600 ? mb_substr($mensagem, 0, 600) . '…' : $mensagem;
+        $citada = str_replace(["\r\n", "\r"], "\n", $resumo);
+
+        $corpoEmail = $saudacao . "\n\n"
+            . "Sobre a sua mensagem:\n"
+            . '"' . $citada . '"' . "\n\n"
+            . "Obsyrium Store\n";
+
+        $textoWhatsapp = $saudacao . " Sobre a sua mensagem: \"" . $citada . '"';
+        $digitos = preg_replace('/\D+/', '', $telefone) ?? '';
+
+        return [
+            'mail' => 'mailto:' . $email . '?' . http_build_query(
+                ['subject' => 'Resposta — Obsyrium Store', 'body' => $corpoEmail],
+                '',
+                '&',
+                PHP_QUERY_RFC3986
+            ),
+            'whatsapp' => $digitos === '' ? null : 'https://wa.me/' . $digitos . '?' . http_build_query(
+                ['text' => $textoWhatsapp],
+                '',
+                '&',
+                PHP_QUERY_RFC3986
+            ),
+        ];
+    }
+
+    /**
+     * Limite por IP: conta os envios bem-sucedidos dentro da janela.
+     */
+    private function tooManyAttempts(string $ip): bool
+    {
+        $consulta = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM contact_attempts
+             WHERE ip_hash = :ip AND created_at > (NOW() - INTERVAL ' . self::WINDOW_MINUTES . ' MINUTE)'
+        );
+        $consulta->execute([':ip' => $this->ipHash($ip)]);
+
+        return (int) $consulta->fetchColumn() >= self::MAX_SENDS_PER_WINDOW;
+    }
+
+    /**
+     * Registra o envio e, de passagem, limpa o que já saiu da janela.
+     */
+    private function recordAttempt(string $ip): void
+    {
+        $this->pdo->exec('DELETE FROM contact_attempts WHERE created_at < (NOW() - INTERVAL 1 DAY)');
+
+        $this->pdo->prepare('INSERT INTO contact_attempts (ip_hash) VALUES (:ip)')
+            ->execute([':ip' => $this->ipHash($ip)]);
+    }
+
+    private function ipHash(string $ip): string
+    {
+        return hash('sha256', $ip === '' ? 'desconhecido' : $ip);
     }
 
     /**

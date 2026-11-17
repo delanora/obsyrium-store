@@ -82,6 +82,7 @@ $naLixeira = $adminMensagensFiltro === ContactService::FILTER_TRASH;
 
 			<tbody>
 				<?php foreach ($adminMensagens as $mensagem): ?>
+					<?php $resposta = ContactService::replyLinks($mensagem['name'], $mensagem['email'], $mensagem['phone'], $mensagem['message']); ?>
 					<tr class="<?= $mensagem['is_read'] || $naLixeira ? '' : 'admin-message--nova' ?>">
 						<td>
 							<span class="admin-message__name">
@@ -104,6 +105,14 @@ $naLixeira = $adminMensagensFiltro === ContactService::FILTER_TRASH;
 						</td>
 
 						<td>
+							<div class="admin-message__reply">
+								<a class="admin-link-button" href="<?= $escape($resposta['mail']) ?>">Responder por e-mail</a>
+
+								<?php if ($resposta['whatsapp'] !== null): ?>
+									<a class="admin-link-button" href="<?= $escape($resposta['whatsapp']) ?>" target="_blank" rel="noopener">WhatsApp</a>
+								<?php endif; ?>
+							</div>
+
 							<div class="admin-message__actions">
 								<?php if ($naLixeira): ?>
 									<form action="/admin/mensagens/restaurar" method="post">
