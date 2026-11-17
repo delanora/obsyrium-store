@@ -48,7 +48,7 @@ $primeiroNome = explode(' ', trim((string) $contaUsuario['name']))[0];
 
 					<div class="field">
 						<label class="field__label" for="phone">Telefone</label>
-						<input class="field__input" id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(11) 91234-5678" value="<?= $valor('phone', $contaTelefone) ?>">
+						<input class="field__input" id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="15" placeholder="(11) 91234-5678" data-phone-mask value="<?= $valor('phone', $contaTelefone) ?>">
 						<p class="field__hint">Com DDD. Serve para avisos sobre a entrega e fica cifrado no banco.</p>
 						<?php if (isset($errors['phone'])): ?>
 							<p class="field__error"><?= $escape($errors['phone']) ?></p>

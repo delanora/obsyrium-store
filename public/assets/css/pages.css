@@ -152,8 +152,9 @@
 }
 
 @media (min-width: 48rem) {
+    /* Nome, e-mail e telefone na mesma linha; mensagem e botão logo abaixo. */
     .contact__fields {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .contact__field--wide {

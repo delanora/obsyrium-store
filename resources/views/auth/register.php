@@ -45,7 +45,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 				<div class="field">
 					<label class="field__label" for="phone">Telefone com DDD</label>
-					<input class="field__input" id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(11) 98765-4321" required value="<?= $valor('phone') ?>">
+					<input class="field__input" id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="15" placeholder="(11) 98765-4321" data-phone-mask required value="<?= $valor('phone') ?>">
 					<?php if (isset($errors['phone'])): ?>
 						<p class="field__error"><?= $escape($errors['phone']) ?></p>
 					<?php endif; ?>

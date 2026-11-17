@@ -90,7 +90,7 @@ $valores = $contatoValores ?? ['name' => '', 'email' => '', 'phone' => '', 'mess
 
 				<div class="field">
 					<label class="field__label" for="contato-telefone">Telefone</label>
-					<input class="field__input" id="contato-telefone" name="phone" type="tel" maxlength="<?= App\Services\ContactService::MAX_PHONE ?>" autocomplete="tel" inputmode="tel" placeholder="(11) 99999-9999" required value="<?= $escape($valores['phone']) ?>">
+					<input class="field__input" id="contato-telefone" name="phone" type="tel" maxlength="15" autocomplete="tel" inputmode="tel" placeholder="(11) 99999-9999" data-phone-mask required value="<?= $escape($valores['phone']) ?>">
 				</div>
 
 				<div class="field contact__field--wide">

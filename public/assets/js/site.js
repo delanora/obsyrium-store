@@ -3,8 +3,9 @@
  *
  * Menu do celular (hamburger, com foco, Escape e clique fora), gaveta do
  * carrinho no computador, sombra do cabeçalho ao rolar, entrada dos blocos
- * marcados com [data-reveal], os filtros recolhíveis do catálogo no celular e
- * o CEP que preenche o endereço pela BrasilAPI.
+ * marcados com [data-reveal], os filtros recolhíveis do catálogo no celular, a
+ * máscara do telefone brasileiro e o CEP que preenche o endereço pela
+ * BrasilAPI.
  * Sem este arquivo o site continua inteiro: o menu fica em duas linhas e
  * nada é escondido, porque os estados iniciais dependem de html.js.
  */
@@ -672,6 +673,125 @@
 
         campoCep.addEventListener('change', consultarCep);
     }
+    // Telefone: a máscara do número brasileiro entra enquanto a pessoa digita —
+    // (11) 9999-9999 no fixo e (11) 99999-9999 no celular. O campo guarda o
+    // valor formatado; quem descarta parênteses, espaço e hífen é o servidor, e
+    // sem script o campo continua sendo um "tel" comum.
+    var camposDeTelefone = document.querySelectorAll('[data-phone-mask]');
+
+    if (camposDeTelefone.length) {
+        var apenasDigitosTelefone = function (texto) {
+            return String(texto).replace(/\D+/g, '');
+        };
+
+        var formatarTelefone = function (texto) {
+            var digitos = apenasDigitosTelefone(texto);
+
+            // Número colado com o país (+55) perde o 55: o campo é do número
+            // local, com DDD.
+            if (digitos.length > 11 && digitos.slice(0, 2) === '55') {
+                digitos = digitos.slice(2);
+            }
+
+            digitos = digitos.slice(0, 11);
+
+            if (digitos.length === 0) {
+                return '';
+            }
+
+            if (digitos.length <= 2) {
+                return '(' + digitos;
+            }
+
+            if (digitos.length <= 6) {
+                return '(' + digitos.slice(0, 2) + ') ' + digitos.slice(2);
+            }
+
+            // Fixo (até 10 dígitos) tem 4 antes do hífen; celular tem 5.
+            var corte = digitos.length > 10 ? 7 : 6;
+
+            return '(' + digitos.slice(0, 2) + ') ' + digitos.slice(2, corte) + '-' + digitos.slice(corte);
+        };
+
+        // Posição do cursor depois de N dígitos, porque parênteses, espaço e
+        // hífen também ocupam lugar no texto.
+        var posicaoDoDigito = function (formatado, quantidade) {
+            if (quantidade <= 0) {
+                return 0;
+            }
+
+            var vistos = 0;
+
+            for (var i = 0; i < formatado.length; i += 1) {
+                if (/\d/.test(formatado.charAt(i))) {
+                    vistos += 1;
+
+                    if (vistos === quantidade) {
+                        return i + 1;
+                    }
+                }
+            }
+
+            return formatado.length;
+        };
+
+        Array.prototype.forEach.call(camposDeTelefone, function (campo) {
+            if (campo.value !== '') {
+                campo.value = formatarTelefone(campo.value);
+            }
+
+            campo.addEventListener('input', function () {
+                var cursor = campo.selectionStart;
+
+                if (typeof cursor !== 'number') {
+                    cursor = campo.value.length;
+                }
+
+                var digitosAntesDoCursor = apenasDigitosTelefone(campo.value.slice(0, cursor)).length;
+                var formatado = formatarTelefone(campo.value);
+
+                if (campo.value === formatado) {
+                    return;
+                }
+
+                campo.value = formatado;
+
+                var alvo = posicaoDoDigito(formatado, Math.min(digitosAntesDoCursor, 11));
+                campo.setSelectionRange(alvo, alvo);
+            });
+
+            // Backspace logo depois de um separador apaga o dígito anterior: o
+            // parêntese e o hífen são enfeite e não podem prender o cursor.
+            campo.addEventListener('keydown', function (evento) {
+                if (evento.key !== 'Backspace' || campo.selectionStart !== campo.selectionEnd) {
+                    return;
+                }
+
+                var cursor = campo.selectionStart;
+                var anterior = campo.value.charAt(cursor - 1);
+
+                if (anterior !== '(' && anterior !== ')' && anterior !== ' ' && anterior !== '-') {
+                    return;
+                }
+
+                evento.preventDefault();
+
+                var digitos = apenasDigitosTelefone(campo.value);
+                var quantidade = apenasDigitosTelefone(campo.value.slice(0, cursor - 1)).length;
+
+                if (quantidade > 0) {
+                    digitos = digitos.slice(0, quantidade - 1) + digitos.slice(quantidade);
+                }
+
+                var formatado = formatarTelefone(digitos);
+                var alvo = posicaoDoDigito(formatado, quantidade - 1);
+
+                campo.value = formatado;
+                campo.setSelectionRange(alvo, alvo);
+            });
+        });
+    }
+
     // Catálogo: no celular o painel de filtros nasce recolhido. Com filtro
     // ativo ele continua aberto, para dar para ajustar o que está ligado.
     var filtros = document.querySelector('[data-catalog-filters]');
