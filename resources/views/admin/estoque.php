@@ -132,7 +132,20 @@ $voltar = ['aba' => $aba, 'ordem' => $ordem, 'direcao' => $direcao, 'pagina' => 
 					<?php $campoId = 'saldo-' . (int) $linha['variant_id']; ?>
 
 					<tr>
-						<td><?= $escape((string) $linha['product']) ?></td>
+						<?php $foto = (string) ($linha['image'] ?? ''); ?>
+						<td>
+							<span class="admin-product-cell">
+								<img
+									class="admin-product-cell__thumb"
+									src="<?= $escape($foto !== '' ? $foto : '/assets/images/placeholder.svg') ?>"
+									alt=""
+									width="36"
+									height="45"
+									loading="lazy"
+								>
+								<?= $escape((string) $linha['product']) ?>
+							</span>
+						</td>
 						<td class="admin-table__muted"><?= $escape((string) $linha['size']) ?></td>
 						<td class="admin-table__muted admin-table__sku"><?= $escape((string) $linha['sku']) ?></td>
 						<td class="admin-table__money"><?= $escape((string) $linha['price']) ?></td>

@@ -102,6 +102,11 @@ final class StockService
                     p.is_active,
                     p.price_cents,
                     p.compare_price_cents,
+                    (SELECT pi.path
+                       FROM product_images pi
+                      WHERE pi.product_id = p.id
+                      ORDER BY pi.position, pi.id
+                      LIMIT 1) AS image,
                     v.id AS variant_id,
                     v.size,
                     v.sku,
@@ -128,6 +133,7 @@ final class StockService
                 'product_id' => (int) $linha['product_id'],
                 'variant_id' => (int) $linha['variant_id'],
                 'product' => (string) $linha['name'],
+                'image' => (string) ($linha['image'] ?? ''),
                 'size' => (string) $linha['size'],
                 'sku' => (string) $linha['sku'],
                 'price' => Price::format($cheio),
