@@ -15,6 +15,10 @@ use PDO;
  * subcategorias dela. Cor, preço e estoque saem do banco: nada é confiado à
  * URL. O preço vem do que o cliente digita, em reais, e é convertido para
  * centavos aqui — cada ponta é opcional.
+ *
+ * A busca (`q`) procura no nome, na cor, no material, na descrição e no nome
+ * das categorias do produto. Os curingas do LIKE são escapados, então digitar
+ * `%` ou `_` procura esses caracteres e não vira curinga.
  */
 final class CatalogService
 {
@@ -55,6 +59,7 @@ final class CatalogService
     public function state(array $query): array
     {
         $estado = [
+            'q' => '',
             'categoria' => '',
             'categoria_id' => null,
             'sub' => '',
@@ -136,6 +141,7 @@ final class CatalogService
             $estado['ordem'] = $ordem;
         }
 
+        $estado['q'] = $this->texto($query['q'] ?? '');
         $estado['pagina'] = max(1, (int) ($query['pagina'] ?? 1));
 
         return $estado;
@@ -398,6 +404,28 @@ final class CatalogService
             $params[':preco_max'] = (int) $estado['preco_max'];
         }
 
+        // Cada termo usa o seu próprio parâmetro: o MySQL não aceita o mesmo
+        // nome repetido na consulta quando o prepare é nativo.
+        if ($estado['q'] !== '') {
+            $busca = '%' . $this->like((string) $estado['q']) . '%';
+
+            $where[] = '(p.name LIKE :busca_nome
+                          OR p.color LIKE :busca_cor
+                          OR p.material LIKE :busca_material
+                          OR p.description LIKE :busca_descricao
+                          OR EXISTS (SELECT 1
+                                       FROM product_categories pcb
+                                       INNER JOIN categories catb ON catb.id = pcb.category_id
+                                      WHERE pcb.product_id = p.id
+                                        AND catb.name LIKE :busca_categoria))';
+
+            $params[':busca_nome'] = $busca;
+            $params[':busca_cor'] = $busca;
+            $params[':busca_material'] = $busca;
+            $params[':busca_descricao'] = $busca;
+            $params[':busca_categoria'] = $busca;
+        }
+
         return [$where, $params];
     }
 
@@ -469,6 +497,14 @@ final class CatalogService
             'slug' => (string) $linha['slug'],
             'parent_id' => $linha['parent_id'] !== null ? (int) $linha['parent_id'] : null,
         ];
+    }
+
+    /**
+     * Escapa os curingas do LIKE: o que a pessoa digita é texto, não padrão.
+     */
+    private function like(string $valor): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $valor);
     }
 
     private function texto(mixed $valor): string

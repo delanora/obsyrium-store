@@ -35,6 +35,10 @@ $itensNoCarrinho = array_sum(array_column($itensDoCarrinho, 'quantity'));
 $avisoDoCarrinho = (($flash ?? [])['type'] ?? null) === 'cart' ? $flash : null;
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+
+// Termo da busca que veio na URL, para o campo continuar preenchido quando a
+// pessoa está vendo os resultados.
+$buscaAtual = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 60, 'UTF-8');
 ?>
 <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
 
@@ -60,9 +64,19 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 		</nav>
 
 		<div class="site-header__actions">
-			<button class="icon-button" type="button" aria-label="Buscar">
+			<?php /* Busca: campo no computador e ícone que leva ao catálogo no
+			         celular, onde um campo ao lado do menu não caberia. */ ?>
+			<form class="site-search" action="/catalogo" method="get" role="search">
+				<label class="visually-hidden" for="busca-site">Buscar produtos</label>
+				<input class="site-search__input" id="busca-site" name="q" type="search" value="<?= $escape($buscaAtual) ?>" placeholder="Buscar" autocomplete="off" maxlength="60">
+				<button class="site-search__button" type="submit" aria-label="Buscar">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-3.5-3.5"/></svg>
+				</button>
+			</form>
+
+			<a class="icon-button site-search__link" href="/catalogo" aria-label="Buscar produtos">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-3.5-3.5"/></svg>
-			</button>
+			</a>
 
 			<?php if ($conectado): ?>
 				<a class="icon-button<?= $naConta ? ' icon-button--active' : '' ?>" href="/conta" aria-label="Minha conta">

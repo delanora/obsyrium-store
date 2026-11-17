@@ -150,6 +150,24 @@
     text-transform: uppercase;
 }
 
+.catalog-field__input {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+}
+
+.catalog-field__input:focus-visible {
+    border-color: var(--color-accent);
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
 .catalog-field__select {
     width: 100%;
     min-height: 2.75rem;

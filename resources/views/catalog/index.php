@@ -33,7 +33,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
 $url = static function (array $mudancas = []) use ($estado): string {
     $query = [];
 
-    foreach (['categoria', 'sub', 'tamanho', 'cor', 'disponibilidade', 'preco_min', 'preco_max', 'ordem', 'pagina'] as $chave) {
+    foreach (['q', 'categoria', 'sub', 'tamanho', 'cor', 'disponibilidade', 'preco_min', 'preco_max', 'ordem', 'pagina'] as $chave) {
         $valor = array_key_exists($chave, $mudancas) ? $mudancas[$chave] : ($estado[$chave] ?? '');
 
         if ($valor === '' || $valor === null) {
@@ -70,6 +70,13 @@ foreach ($categorias as $categoria) {
 
 // Chips dos filtros ligados: cada um leva de volta ao catálogo sem ele.
 $ativos = [];
+
+if ($estado['q'] !== '') {
+    $ativos[] = [
+        'rotulo' => 'Busca: ' . $estado['q'],
+        'href' => $url(['q' => '', 'pagina' => 1]),
+    ];
+}
 
 if ($categoriaAtual !== null) {
     $ativos[] = [
@@ -158,11 +165,19 @@ if ($resultado['paginas'] <= 7) {
 <section class="section catalog">
 	<div class="container">
 		<header class="catalog__head">
-			<h1 class="catalog__title">Catálogo</h1>
-			<p class="catalog__lead">
-				Camisetas de estampa autoral, feitas em lotes pequenos e conferidas peça a peça antes de sair.
-				Nada de catálogo infinito: quando o lote acaba, o tamanho sai do ar.
-			</p>
+			<?php if ($estado['q'] !== ''): ?>
+				<h1 class="catalog__title">Busca</h1>
+				<p class="catalog__lead">
+					Resultados para “<?= $escape((string) $estado['q']) ?>”. Procuramos no nome, na cor, no material,
+					na descrição e na categoria de cada camiseta.
+				</p>
+			<?php else: ?>
+				<h1 class="catalog__title">Catálogo</h1>
+				<p class="catalog__lead">
+					Camisetas de estampa autoral, feitas em lotes pequenos e conferidas peça a peça antes de sair.
+					Nada de catálogo infinito: quando o lote acaba, o tamanho sai do ar.
+				</p>
+			<?php endif; ?>
 		</header>
 
 		<div class="catalog__layout">
@@ -181,6 +196,12 @@ if ($resultado['paginas'] <= 7) {
 					<?php if ($estado['ordem'] !== 'novidades'): ?>
 						<input type="hidden" name="ordem" value="<?= $escape((string) $estado['ordem']) ?>">
 					<?php endif; ?>
+
+					<div class="catalog-field">
+						<label class="catalog-field__label" for="filtro-busca">Busca</label>
+
+						<input class="catalog-field__input" id="filtro-busca" name="q" type="search" value="<?= $escape((string) $estado['q']) ?>" placeholder="Nome, cor, categoria…" maxlength="60" autocomplete="off">
+					</div>
 
 					<div class="catalog-field">
 						<label class="catalog-field__label" for="filtro-categoria">Categoria</label>
@@ -360,8 +381,14 @@ if ($resultado['paginas'] <= 7) {
 
 				<?php if ($produtos === []): ?>
 					<div class="catalog__empty">
-						<p class="catalog__empty-title">Nenhuma camiseta com esses filtros.</p>
-						<p class="catalog__empty-text">Tente uma faixa de preço mais ampla ou veja o catálogo inteiro.</p>
+						<?php if ($estado['q'] !== ''): ?>
+							<p class="catalog__empty-title">Nenhuma camiseta encontrada para “<?= $escape((string) $estado['q']) ?>”.</p>
+							<p class="catalog__empty-text">Confira a escrita ou procure por uma cor, uma categoria ou uma parte do nome.</p>
+						<?php else: ?>
+							<p class="catalog__empty-title">Nenhuma camiseta com esses filtros.</p>
+							<p class="catalog__empty-text">Tente uma faixa de preço mais ampla ou veja o catálogo inteiro.</p>
+						<?php endif; ?>
+
 						<a class="button button--ghost" href="/catalogo">Ver o catálogo inteiro</a>
 					</div>
 				<?php else: ?>
