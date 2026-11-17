@@ -650,7 +650,10 @@ MD
 - **Contagem das categorias** usa `COUNT(DISTINCT ...)` com as filhas na mesma subconsulta: produto ligado à categoria e a uma subcategoria conta uma vez só.
 - **Celular**: o painel de filtros é um `<details>` que nasce recolhido (`site.js` fecha quando não há filtro ativo) e abre com o toque; com filtro ligado já vem aberto e mostra um selo com a quantidade.
 - O card da vitrine virou o partial `resources/views/partials/product-card.php` e o formato do card saiu para `App\Support\ProductCard`, usados pela home e pelo catálogo.
-- O menu ganhou **Catálogo** (marcado como página atual) e o "Ver todos" da vitrine aponta para ele. `Navegacao` passou a aceitar `/catalogo` como origem, então adicionar ao carrinho a partir do catálogo devolve o cliente para o catálogo.
+- O menu ganhou **Catálogo** (marcado como página atual) e o "Ver todos" da vitrine aponta para ele. `Navegacao` passou a aceitar `/catalogo` e `/categoria/...` como origem, então adicionar ao carrinho a partir do catálogo ou de uma categoria devolve o cliente para lá.
+- **Categorias na loja**: `GET /categoria/{slug}` (`CatalogController::category()`) e `GET /categoria/{categoria}/{sub}` (`subcategory()`) usam a mesma view e o mesmo serviço do catálogo. `CatalogService::categoryWithChildren()` resolve a categoria (ela, a mãe e as filhas) e `stateForCategory()` prende o estado a ela — o resto dos filtros (cor, tamanho, preço, disponibilidade, ordenação) continua valendo dentro da categoria. Categoria principal traz também o que está nas filhas; subcategoria traz só o que está nela.
+- O caminho da subcategoria é canônico com a mãe: `/categoria/{filha}` responde 301 para `/categoria/{mãe}/{filha}`, e `/categoria/{mãe}/{outra}` responde 404, igual a slug inexistente. Na view, o seletor de categoria e o campo de busca dos filtros somem (a categoria está no caminho e a busca do cabeçalho é geral), o formulário envia para a própria categoria e "Limpar tudo" volta para ela sem os filtros.
+- Duas fileiras de pílulas acima da grade: as categorias principais (com a atual marcada) em todas as telas, e as subcategorias quando a página é de uma categoria principal. O caminho `Início / Catálogo / Categoria` fica no cabeçalho da página, e a página sem filtros e sem produto diz que a categoria ainda está vazia.
 
 ## 31. Confirmação do pedido e páginas institucionais
 

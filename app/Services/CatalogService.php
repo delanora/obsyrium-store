@@ -148,6 +148,37 @@ final class CatalogService
     }
 
     /**
+     * Estado do catálogo preso a uma categoria: a categoria vem do caminho, não
+     * da URL, e o resto dos filtros (cor, tamanho, preço, ordenação, busca)
+     * continua valendo dentro dela. Categoria principal traz também as filhas;
+     * subcategoria traz só o que está nela.
+     *
+     * @param array<string, mixed> $query
+     * @param array{id: int, name: string, slug: string, parent_id: int|null} $categoria
+     *
+     * @return array<string, mixed>
+     */
+    public function stateForCategory(array $query, array $categoria): array
+    {
+        $estado = $this->state($query);
+
+        $estado['categoria'] = '';
+        $estado['categoria_id'] = null;
+        $estado['sub'] = '';
+        $estado['sub_id'] = null;
+
+        if ($categoria['parent_id'] === null) {
+            $estado['categoria'] = (string) $categoria['slug'];
+            $estado['categoria_id'] = (int) $categoria['id'];
+        } else {
+            $estado['sub'] = (string) $categoria['slug'];
+            $estado['sub_id'] = (int) $categoria['id'];
+        }
+
+        return $estado;
+    }
+
+    /**
      * Produtos da página pedida, com o total e as páginas que existem.
      *
      * @param array<string, mixed> $estado
@@ -268,6 +299,46 @@ final class CatalogService
         }
 
         return $arvore;
+    }
+
+    /**
+     * Categoria para a página da loja: ela mesma, a mãe (quando é filha), as
+     * filhas (quando é principal) e a contagem de produtos de cada uma. Slug
+     * que não existe devolve `null` — a página responde 404.
+     *
+     * @return array{id: int, name: string, slug: string, parent_id: int|null, parent: array{id: int, name: string, slug: string}|null, children: list<array{id: int, name: string, slug: string, total: int}>}|null
+     */
+    public function categoryWithChildren(string $slug): ?array
+    {
+        $categoria = $this->findCategory($slug);
+
+        if ($categoria === null) {
+            return null;
+        }
+
+        $resultado = $categoria + ['parent' => null, 'children' => []];
+
+        foreach ($this->categories() as $principal) {
+            if ($principal['id'] === $categoria['id']) {
+                $resultado['children'] = $principal['children'];
+
+                return $resultado;
+            }
+
+            foreach ($principal['children'] as $filha) {
+                if ($filha['id'] === $categoria['id']) {
+                    $resultado['parent'] = [
+                        'id' => (int) $principal['id'],
+                        'name' => (string) $principal['name'],
+                        'slug' => (string) $principal['slug'],
+                    ];
+
+                    return $resultado;
+                }
+            }
+        }
+
+        return $resultado;
     }
 
     /**

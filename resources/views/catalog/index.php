@@ -16,6 +16,11 @@ use App\Services\CatalogService;
  * O estado continua na URL — cada filtro ativo aparece numa faixa de chips
  * removíveis, e a ordenação é um menu recolhido que também é um link.
  *
+ * A mesma view serve as páginas de categoria: elas chegam com `$urlBase`
+ * (`/categoria/...`) e `$categoriaPagina`, então o formulário, os chips e a
+ * paginação continuam dentro da categoria. No catálogo os dois ficam nulos e o
+ * formulário mostra o seletor de categoria.
+ *
  * @var list<array<string, mixed>> $produtos
  * @var array<string, mixed> $estado
  * @var array<string, mixed> $resultado
@@ -24,16 +29,27 @@ use App\Services\CatalogService;
  * @var list<array{name: string, total: int}> $cores
  * @var array{min: int, max: int} $precos
  * @var int $totalDaLoja
+ * @var string|null $urlBase
+ * @var array<string, mixed>|null $categoriaPagina
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 
+$urlBase = isset($urlBase) && is_string($urlBase) ? $urlBase : '/catalogo';
+$categoriaPagina = $categoriaPagina ?? null;
+
 // Monta o link do catálogo com o estado atual trocado pelo que vier aqui.
 // Valores padrão ficam fora da URL: /catalogo limpo é o catálogo inteiro.
-$url = static function (array $mudancas = []) use ($estado): string {
+$url = static function (array $mudancas = []) use ($estado, $urlBase, $categoriaPagina): string {
     $query = [];
 
     foreach (['q', 'categoria', 'sub', 'tamanho', 'cor', 'disponibilidade', 'preco_min', 'preco_max', 'ordem', 'pagina'] as $chave) {
+        // Numa página de categoria, categoria e subcategoria estão no caminho:
+        // repeti-las na URL seria contraditório.
+        if ($categoriaPagina !== null && ($chave === 'categoria' || $chave === 'sub')) {
+            continue;
+        }
+
         $valor = array_key_exists($chave, $mudancas) ? $mudancas[$chave] : ($estado[$chave] ?? '');
 
         if ($valor === '' || $valor === null) {
@@ -57,7 +73,7 @@ $url = static function (array $mudancas = []) use ($estado): string {
         $query[$chave] = $valor;
     }
 
-    return '/catalogo' . ($query === [] ? '' : '?' . http_build_query($query));
+    return $urlBase . ($query === [] ? '' : '?' . http_build_query($query));
 };
 
 $categoriaAtual = null;
@@ -78,7 +94,7 @@ if ($estado['q'] !== '') {
     ];
 }
 
-if ($categoriaAtual !== null) {
+if ($categoriaPagina === null && $categoriaAtual !== null) {
     $ativos[] = [
         'rotulo' => (string) $categoriaAtual['name'],
         'href' => $url(['categoria' => '', 'sub' => '', 'pagina' => 1]),
@@ -165,7 +181,32 @@ if ($resultado['paginas'] <= 7) {
 <section class="section catalog">
 	<div class="container">
 		<header class="catalog__head">
-			<?php if ($estado['q'] !== ''): ?>
+			<?php if ($categoriaPagina !== null): ?>
+				<nav class="catalog__crumb" aria-label="Você está em">
+					<a href="/">Início</a>
+					<span aria-hidden="true">/</span>
+					<a href="/catalogo">Catálogo</a>
+					<span aria-hidden="true">/</span>
+
+					<?php if ($categoriaPagina['parent'] !== null): ?>
+						<a href="/categoria/<?= $escape((string) $categoriaPagina['parent']['slug']) ?>"><?= $escape((string) $categoriaPagina['parent']['name']) ?></a>
+						<span aria-hidden="true">/</span>
+					<?php endif; ?>
+
+					<span aria-current="page"><?= $escape((string) $categoriaPagina['name']) ?></span>
+				</nav>
+
+				<h1 class="catalog__title"><?= $escape((string) $categoriaPagina['name']) ?></h1>
+				<p class="catalog__lead">
+					<?php if ($categoriaPagina['parent'] !== null): ?>
+						Camisetas de <?= $escape((string) $categoriaPagina['name']) ?> dentro de <?= $escape((string) $categoriaPagina['parent']['name']) ?>,
+						em lotes pequenos e com estoque real. Quando um tamanho acaba, ele sai do ar.
+					<?php else: ?>
+						Camisetas de <?= $escape((string) $categoriaPagina['name']) ?>, em lotes pequenos e com estoque real.
+						Quando um tamanho acaba, ele sai do ar até a próxima remessa.
+					<?php endif; ?>
+				</p>
+			<?php elseif ($estado['q'] !== ''): ?>
 				<h1 class="catalog__title">Busca</h1>
 				<p class="catalog__lead">
 					Resultados para “<?= $escape((string) $estado['q']) ?>”. Procuramos no nome, na cor, no material,
@@ -180,6 +221,41 @@ if ($resultado['paginas'] <= 7) {
 			<?php endif; ?>
 		</header>
 
+		<?php
+		// Atalhos de categoria: o catálogo inteiro e as categorias principais.
+		// Numa subcategoria, a mãe é quem fica marcada.
+		$categoriaAtiva = $categoriaPagina !== null
+			? (string) ($categoriaPagina['parent']['slug'] ?? $categoriaPagina['slug'])
+			: (string) $estado['categoria'];
+
+		// Numa busca o atalho não representa o que está na tela, então nenhum
+		// fica marcado.
+		$marcarAtalho = $estado['q'] === '';
+		?>
+		<nav class="catalog-subcats" aria-label="Categorias">
+			<a class="catalog-subcat" href="/catalogo"<?= $marcarAtalho && $categoriaAtiva === '' ? ' aria-current="page"' : '' ?>>
+				Todas <span class="catalog-subcat__count"><?= $totalDaLoja ?></span>
+			</a>
+
+			<?php foreach ($categorias as $categoria): ?>
+				<a class="catalog-subcat" href="/categoria/<?= $escape((string) $categoria['slug']) ?>"<?= $marcarAtalho && $categoriaAtiva === (string) $categoria['slug'] ? ' aria-current="true"' : '' ?>>
+					<?= $escape((string) $categoria['name']) ?> <span class="catalog-subcat__count"><?= (int) $categoria['total'] ?></span>
+				</a>
+			<?php endforeach; ?>
+		</nav>
+
+		<?php if ($categoriaPagina !== null && $categoriaPagina['children'] !== []): ?>
+			<nav class="catalog-subcats catalog-subcats--filhas" aria-label="Subcategorias de <?= $escape((string) $categoriaPagina['name']) ?>">
+				<a class="catalog-subcat" href="<?= $escape($urlBase) ?>" aria-current="page">Todas de <?= $escape((string) $categoriaPagina['name']) ?></a>
+
+				<?php foreach ($categoriaPagina['children'] as $filha): ?>
+					<a class="catalog-subcat" href="/categoria/<?= $escape((string) $categoriaPagina['slug']) ?>/<?= $escape((string) $filha['slug']) ?>">
+						<?= $escape((string) $filha['name']) ?> <span class="catalog-subcat__count"><?= (int) $filha['total'] ?></span>
+					</a>
+				<?php endforeach; ?>
+			</nav>
+		<?php endif; ?>
+
 		<div class="catalog__layout">
 			<details class="catalog-filters" data-catalog-filters open<?= $filtrosAtivos > 0 ? ' data-active' : '' ?>>
 				<summary class="catalog-filters__summary">
@@ -192,30 +268,33 @@ if ($resultado['paginas'] <= 7) {
 					<span class="catalog-filters__chevron" aria-hidden="true"></span>
 				</summary>
 
-				<form class="catalog-filters__body" action="/catalogo" method="get" data-filter-form>
+				<form class="catalog-filters__body" action="<?= $escape($urlBase) ?>" method="get" data-filter-form>
 					<?php if ($estado['ordem'] !== 'novidades'): ?>
 						<input type="hidden" name="ordem" value="<?= $escape((string) $estado['ordem']) ?>">
 					<?php endif; ?>
 
-					<div class="catalog-field">
-						<label class="catalog-field__label" for="filtro-busca">Busca</label>
+					<?php /* Na página de categoria a busca e a categoria já estão no caminho e nos atalhos acima. */ ?>
+					<?php if ($categoriaPagina === null): ?>
+						<div class="catalog-field">
+							<label class="catalog-field__label" for="filtro-busca">Busca</label>
 
-						<input class="catalog-field__input" id="filtro-busca" name="q" type="search" value="<?= $escape((string) $estado['q']) ?>" placeholder="Nome, cor, categoria…" maxlength="60" autocomplete="off">
-					</div>
+							<input class="catalog-field__input" id="filtro-busca" name="q" type="search" value="<?= $escape((string) $estado['q']) ?>" placeholder="Nome, cor, categoria…" maxlength="60" autocomplete="off">
+						</div>
 
-					<div class="catalog-field">
-						<label class="catalog-field__label" for="filtro-categoria">Categoria</label>
+						<div class="catalog-field">
+							<label class="catalog-field__label" for="filtro-categoria">Categoria</label>
 
-						<select class="catalog-field__select" id="filtro-categoria" name="categoria">
-							<option value="">Todas as camisetas (<?= $totalDaLoja ?>)</option>
+							<select class="catalog-field__select" id="filtro-categoria" name="categoria">
+								<option value="">Todas as camisetas (<?= $totalDaLoja ?>)</option>
 
-							<?php foreach ($categorias as $categoria): ?>
-								<option value="<?= $escape((string) $categoria['slug']) ?>"<?= $categoria['slug'] === $estado['categoria'] ? ' selected' : '' ?>>
-									<?= $escape((string) $categoria['name']) ?> (<?= (int) $categoria['total'] ?>)
-								</option>
-							<?php endforeach; ?>
-						</select>
-					</div>
+								<?php foreach ($categorias as $categoria): ?>
+									<option value="<?= $escape((string) $categoria['slug']) ?>"<?= $categoria['slug'] === $estado['categoria'] ? ' selected' : '' ?>>
+										<?= $escape((string) $categoria['name']) ?> (<?= (int) $categoria['total'] ?>)
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+					<?php endif; ?>
 
 					<?php if ($categoriaAtual !== null && $categoriaAtual['children'] !== []): ?>
 						<div class="catalog-field">
@@ -309,7 +388,7 @@ if ($resultado['paginas'] <= 7) {
 						<button class="button catalog-filters__apply" type="submit">Aplicar filtros</button>
 
 						<?php if ($filtrosAtivos > 0): ?>
-							<a class="catalog-filters__clear" href="/catalogo">Limpar tudo</a>
+							<a class="catalog-filters__clear" href="<?= $escape($urlBase) ?>">Limpar tudo</a>
 						<?php endif; ?>
 					</div>
 				</form>
@@ -374,7 +453,7 @@ if ($resultado['paginas'] <= 7) {
 						<?php endforeach; ?>
 
 						<li>
-							<a class="catalog-active__clear" href="/catalogo">Limpar tudo</a>
+							<a class="catalog-active__clear" href="<?= $escape($urlBase) ?>">Limpar tudo</a>
 						</li>
 					</ul>
 				<?php endif; ?>
@@ -384,6 +463,9 @@ if ($resultado['paginas'] <= 7) {
 						<?php if ($estado['q'] !== ''): ?>
 							<p class="catalog__empty-title">Nenhuma camiseta encontrada para “<?= $escape((string) $estado['q']) ?>”.</p>
 							<p class="catalog__empty-text">Confira a escrita ou procure por uma cor, uma categoria ou uma parte do nome.</p>
+						<?php elseif ($categoriaPagina !== null && $filtrosAtivos === 0): ?>
+							<p class="catalog__empty-title">Ainda não há camisetas em <?= $escape((string) $categoriaPagina['name']) ?>.</p>
+							<p class="catalog__empty-text">Quando a próxima remessa chegar, as peças desta categoria aparecem aqui.</p>
 						<?php else: ?>
 							<p class="catalog__empty-title">Nenhuma camiseta com esses filtros.</p>
 							<p class="catalog__empty-text">Tente uma faixa de preço mais ampla ou veja o catálogo inteiro.</p>

@@ -23,6 +23,8 @@ use App\Routing\Router;
 return static function (Router $router): void {
     $router->get('/', [HomeController::class, 'index']);
     $router->get('/catalogo', [CatalogController::class, 'index']);
+    $router->get('/categoria/{slug}', [CatalogController::class, 'category']);
+    $router->get('/categoria/{categoria}/{sub}', [CatalogController::class, 'subcategory']);
     $router->get('/produto/{slug}', [ProductController::class, 'show']);
 
     $router->get('/sobre', [PageController::class, 'about']);

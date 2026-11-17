@@ -28,6 +28,77 @@
     line-height: var(--line-height-base);
 }
 
+/* Caminho da página de categoria: Início / Catálogo / Categoria. */
+.catalog__crumb {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+}
+
+.catalog__crumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+}
+
+.catalog__crumb a:hover {
+    color: var(--color-accent);
+}
+
+.catalog__crumb [aria-current="page"] {
+    color: var(--color-accent);
+}
+
+/* Atalhos de categoria: pílulas que levam às páginas /categoria/{slug}. */
+.catalog-subcats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+    margin: calc(var(--space-4) * -1) 0 var(--space-5);
+}
+
+.catalog-subcats--filhas {
+    margin-top: calc(var(--space-5) * -1);
+}
+
+.catalog-subcat {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.25rem;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+    text-decoration: none;
+    transition:
+        border-color var(--duration-fast) var(--ease-standard),
+        color var(--duration-fast) var(--ease-standard);
+}
+
+.catalog-subcat:hover,
+.catalog-subcat[aria-current] {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.catalog-subcat__count {
+    color: var(--color-text-subtle);
+    letter-spacing: normal;
+}
+
+.catalog-subcat[aria-current] .catalog-subcat__count {
+    color: inherit;
+}
+
 /* ============ Estrutura ============ */
 
 .catalog__layout {
