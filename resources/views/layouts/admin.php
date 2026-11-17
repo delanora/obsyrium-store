@@ -13,6 +13,7 @@ use App\Support\Csrf;
  * @var string|null $title Título do documento.
  * @var array<string, mixed>|null $adminAtual
  * @var string $adminAba 'dashboard', 'pedidos', 'estoque', 'categorias', 'contato' ou 'mensagens'
+ * @var int $adminMensagensNaoLidas Quantidade exibida ao lado da aba Mensagens
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -29,6 +30,7 @@ $asset = static function (string $caminho): string {
 $flash = App\Support\Session::takeFlash();
 
 $adminAba = $adminAba ?? 'dashboard';
+$adminMensagensNaoLidas = (int) ($adminMensagensNaoLidas ?? 0);
 
 $adminItens = [
 	'dashboard' => ['rotulo' => 'Dashboard', 'href' => '/admin'],
@@ -75,7 +77,9 @@ $adminItens = [
 			<aside class="admin-side">
 				<nav class="admin-nav" aria-label="Seções do painel">
 					<?php foreach ($adminItens as $chave => $item): ?>
-						<a class="admin-nav__link" href="<?= $escape($item['href']) ?>"<?= $adminAba === $chave ? ' aria-current="page"' : '' ?>><?= $escape($item['rotulo']) ?></a>
+						<a class="admin-nav__link" href="<?= $escape($item['href']) ?>"<?= $adminAba === $chave ? ' aria-current="page"' : '' ?>>
+							<?= $escape($item['rotulo']) ?><?php if ($chave === 'mensagens' && $adminMensagensNaoLidas > 0): ?><span class="admin-nav__count"><?= $adminMensagensNaoLidas ?></span><?php endif; ?>
+						</a>
 					<?php endforeach; ?>
 				</nav>
 

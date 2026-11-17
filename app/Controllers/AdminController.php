@@ -924,6 +924,11 @@ final class AdminController
         $adminMensagens = $contexto['mensagens'] ?? [];
         $adminMensagensFiltro = $contexto['mensagensFiltro'] ?? ContactService::FILTER_ALL;
         $adminMensagensContagem = $contexto['mensagensContagem'] ?? [];
+
+        // O contador da aba Mensagens aparece em todas as telas do painel; a
+        // própria aba já calculou as contagens, então reaproveita o resultado.
+        $adminMensagensNaoLidas = (int) ($adminMensagensContagem['nao_lidas']
+            ?? (new ContactService(Connection::get()))->counts()['nao_lidas']);
         $content = $basePath . '/resources/views/admin/' . $view . '.php';
 
         require $basePath . '/resources/views/layouts/admin.php';

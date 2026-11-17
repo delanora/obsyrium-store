@@ -115,6 +115,22 @@
     color: var(--color-text);
 }
 
+/* Contador de mensagens não lidas, ao lado da aba. */
+
+.admin-nav__count {
+    display: inline-block;
+    margin-left: var(--space-2);
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-accent);
+    color: var(--color-accent-contrast);
+    font-size: 0.65rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    line-height: 1.5;
+    vertical-align: 0.1em;
+}
+
 .admin-nav__link[aria-current="page"] {
     border-bottom-color: var(--color-accent);
     color: var(--color-accent);
