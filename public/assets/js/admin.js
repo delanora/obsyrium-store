@@ -98,6 +98,18 @@
             }
         });
 
+        // O × de cada linha apaga a categoria: o formulário vai para a rota de
+        // exclusão. Sem JavaScript ele já envia; aqui só pede confirmação.
+        cada(campo.querySelectorAll('[data-category-delete]'), function (apagar) {
+            apagar.addEventListener('click', function (evento) {
+                var aviso = 'Apagar a categoria "' + apagar.getAttribute('data-category-name') + '"? Ela sai da lista.';
+
+                if (!window.confirm(aviso)) {
+                    evento.preventDefault();
+                }
+            });
+        });
+
         document.addEventListener('click', function (evento) {
             if (menu.open && !campo.contains(evento.target)) {
                 menu.open = false;

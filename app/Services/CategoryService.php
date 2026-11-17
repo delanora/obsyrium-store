@@ -195,6 +195,67 @@ final class CategoryService
     }
 
     /**
+     * Apaga uma categoria vazia. Categoria com filhas ou com produto fica.
+     *
+     * @return string|null Mensagem de erro, ou null quando a categoria saiu.
+     */
+    public function delete(int $id): ?string
+    {
+        $categoria = $this->find($id);
+
+        if ($categoria === null) {
+            return 'Categoria não encontrada.';
+        }
+
+        $nome = $categoria['name'];
+
+        $filhas = $this->pdo->prepare('SELECT COUNT(*) FROM categories WHERE parent_id = :id');
+        $filhas->bindValue(':id', $id, PDO::PARAM_INT);
+        $filhas->execute();
+        $quantasFilhas = (int) $filhas->fetchColumn();
+
+        if ($quantasFilhas > 0) {
+            return sprintf(
+                'A categoria "%s" tem %d subcategoria%s. Apague %s antes.',
+                $nome,
+                $quantasFilhas,
+                $quantasFilhas === 1 ? '' : 's',
+                $quantasFilhas === 1 ? 'ela' : 'elas'
+            );
+        }
+
+        // `products.category_id` é a principal e `product_categories` guarda os
+        // outros vínculos; qualquer um dos dois segura a categoria.
+        // O mesmo id entra duas vezes, em marcadores diferentes: o MySQL não
+        // aceita repetir um marcador nomeado na mesma consulta preparada.
+        $produtos = $this->pdo->prepare(
+            'SELECT COUNT(DISTINCT p.id)
+               FROM products p
+               LEFT JOIN product_categories pc ON pc.product_id = p.id
+              WHERE p.category_id = :principal OR pc.category_id = :vinculo'
+        );
+        $produtos->bindValue(':principal', $id, PDO::PARAM_INT);
+        $produtos->bindValue(':vinculo', $id, PDO::PARAM_INT);
+        $produtos->execute();
+        $usados = (int) $produtos->fetchColumn();
+
+        if ($usados > 0) {
+            return sprintf(
+                'A categoria "%s" não pode ser apagada: %d produto%s %s ela.',
+                $nome,
+                $usados,
+                $usados === 1 ? '' : 's',
+                $usados === 1 ? 'usa' : 'usam'
+            );
+        }
+
+        $this->pdo->prepare('DELETE FROM categories WHERE id = :id')
+            ->execute([':id' => $id]);
+
+        return null;
+    }
+
+    /**
      * @return array{id: int, name: string, parent_id: int|null}|null
      */
     private function find(int $id): ?array

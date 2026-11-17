@@ -222,6 +222,8 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 			<input type="hidden" name="<?= $escape((string) $campo) ?>" value="<?= $escape((string) $info) ?>">
 		<?php endforeach; ?>
 
+		<input type="hidden" name="voltar_para" value="<?= $escape($urlDoProduto) ?>">
+
 		<h2 class="admin-product__subtitle"><?= $novo ? 'Dados do modelo' : 'Dados do produto' ?></h2>
 
 		<div class="field">
@@ -263,6 +265,21 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 								</span>
 								<span><?= $escape((string) $categoria['name']) ?></span>
 							</label>
+
+							<button
+								class="field__combo__remove"
+								type="submit"
+								formaction="/admin/categorias/apagar"
+								formnovalidate
+								name="categoria_apagar"
+								value="<?= $raiz ?>"
+								aria-label="Apagar a categoria <?= $escape((string) $categoria['name']) ?>"
+								title="Apagar <?= $escape((string) $categoria['name']) ?>"
+								data-category-delete
+								data-category-name="<?= $escape((string) $categoria['name']) ?>"
+							>
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+							</button>
 						</li>
 					<?php endforeach; ?>
 				</ul>

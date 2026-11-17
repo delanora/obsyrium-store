@@ -333,6 +333,36 @@ final class AdminController
     }
 
     /**
+     * Apaga uma categoria que não tenha subcategoria nem produto ligado.
+     */
+    public function deleteCategory(): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($_POST['categoria_apagar'] ?? 0);
+        $erro = (new CategoryService(Connection::get()))->delete($id);
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Categoria apagada.');
+
+        $this->redirect($this->categoryBackUrl((string) ($_POST['voltar_para'] ?? '')));
+    }
+
+    /**
+     * Página de volta depois de apagar a categoria: o formulário do produto que
+     * pediu a exclusão ou a tela de categorias.
+     */
+    private function categoryBackUrl(string $caminho): string
+    {
+        return preg_match('#^/admin/estoque/(?:novo|produto/\d+)$#', $caminho) === 1
+            ? $caminho
+            : '/admin/categorias';
+    }
+
+    /**
      * Editor do produto. É a tela do item da loja, com todos os campos
      * editáveis e as fotos sendo enviadas por ela.
      *
