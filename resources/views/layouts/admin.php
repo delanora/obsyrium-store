@@ -16,6 +16,16 @@ use App\Support\Csrf;
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+
+// Cada arquivo estático entra na página com a data de modificação na URL: mudou
+// o arquivo, muda o endereço e o navegador não fica com CSS/JS velho no cache.
+$asset = static function (string $caminho): string {
+    $arquivo = dirname(__DIR__, 3) . '/public' . $caminho;
+    $versao = is_file($arquivo) ? (string) filemtime($arquivo) : '';
+
+    return $caminho . ($versao !== '' ? '?v=' . $versao : '');
+};
+
 $flash = App\Support\Session::takeFlash();
 
 $adminAba = $adminAba ?? 'dashboard';
@@ -33,10 +43,10 @@ $adminItens = [
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title><?= $escape($title ?? 'Administração Obsyrium') ?></title>
 	<meta name="robots" content="noindex, nofollow">
-	<link rel="stylesheet" href="/assets/css/tokens.css">
-	<link rel="stylesheet" href="/assets/css/base.css">
-	<link rel="stylesheet" href="/assets/css/components.css">
-	<link rel="stylesheet" href="/assets/css/admin.css">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/tokens.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/base.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/components.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/admin.css') ?>">
 </head>
 <body class="admin-body">
 	<div class="admin-shell">
@@ -75,7 +85,7 @@ $adminItens = [
 			<?php require $content; ?>
 		</main>
 
-		<script src="/assets/js/admin.js" defer></script>
+		<script src="<?= $asset('/assets/js/admin.js') ?>" defer></script>
 	</div>
 </body>
 </html>

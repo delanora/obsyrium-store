@@ -125,9 +125,11 @@ if ($estado['preco_min'] !== '' || $estado['preco_max'] !== '') {
 $filtrosAtivos = count($ativos);
 
 // Preço digitado volta para o campo em reais, com ponto decimal.
+// Preço no campo: sempre com vírgula e dois centavos ("129,90"), que é como a
+// máscara de site.js devolve o valor depois de cada tecla.
 $valorPreco = static fn (mixed $centavos): string => $centavos === '' || $centavos === null
     ? ''
-    : number_format((int) $centavos / 100, 2, '.', '');
+    : number_format((int) $centavos / 100, 2, ',', '');
 
 // Paginação: até 7 páginas aparecem todas; acima disso entra a primeira, a
 // atual, a última e as vizinhas, com reticências no lugar do resto.
@@ -270,12 +272,12 @@ if ($resultado['paginas'] <= 7) {
 						<div class="catalog-price" role="group" aria-labelledby="filtro-preco">
 							<label class="catalog-price__field">
 								<span class="catalog-price__text">De</span>
-								<input class="catalog-price__input" type="text" name="preco_min" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="<?= $precos['min'] > 0 ? number_format($precos['min'] / 100, 0, ',', '.') : '0' ?>" value="<?= $escape($valorPreco($estado['preco_min'])) ?>">
+								<input class="catalog-price__input" type="text" name="preco_min" inputmode="decimal" autocomplete="off" spellcheck="false" data-money placeholder="<?= $precos['min'] > 0 ? number_format($precos['min'] / 100, 0, ',', '.') : '0' ?>" value="<?= $escape($valorPreco($estado['preco_min'])) ?>">
 							</label>
 
 							<label class="catalog-price__field">
 								<span class="catalog-price__text">Até</span>
-								<input class="catalog-price__input" type="text" name="preco_max" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="<?= $precos['max'] > 0 ? number_format($precos['max'] / 100, 0, ',', '.') : '0' ?>" value="<?= $escape($valorPreco($estado['preco_max'])) ?>">
+								<input class="catalog-price__input" type="text" name="preco_max" inputmode="decimal" autocomplete="off" spellcheck="false" data-money placeholder="<?= $precos['max'] > 0 ? number_format($precos['max'] / 100, 0, ',', '.') : '0' ?>" value="<?= $escape($valorPreco($estado['preco_max'])) ?>">
 							</label>
 						</div>
 

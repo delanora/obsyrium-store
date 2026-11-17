@@ -722,6 +722,79 @@
         });
     }
 
+    // Preço digitado do catálogo: o campo já nasce com ",00" e a pessoa digita
+    // só a parte inteira antes da vírgula; os centavos continuam editáveis se
+    // ela quiser (149,90). Sem script o campo é texto livre e o servidor aceita
+    // "149", "149,90" e "149.90".
+    var camposDePreco = document.querySelectorAll('[data-money]');
+
+    Array.prototype.forEach.call(camposDePreco, function (campo) {
+        var formatar = function (valor) {
+            var partes = String(valor).replace('.', ',').split(',');
+            var inteiro = (partes[0] || '').replace(/\D+/g, '').slice(0, 7);
+            var centavos = (partes[1] || '').replace(/\D+/g, '').slice(0, 2);
+
+            if (centavos.length === 0) {
+                centavos = '00';
+            } else if (centavos.length === 1) {
+                centavos += '0';
+            }
+
+            return inteiro + ',' + centavos;
+        };
+
+        var caretAntesDaVirgula = function () {
+            var posicao = campo.value.indexOf(',');
+            campo.setSelectionRange(posicao, posicao);
+        };
+
+        if (campo.value !== '') {
+            campo.value = formatar(campo.value);
+        }
+
+        campo.addEventListener('focus', function () {
+            if (campo.value === '') {
+                campo.value = ',00';
+            }
+
+            caretAntesDaVirgula();
+        });
+
+        // O clique reposiciona o cursor depois do foco; com o campo ainda em
+        // ",00" o cursor volta para antes da vírgula, que é por onde se começa
+        // a digitar.
+        campo.addEventListener('click', function () {
+            if (campo.value === ',00') {
+                caretAntesDaVirgula();
+            }
+        });
+
+        campo.addEventListener('input', function () {
+            campo.value = formatar(campo.value);
+            caretAntesDaVirgula();
+        });
+
+        // Backspace logo depois da vírgula apaga o último dígito do valor: a
+        // vírgula é enfeite e não pode prender o cursor.
+        campo.addEventListener('keydown', function (evento) {
+            if (evento.key !== 'Backspace' || campo.selectionStart !== campo.selectionEnd) {
+                return;
+            }
+
+            if (campo.selectionStart === 1 && campo.value.charAt(0) === ',') {
+                evento.preventDefault();
+            }
+        });
+
+        // Campo só com ",00" não vira filtro: sai da URL em vez de pedir preço
+        // zero ao servidor.
+        campo.addEventListener('blur', function () {
+            if (campo.value === ',00') {
+                campo.value = '';
+            }
+        });
+    });
+
     // Marca para o script inline que o comportamento carregou.
     window.__obsyriumReady = true;
 })();

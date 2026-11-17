@@ -11,6 +11,15 @@ declare(strict_types=1);
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 
+// Cada arquivo estático entra na página com a data de modificação na URL: mudou
+// o arquivo, muda o endereço e o navegador não fica com CSS/JS velho no cache.
+$asset = static function (string $caminho): string {
+    $arquivo = dirname(__DIR__, 3) . '/public' . $caminho;
+    $versao = is_file($arquivo) ? (string) filemtime($arquivo) : '';
+
+    return $caminho . ($versao !== '' ? '?v=' . $versao : '');
+};
+
 // Lido antes do cabeçalho: o aviso de item adicionado aparece no próprio
 // cabeçalho, junto do ícone do carrinho, e não como faixa no topo.
 $flash = App\Support\Session::takeFlash();
@@ -20,18 +29,18 @@ $flash = App\Support\Session::takeFlash();
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title><?= $escape($title ?? 'Obsyrium Store') ?></title>
-	<link rel="stylesheet" href="/assets/css/tokens.css">
-	<link rel="stylesheet" href="/assets/css/base.css">
-	<link rel="stylesheet" href="/assets/css/components.css">
-	<link rel="stylesheet" href="/assets/css/layout.css">
-	<link rel="stylesheet" href="/assets/css/product.css">
-	<link rel="stylesheet" href="/assets/css/catalog.css">
-	<link rel="stylesheet" href="/assets/css/cart.css">
-	<link rel="stylesheet" href="/assets/css/account.css">
-	<link rel="stylesheet" href="/assets/css/checkout.css">
-	<link rel="stylesheet" href="/assets/css/pages.css">
-	<link rel="stylesheet" href="/assets/css/auth.css">
-	<link rel="stylesheet" href="/assets/css/animations.css">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/tokens.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/base.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/components.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/layout.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/product.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/catalog.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/cart.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/account.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/checkout.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/pages.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/auth.css') ?>">
+	<link rel="stylesheet" href="<?= $asset('/assets/css/animations.css') ?>">
 	<script>
 		document.documentElement.classList.add("js");
 		window.addEventListener("load", function () {
@@ -58,6 +67,6 @@ $flash = App\Support\Session::takeFlash();
 
 	<?php require __DIR__ . '/../partials/footer.php'; ?>
 
-	<script src="/assets/js/site.js" defer></script>
+	<script src="<?= $asset('/assets/js/site.js') ?>" defer></script>
 </body>
 </html>
