@@ -108,12 +108,15 @@ if ($estado['preco_min'] !== '' || $estado['preco_max'] !== '') {
     $de = (int) ($estado['preco_min'] ?: 0);
     $ate = (int) ($estado['preco_max'] ?: 0);
 
+    // Centavos aparecem só quando existem: "R$ 130" e "R$ 129,90".
+    $reais = static fn (int $centavos): string => number_format($centavos / 100, $centavos % 100 === 0 ? 0 : 2, ',', '.');
+
     if ($de > 0 && $ate > 0) {
-        $rotulo = sprintf('R$ %s a %s', number_format($de / 100, 0, ',', '.'), number_format($ate / 100, 0, ',', '.'));
+        $rotulo = sprintf('R$ %s a %s', $reais($de), $reais($ate));
     } elseif ($de > 0) {
-        $rotulo = sprintf('A partir de R$ %s', number_format($de / 100, 0, ',', '.'));
+        $rotulo = sprintf('A partir de R$ %s', $reais($de));
     } else {
-        $rotulo = sprintf('Até R$ %s', number_format($ate / 100, 0, ',', '.'));
+        $rotulo = sprintf('Até R$ %s', $reais($ate));
     }
 
     $ativos[] = ['rotulo' => $rotulo, 'href' => $url(['preco_min' => '', 'preco_max' => '', 'pagina' => 1])];
@@ -267,12 +270,12 @@ if ($resultado['paginas'] <= 7) {
 						<div class="catalog-price" role="group" aria-labelledby="filtro-preco">
 							<label class="catalog-price__field">
 								<span class="catalog-price__text">De</span>
-								<input class="catalog-price__input" type="number" name="preco_min" inputmode="decimal" min="0" step="1" placeholder="<?= $precos['min'] > 0 ? number_format($precos['min'] / 100, 0, ',', '.') : '0' ?>" value="<?= $escape($valorPreco($estado['preco_min'])) ?>">
+								<input class="catalog-price__input" type="text" name="preco_min" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="<?= $precos['min'] > 0 ? number_format($precos['min'] / 100, 0, ',', '.') : '0' ?>" value="<?= $escape($valorPreco($estado['preco_min'])) ?>">
 							</label>
 
 							<label class="catalog-price__field">
 								<span class="catalog-price__text">Até</span>
-								<input class="catalog-price__input" type="number" name="preco_max" inputmode="decimal" min="0" step="1" placeholder="<?= $precos['max'] > 0 ? number_format($precos['max'] / 100, 0, ',', '.') : '0' ?>" value="<?= $escape($valorPreco($estado['preco_max'])) ?>">
+								<input class="catalog-price__input" type="text" name="preco_max" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="<?= $precos['max'] > 0 ? number_format($precos['max'] / 100, 0, ',', '.') : '0' ?>" value="<?= $escape($valorPreco($estado['preco_max'])) ?>">
 							</label>
 						</div>
 
