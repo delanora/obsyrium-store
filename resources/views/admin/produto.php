@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Services\ProductAdminService;
 use App\Services\StockService;
 use App\Support\Csrf;
 
@@ -70,6 +71,7 @@ if ($novo && $tamanhosMarcados === []) {
 
 // A cor atual entra na frente da lista de sugestões quando ainda não está nela.
 $corAtual = $valor('color', $novo ? '' : (string) $adminProduto['color']);
+$novaCor = (string) ($adminValores['nova_cor'] ?? '');
 $coresSugeridas = $adminCores;
 
 if ($corAtual !== '' && !in_array($corAtual, $coresSugeridas, true)) {
@@ -274,27 +276,31 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 		</fieldset>
 
 		<div class="admin-field-row">
-			<div class="field">
+			<div class="field" data-color-field="<?= $escape(ProductAdminService::NEW_COLOR) ?>">
 				<label class="field__label" for="color">Cor</label>
-				<input
-					class="field__input"
-					id="color"
-					name="color"
-					type="text"
-					maxlength="40"
-					required
-					list="cores-do-produto"
-					autocomplete="off"
-					data-color-input
-					value="<?= $escape($corAtual) ?>"
-				>
-				<p class="field__hint">Escolha uma das cores da lista ou digite uma nova: ela passa a ser sugerida no campo.</p>
-
-				<datalist id="cores-do-produto">
+				<select class="field__input field__select" id="color" name="color" required data-color-select>
+					<option value="">Escolha uma cor</option>
 					<?php foreach ($coresSugeridas as $cor): ?>
-						<option value="<?= $escape($cor) ?>"></option>
+						<option value="<?= $escape($cor) ?>" <?= $novaCor === '' && $cor === $corAtual ? 'selected' : '' ?>><?= $escape($cor) ?></option>
 					<?php endforeach; ?>
-				</datalist>
+					<option value="<?= $escape(ProductAdminService::NEW_COLOR) ?>" <?= $novaCor !== '' ? 'selected' : '' ?>>+ adicionar nova cor</option>
+				</select>
+
+				<div class="field__new-color" data-color-new>
+					<label class="field__label" for="nova_cor">Nova cor</label>
+					<input
+						class="field__input"
+						id="nova_cor"
+						name="nova_cor"
+						type="text"
+						maxlength="40"
+						autocomplete="off"
+						value="<?= $escape($novaCor) ?>"
+						data-color-new-input
+					>
+				</div>
+
+				<p class="field__hint">Cor nova? Use "+ adicionar nova cor": ela entra na lista.</p>
 			</div>
 
 			<div class="field">

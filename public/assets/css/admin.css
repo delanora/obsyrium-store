@@ -1413,6 +1413,49 @@
 .admin-table--estoque td:last-child {
     padding-inline-end: var(--space-4);
 }
+/* Campos alinhados pelo topo: um campo com mais linhas de ajuda não estica o
+   input do vizinho na mesma linha. */
+
+.field {
+    align-content: start;
+}
+
+.field__input {
+    align-self: start;
+}
+
+/* Cor do produto: seletor com a seta do tema e o campo da cor nova */
+
+.field__select {
+    appearance: none;
+    padding-inline-end: 2.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23c9a063' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--space-4) center;
+    background-size: 0.75rem;
+    cursor: pointer;
+}
+
+.field__new-color {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px dashed var(--color-accent-strong);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+}
+
+/* O bloco nasce visível (sem JavaScript dá para cadastrar a cor); o script o
+   esconde quando o seletor não está em "+ adicionar nova cor". */
+.field__new-color[hidden] {
+    display: none;
+}
+
+/* Com o campo da cor nova aberto, a dica do seletor sai de cena. */
+.field__new-color:not([hidden]) ~ .field__hint {
+    display: none;
+}
+
 /* Foto principal na célula do produto, no estoque */
 
 .admin-product-cell {

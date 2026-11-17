@@ -31,8 +31,13 @@ final class ProductAdminService
     public const SIZES = ['PP', 'P', 'M', 'G', 'GG'];
 
     /**
-     * Cores sugeridas no cadastro. O campo aceita qualquer cor digitada; estas
-     * são só o ponto de partida, e as cores já usadas no catálogo entram junto.
+     * Valor do item "+ adicionar nova cor" no seletor de cor.
+     */
+    public const NEW_COLOR = '__nova';
+
+    /**
+     * Cores de fábrica, semeadas em `product_colors` pela migration. Depois disso
+     * a lista vem do banco e cresce pelo próprio painel.
      */
     public const COLORS = [
         'Preta',
@@ -216,6 +221,8 @@ final class ProductAdminService
             throw $erro;
         }
 
+        $this->guardarCor((string) $dadosNormalizados['color']);
+
         $check['id'] = $id;
 
         return $check;
@@ -282,6 +289,8 @@ final class ProductAdminService
 
             throw $erro;
         }
+
+        $this->guardarCor((string) $dadosNormalizados['color']);
 
         return $check;
     }
@@ -472,28 +481,41 @@ final class ProductAdminService
     }
 
     /**
-     * Cores oferecidas no campo de cor: as de fábrica mais as que já existem no
-     * catálogo, para o que foi digitado uma vez voltar como sugestão.
+     * Guarda a cor usada no produto na lista do seletor, quando ela é nova.
+     */
+    private function guardarCor(string $nome): void
+    {
+        $nome = trim($nome);
+
+        if ($nome === '') {
+            return;
+        }
+
+        $existe = $this->pdo->prepare('SELECT 1 FROM product_colors WHERE name = :name LIMIT 1');
+        $existe->execute([':name' => $nome]);
+
+        if ($existe->fetchColumn() !== false) {
+            return;
+        }
+
+        $posicao = (int) $this->pdo->query('SELECT COALESCE(MAX(position), 0) + 1 FROM product_colors')->fetchColumn();
+
+        $this->pdo->prepare('INSERT IGNORE INTO product_colors (name, position) VALUES (:name, :position)')
+            ->execute([':name' => $nome, ':position' => $posicao]);
+    }
+
+    /**
+     * Cores oferecidas no campo de cor, na ordem em que aparecem no seletor.
      *
      * @return list<string>
      */
     public function colors(): array
     {
-        $linhas = $this->pdo
-            ->query("SELECT DISTINCT color FROM products WHERE color <> ''")
+        $nomes = $this->pdo
+            ->query('SELECT name FROM product_colors ORDER BY position, name')
             ->fetchAll(PDO::FETCH_COLUMN);
 
-        $cores = self::COLORS;
-
-        foreach ($linhas as $cor) {
-            $cor = trim((string) $cor);
-
-            if ($cor !== '' && !in_array($cor, $cores, true)) {
-                $cores[] = $cor;
-            }
-        }
-
-        return $cores;
+        return array_values(array_map(static fn ($nome): string => (string) $nome, $nomes));
     }
 
     /**
@@ -508,7 +530,14 @@ final class ProductAdminService
         $nome = trim((string) ($dados['name'] ?? ''));
         $slug = trim((string) ($dados['slug'] ?? ''));
         $cor = trim((string) ($dados['color'] ?? ''));
+        $novaCor = trim((string) ($dados['nova_cor'] ?? ''));
         $material = trim((string) ($dados['material'] ?? ''));
+
+        // "+ adicionar nova cor" manda o valor especial e a cor de verdade vem em
+        // `nova_cor`; uma cor nova digitada tem prioridade sobre a da lista.
+        if ($novaCor !== '' || $cor === self::NEW_COLOR) {
+            $cor = $novaCor;
+        }
         $descricao = trim((string) ($dados['description'] ?? ''));
         $precoBruto = trim((string) ($dados['price'] ?? ''));
         $comparativoBruto = trim((string) ($dados['compare_price'] ?? ''));
@@ -517,10 +546,11 @@ final class ProductAdminService
         $categorias = $this->resolverCategorias($dados);
         $erros = $categorias['errors'];
 
-        $valores = [
-            'name' => $nome,
-            'slug' => $slug,
-            'color' => $cor,
+                    $valores = [
+              'name' => $nome,
+              'slug' => $slug,
+              'color' => $cor,
+              'nova_cor' => $novaCor,
             'material' => $material,
             'description' => $descricao,
             'price' => $precoBruto,
@@ -546,7 +576,7 @@ final class ProductAdminService
         }
 
         if (mb_strlen($cor) < 2 || mb_strlen($cor) > 40) {
-            $erros[] = 'A cor precisa ter de 2 a 40 caracteres.';
+            $erros[] = 'Escolha uma cor da lista ou cadastre uma nova, com 2 a 40 caracteres.';
         }
 
         if (mb_strlen($material) < 2 || mb_strlen($material) > 80) {

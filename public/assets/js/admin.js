@@ -106,34 +106,30 @@
         });
     });
 
-    // Cor do produto: o que foi digitado e ainda não estava na lista passa a ser
-    // sugerido nela, sem sair do campo e sem recarregar a página.
-    cada(document.querySelectorAll('[data-color-input]'), function (campo) {
-        var lista = document.getElementById(campo.getAttribute('list') || '');
+    // Cor: "+ adicionar nova cor" abre o campo da cor nova e o esconde de novo
+    // quando uma cor da lista é escolhida. Sem este script o campo fica sempre
+    // visível e o servidor usa o que estiver preenchido.
+    cada(document.querySelectorAll('[data-color-field]'), function (campo) {
+        var seletor = campo.querySelector('[data-color-select]');
+        var bloco = campo.querySelector('[data-color-new]');
+        var entrada = campo.querySelector('[data-color-new-input]');
 
-        if (!lista) {
+        if (!seletor || !bloco || !entrada) {
             return;
         }
 
-        campo.addEventListener('change', function () {
-            var valor = campo.value.trim();
-            var existe = false;
+        var atualizar = function () {
+            bloco.hidden = seletor.value !== campo.getAttribute('data-color-field');
+        };
 
-            if (valor === '') {
-                return;
-            }
+        seletor.addEventListener('change', function () {
+            atualizar();
 
-            cada(lista.options, function (opcao) {
-                if (opcao.value.toLowerCase() === valor.toLowerCase()) {
-                    existe = true;
-                }
-            });
-
-            if (!existe) {
-                var nova = document.createElement('option');
-                nova.value = valor;
-                lista.appendChild(nova);
+            if (!bloco.hidden) {
+                entrada.focus();
             }
         });
+
+        atualizar();
     });
 })();
