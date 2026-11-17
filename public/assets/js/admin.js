@@ -275,21 +275,31 @@
             });
         });
 
-        campo.addEventListener('keydown', function (evento) {
-            if (evento.key === 'Enter' && evento.target === entrada && !painel.hidden) {
-                evento.preventDefault();
-            }
+        		campo.addEventListener('keydown', function (evento) {
+			if (evento.key === 'Enter' && evento.target === entrada && !painel.hidden) {
+				evento.preventDefault();
+			}
 
-            if (evento.key === 'Escape') {
-                entrada.focus();
-                abrir(false);
-            }
-        });
+			if (evento.key === 'Escape') {
+				entrada.focus();
+				abrir(false);
+			}
+		});
 
-        document.addEventListener('click', function (evento) {
-            if (!campo.contains(evento.target)) {
-                abrir(false);
-            }
-        });
-    });
+		document.addEventListener('click', function (evento) {
+			if (!campo.contains(evento.target)) {
+				abrir(false);
+			}
+		});
+	});
+
+	// Ações destrutivas que pedem confirmação. Sem JavaScript o formulário já
+	// envia; aqui só evita a lixeira e a exclusão por engano.
+	cada(document.querySelectorAll('form[data-confirm]'), function (formulario) {
+		formulario.addEventListener('submit', function (evento) {
+			if (!window.confirm(formulario.getAttribute('data-confirm'))) {
+				evento.preventDefault();
+			}
+		});
+	});
 })();

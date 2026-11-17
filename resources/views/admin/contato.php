@@ -5,25 +5,18 @@ declare(strict_types=1);
 use App\Support\Csrf;
 
 /*
- * Contato no painel: os dois canais que a página pública exibe e as mensagens
- * que chegaram pelo formulário.
+ * Contato no painel: os dois canais que a página pública exibe.
  *
  * O WhatsApp é gravado só com dígitos (país + DDD + número) e o Instagram sem o
- * @; a página pública monta o link e o rótulo a partir disso.
+ * @; a página pública monta o link e o rótulo a partir disso. As mensagens do
+ * formulário ficam na aba própria, Mensagens.
  *
  * @var array{whatsapp: string, instagram: string} $adminContato
- * @var list<array{id: int, name: string, email: string, message: string, created_at: string}> $adminMensagens
  * @var list<string> $adminErros
  * @var array<string, string> $adminValores
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-
-$data = static function (string $valor): string {
-    $quando = strtotime($valor);
-
-    return $quando === false ? $valor : date('d/m/Y H:i', $quando);
-};
 
 $whatsapp = (string) ($adminValores['whatsapp'] ?? $adminContato['whatsapp'] ?? '');
 $instagram = (string) ($adminValores['instagram'] ?? $adminContato['instagram'] ?? '');
@@ -34,12 +27,16 @@ $instagram = (string) ($adminValores['instagram'] ?? $adminContato['instagram'] 
 	<span aria-current="page">Contato</span>
 </p>
 
-<header class="admin-head">
+<header class="admin-head admin-head--row">
 	<div>
 		<p class="admin-head__eyebrow">Painel</p>
 		<h1 class="admin-head__title">Contato</h1>
-		<p class="admin-head__text">Canais exibidos na página Contato e mensagens recebidas pelo formulário.</p>
+		<p class="admin-head__text">Canais exibidos na página Contato da loja.</p>
 	</div>
+
+	<p class="admin-head__actions">
+		<a class="admin-link-button" href="/admin/mensagens">Ver mensagens</a>
+	</p>
 </header>
 
 <?php if ($adminErros !== []): ?>

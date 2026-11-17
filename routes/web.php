@@ -71,6 +71,11 @@ return static function (Router $router): void {
     $router->post('/admin/estoque/novo', [AdminController::class, 'createProduct']);
     $router->get('/admin/contato', [AdminController::class, 'contact']);
     $router->post('/admin/contato', [AdminController::class, 'saveContact']);
+    $router->get('/admin/mensagens', [AdminController::class, 'messages']);
+    $router->post('/admin/mensagens/ler', [AdminController::class, 'markMessage']);
+    $router->post('/admin/mensagens/lixeira', [AdminController::class, 'trashMessage']);
+    $router->post('/admin/mensagens/restaurar', [AdminController::class, 'restoreMessage']);
+    $router->post('/admin/mensagens/apagar', [AdminController::class, 'deleteMessage']);
     $router->get('/admin/categorias', [AdminController::class, 'categories']);
     $router->post('/admin/categorias', [AdminController::class, 'createCategory']);
     $router->post('/admin/categorias/apagar', [AdminController::class, 'deleteCategory']);

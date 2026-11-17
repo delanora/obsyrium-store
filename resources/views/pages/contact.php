@@ -14,14 +14,14 @@ use App\Support\Csrf;
  *
  * @var array{whatsapp: string|null, whatsappLabel: string, instagram: string|null, instagramLabel: string} $contatoCanais
  * @var list<string> $contatoErros
- * @var array{name: string, email: string, message: string} $contatoValores
+ * @var array{name: string, email: string, phone: string, message: string} $contatoValores
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 
 $canais = $contatoCanais;
 $erros = $contatoErros ?? [];
-$valores = $contatoValores ?? ['name' => '', 'email' => '', 'message' => ''];
+$valores = $contatoValores ?? ['name' => '', 'email' => '', 'phone' => '', 'message' => ''];
 ?>
 <section class="page">
 	<div class="container page__inner">
@@ -80,6 +80,11 @@ $valores = $contatoValores ?? ['name' => '', 'email' => '', 'message' => ''];
 				<div class="field">
 					<label class="field__label" for="contato-email">E-mail</label>
 					<input class="field__input" id="contato-email" name="email" type="email" maxlength="<?= App\Services\ContactService::MAX_EMAIL ?>" autocomplete="email" required value="<?= $escape($valores['email']) ?>">
+				</div>
+
+				<div class="field">
+					<label class="field__label" for="contato-telefone">Telefone</label>
+					<input class="field__input" id="contato-telefone" name="phone" type="tel" maxlength="<?= App\Services\ContactService::MAX_PHONE ?>" autocomplete="tel" inputmode="tel" placeholder="(11) 99999-9999" required value="<?= $escape($valores['phone']) ?>">
 				</div>
 
 				<div class="field contact__field--wide">

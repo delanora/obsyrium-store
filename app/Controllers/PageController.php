@@ -61,7 +61,7 @@ final class PageController
         $this->render('Contato — Obsyrium Store', 'pages/contact.php', [
             'canais' => (new ContactService(Connection::get()))->channels(),
             'erros' => $erros,
-            'valores' => $valores + ['name' => '', 'email' => '', 'message' => ''],
+            'valores' => $valores + ['name' => '', 'email' => '', 'phone' => '', 'message' => ''],
         ], $status);
     }
 

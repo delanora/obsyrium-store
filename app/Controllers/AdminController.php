@@ -403,10 +403,111 @@ final class AdminController
 
         $this->render('contato', 'Contato — Administração Obsyrium', $admin, 'contato', [
             'contato' => $servico->settings(),
-            'mensagens' => $servico->messages(),
             'erros' => $erros,
             'valores' => $valores,
         ]);
+    }
+
+    /**
+     * Caixa de entrada do formulário de contato, com as abas Todas, Não lidas
+     * e Lixeira.
+     */
+    public function messages(): void
+    {
+        $this->renderMessages($this->admin());
+    }
+
+    public function markMessage(): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $lida = (string) ($_POST['lida'] ?? '1') === '1';
+        $erro = (new ContactService(Connection::get()))->markRead((int) ($_POST['mensagem'] ?? 0), $lida);
+
+        Session::flash(
+            $erro === null ? 'success' : 'error',
+            $erro ?? ($lida ? 'Mensagem marcada como lida.' : 'Mensagem marcada como não lida.')
+        );
+
+        $this->redirect($this->messagesBackUrl((string) ($_POST['voltar'] ?? '')));
+    }
+
+    public function trashMessage(): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $erro = (new ContactService(Connection::get()))->trash((int) ($_POST['mensagem'] ?? 0));
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Mensagem movida para a lixeira.');
+
+        $this->redirect($this->messagesBackUrl((string) ($_POST['voltar'] ?? '')));
+    }
+
+    public function restoreMessage(): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $erro = (new ContactService(Connection::get()))->restore((int) ($_POST['mensagem'] ?? 0));
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Mensagem restaurada.');
+
+        $this->redirect($this->messagesBackUrl((string) ($_POST['voltar'] ?? '')));
+    }
+
+    public function deleteMessage(): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $erro = (new ContactService(Connection::get()))->destroy((int) ($_POST['mensagem'] ?? 0));
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Mensagem apagada de vez.');
+
+        $this->redirect($this->messagesBackUrl((string) ($_POST['voltar'] ?? '')));
+    }
+
+    /**
+     * @param array<string, mixed> $admin
+     */
+    private function renderMessages(array $admin): void
+    {
+        $servico = new ContactService(Connection::get());
+        $filtro = $this->messagesFilter((string) ($_GET['filtro'] ?? ''));
+
+        $this->render('mensagens', 'Mensagens — Administração Obsyrium', $admin, 'mensagens', [
+            'mensagens' => $servico->messages($filtro),
+            'mensagensFiltro' => $filtro,
+            'mensagensContagem' => $servico->counts(),
+        ]);
+    }
+
+    private function messagesFilter(string $filtro): string
+    {
+        return in_array($filtro, [ContactService::FILTER_UNREAD, ContactService::FILTER_TRASH], true)
+            ? $filtro
+            : ContactService::FILTER_ALL;
+    }
+
+    private function messagesBackUrl(string $filtro): string
+    {
+        $filtro = $this->messagesFilter($filtro);
+
+        return '/admin/mensagens' . ($filtro === ContactService::FILTER_ALL ? '' : '?filtro=' . $filtro);
     }
 
     /**
@@ -821,6 +922,8 @@ final class AdminController
         $adminCores = $contexto['cores'] ?? [];
         $adminContato = $contexto['contato'] ?? [];
         $adminMensagens = $contexto['mensagens'] ?? [];
+        $adminMensagensFiltro = $contexto['mensagensFiltro'] ?? ContactService::FILTER_ALL;
+        $adminMensagensContagem = $contexto['mensagensContagem'] ?? [];
         $content = $basePath . '/resources/views/admin/' . $view . '.php';
 
         require $basePath . '/resources/views/layouts/admin.php';

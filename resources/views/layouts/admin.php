@@ -12,7 +12,7 @@ use App\Support\Csrf;
  * @var string $content Caminho da view de conteúdo.
  * @var string|null $title Título do documento.
  * @var array<string, mixed>|null $adminAtual
- * @var string $adminAba 'dashboard', 'pedidos', 'estoque', 'categorias' ou 'contato'
+ * @var string $adminAba 'dashboard', 'pedidos', 'estoque', 'categorias', 'contato' ou 'mensagens'
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -36,6 +36,7 @@ $adminItens = [
 	'estoque' => ['rotulo' => 'Estoque', 'href' => '/admin/estoque'],
 	'categorias' => ['rotulo' => 'Categorias', 'href' => '/admin/categorias'],
 	'contato' => ['rotulo' => 'Contato', 'href' => '/admin/contato'],
+	'mensagens' => ['rotulo' => 'Mensagens', 'href' => '/admin/mensagens'],
 ];
 ?><!DOCTYPE html>
 <html lang="pt-BR">

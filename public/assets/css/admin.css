@@ -1141,7 +1141,10 @@
     padding: 0 var(--space-3);
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-sm);
+    background-color: transparent;
     color: var(--color-text-muted);
+    cursor: pointer;
+    font-family: inherit;
     font-size: var(--font-size-xs);
     letter-spacing: var(--letter-spacing-wide);
     text-decoration: none;
@@ -1152,6 +1155,11 @@
 .admin-link-button:hover {
     border-color: var(--color-accent);
     color: var(--color-accent);
+}
+
+.admin-link-button--danger:hover {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
 }
 
 .admin-alert {
@@ -2188,4 +2196,70 @@
     max-width: 34rem;
     line-height: var(--line-height-base);
     overflow-wrap: anywhere;
+}
+
+/* ============ Mensagens do contato ============ */
+
+.admin-table--mensagens td {
+    vertical-align: top;
+}
+
+.admin-table--mensagens td:last-child {
+    white-space: nowrap;
+}
+
+.admin-message__name {
+    display: block;
+    color: var(--color-text);
+    font-weight: var(--font-weight-semibold);
+}
+
+.admin-message--nova .admin-message__name {
+    color: var(--color-accent);
+}
+
+.admin-message__badge {
+    margin-left: var(--space-2);
+    padding: 0 var(--space-2);
+    border: 1px solid var(--color-accent-strong);
+    border-radius: var(--radius-pill);
+    color: var(--color-accent);
+    font-size: 0.65rem;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.admin-message__meta {
+    display: block;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+a.admin-message__meta:hover {
+    color: var(--color-accent);
+}
+
+.admin-message__text {
+    max-width: 34rem;
+    line-height: var(--line-height-base);
+    overflow-wrap: anywhere;
+}
+
+.admin-message__date {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+}
+
+.admin-message__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.admin-message__actions form {
+    margin: 0;
 }
