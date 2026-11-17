@@ -27,6 +27,7 @@ return static function (Router $router): void {
 
     $router->get('/sobre', [PageController::class, 'about']);
     $router->get('/contato', [PageController::class, 'contact']);
+    $router->post('/contato', [PageController::class, 'sendMessage']);
 
     $router->get('/carrinho', [CartController::class, 'show']);
 
@@ -68,6 +69,8 @@ return static function (Router $router): void {
     $router->post('/admin/estoque/voltar', [AdminController::class, 'restore']);
     $router->get('/admin/estoque/novo', [AdminController::class, 'newProduct']);
     $router->post('/admin/estoque/novo', [AdminController::class, 'createProduct']);
+    $router->get('/admin/contato', [AdminController::class, 'contact']);
+    $router->post('/admin/contato', [AdminController::class, 'saveContact']);
     $router->get('/admin/categorias', [AdminController::class, 'categories']);
     $router->post('/admin/categorias', [AdminController::class, 'createCategory']);
     $router->post('/admin/categorias/apagar', [AdminController::class, 'deleteCategory']);

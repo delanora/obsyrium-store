@@ -661,6 +661,11 @@ Fechar a compra termina numa página própria: `/pedido/OBS-000004/confirmacao`.
 ### Páginas Sobre e Contato
 
 - `GET /sobre` e `GET /contato` (`App\Controllers\PageController`) montam páginas fixas no layout do site: `resources/views/pages/about.php` e `resources/views/pages/contact.php`.
-- Sobre apresenta a marca, o trabalho em lotes pequenos, como a compra funciona e o cuidado com a estampa; Contato reúne o horário de atendimento (segunda a sexta, 9h às 18h) e os atalhos que já funcionam (Compras, endereços e catálogo). O e-mail e os perfis oficiais entram quando o domínio estiver no ar.
+- Sobre apresenta a marca, o trabalho em lotes pequenos, como a compra funciona e o cuidado com a estampa.
+- Contato reúne o horário de atendimento (segunda a sexta, 9h às 18h), os cartões de **WhatsApp** e **Instagram** e o **formulário de mensagem** (`POST /contato`).
+- `App\Services\ContactService` lê os canais da tabela `settings` (chaves `contact_whatsapp` e `contact_instagram`), normaliza o número para só dígitos e o @ sem link e monta o `wa.me` e o `instagram.com`. Canal vazio não aparece com botão: o cartão avisa que ainda não foi publicado.
+- O formulário exige CSRF, valida nome (2–120), e-mail e mensagem (10–4000) e grava em `contact_messages`. Com erro, a página volta preenchida com 422; com sucesso, 303 para `/contato` e o aviso no layout. Não há envio de e-mail enquanto o domínio não existir — a mensagem fica no painel.
+- `GET /admin/contato` (`AdminController::contact()`) edita os dois canais (`POST /admin/contato`, com CSRF) e lista as 100 mensagens mais recentes. A seção entrou na navegação lateral do painel.
+- Migration `2026_11_17_000015_create_settings_and_contact_messages.php`: tabela `settings` (chave/valor, já com os dois canais vazios) e `contact_messages`.
 - O menu do topo ganhou os links reais, com `aria-current` nas duas páginas, e o "Fale conosco" do rodapé aponta para `/contato`. Nenhum link do menu ficou em `#`.
-- Estilos em `public/assets/css/pages.css`, carregado no layout do site: blocos em duas colunas a partir de 48 rem.
+- Estilos em `public/assets/css/pages.css`, carregado no layout do site: blocos em duas colunas a partir de 48 rem, canais de contato lado a lado e formulário em duas colunas no computador. O painel usa `admin-contact*` em `admin.css`.

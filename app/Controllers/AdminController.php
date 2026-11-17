@@ -9,6 +9,7 @@ use App\Repositories\AdminRepository;
 use App\Repositories\LoginAttemptRepository;
 use App\Services\AdminAuthService;
 use App\Services\CategoryService;
+use App\Services\ContactService;
 use App\Services\DashboardService;
 use App\Services\LoginThrottle;
 use App\Services\OrderService;
@@ -360,6 +361,52 @@ final class AdminController
         return preg_match('#^/admin/estoque/(?:novo|produto/\d+)$#', $caminho) === 1
             ? $caminho
             : '/admin/categorias';
+    }
+
+    /**
+     * Canais de atendimento exibidos na página Contato.
+     */
+    public function contact(): void
+    {
+        $this->renderContact($this->admin());
+    }
+
+    public function saveContact(): void
+    {
+        $admin = $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $resultado = (new ContactService(Connection::get()))->saveSettings($_POST);
+
+        if ($resultado['errors'] !== []) {
+            $this->renderContact($admin, $resultado['errors'], $resultado['values']);
+
+            return;
+        }
+
+        Session::flash('success', 'Canais de contato atualizados.');
+
+        $this->redirect('/admin/contato');
+    }
+
+    /**
+     * @param array<string, mixed> $admin
+     * @param list<string> $erros
+     * @param array<string, string> $valores
+     */
+    private function renderContact(array $admin, array $erros = [], array $valores = []): void
+    {
+        $servico = new ContactService(Connection::get());
+
+        $this->render('contato', 'Contato — Administração Obsyrium', $admin, 'contato', [
+            'contato' => $servico->settings(),
+            'mensagens' => $servico->messages(),
+            'erros' => $erros,
+            'valores' => $valores,
+        ]);
     }
 
     /**
@@ -772,6 +819,8 @@ final class AdminController
         $adminLimiteFotos = $contexto['limiteFotos'] ?? '';
         $adminMaxFotos = $contexto['maxFotos'] ?? 0;
         $adminCores = $contexto['cores'] ?? [];
+        $adminContato = $contexto['contato'] ?? [];
+        $adminMensagens = $contexto['mensagens'] ?? [];
         $content = $basePath . '/resources/views/admin/' . $view . '.php';
 
         require $basePath . '/resources/views/layouts/admin.php';
