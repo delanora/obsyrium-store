@@ -29,6 +29,7 @@ use App\Support\Csrf;
  * @var array<string, mixed> $adminPrecos
  * @var string $adminLimiteFotos
  * @var int $adminMaxFotos
+ * @var list<string> $adminCores
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -67,6 +68,14 @@ if ($novo && $tamanhosMarcados === []) {
 	$tamanhosMarcados = $adminTamanhos;
 }
 
+// A cor atual entra na frente da lista de sugestões quando ainda não está nela.
+$corAtual = $valor('color', $novo ? '' : (string) $adminProduto['color']);
+$coresSugeridas = $adminCores;
+
+if ($corAtual !== '' && !in_array($corAtual, $coresSugeridas, true)) {
+	array_unshift($coresSugeridas, $corAtual);
+}
+
 $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 	if (in_array($raiz, $marcadas, true)) {
 		return true;
@@ -92,7 +101,7 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 		<?php if ($novo): ?>
 			<p class="admin-head__eyebrow">Estoque</p>
 			<h1 class="admin-head__title">Novo modelo</h1>
-			<p class="admin-head__text">Cadastre a camiseta, escolha os tamanhos e o saldo inicial. As fotos entram depois, na própria página do produto.</p>
+			<p class="admin-head__text">Cadastre a camiseta com a cor, os tamanhos, o saldo inicial e as fotos — tudo na mesma tela.</p>
 		<?php else: ?>
 			<p class="admin-head__eyebrow"><?= $escape((string) $adminProduto['category']) ?></p>
 			<h1 class="admin-head__title"><?= $escape((string) $adminProduto['name']) ?></h1>
@@ -127,11 +136,30 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 	</div>
 <?php endif; ?>
 
-<div class="admin-product<?= $novo ? ' admin-product--novo' : '' ?>">
-	<?php if (!$novo): ?>
+<div class="admin-product">
 		<section class="admin-product__gallery" aria-labelledby="fotos-titulo">
 			<h2 class="admin-product__subtitle" id="fotos-titulo">Fotos do item</h2>
 
+			<?php if ($novo): ?>
+				<p class="admin-product__empty">Escolha as fotos da camiseta aqui: elas sobem junto com o modelo, ao clicar em "Criar modelo".</p>
+
+				<div class="admin-upload">
+					<label class="field__label" for="fotos">Fotos da camiseta</label>
+					<input
+						class="admin-upload__input"
+						id="fotos"
+						name="photos[]"
+						type="file"
+						accept="image/jpeg,image/png,image/webp"
+						multiple
+						form="produto-form"
+					>
+					<p class="field__hint">
+						JPG, PNG ou WebP, até <?= $escape($adminLimiteFotos) ?>, no máximo <?= (int) $adminMaxFotos ?> fotos.
+						A primeira da lista é a que aparece na vitrine.
+					</p>
+				</div>
+			<?php else: ?>
 			<?php if ($principal === null): ?>
 				<p class="admin-product__empty">Nenhuma foto enviada ainda. A loja mostra a imagem padrão até a primeira foto.</p>
 			<?php else: ?>
@@ -187,10 +215,10 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 				</p>
 				<button class="button" type="submit">Enviar foto</button>
 			</form>
+			<?php endif; ?>
 		</section>
-	<?php endif; ?>
 
-	<form class="admin-product__form" method="post" action="<?= $escape($urlDoProduto) ?>">
+	<form class="admin-product__form" id="produto-form" method="post" action="<?= $escape($urlDoProduto) ?>"<?= $novo ? ' enctype="multipart/form-data"' : '' ?>>
 		<?= Csrf::field() ?>
 		<?php foreach ($adminVoltar as $campo => $info): ?>
 			<input type="hidden" name="<?= $escape((string) $campo) ?>" value="<?= $escape((string) $info) ?>">
@@ -246,7 +274,25 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 		<div class="admin-field-row">
 			<div class="field">
 				<label class="field__label" for="color">Cor</label>
-				<input class="field__input" id="color" name="color" type="text" maxlength="40" required value="<?= $escape($valor('color', $novo ? '' : (string) $adminProduto['color'])) ?>">
+				<input
+					class="field__input"
+					id="color"
+					name="color"
+					type="text"
+					maxlength="40"
+					required
+					list="cores-do-produto"
+					autocomplete="off"
+					data-color-input
+					value="<?= $escape($corAtual) ?>"
+				>
+				<p class="field__hint">Escolha uma das cores da lista ou digite uma nova: ela passa a ser sugerida no campo.</p>
+
+				<datalist id="cores-do-produto">
+					<?php foreach ($coresSugeridas as $cor): ?>
+						<option value="<?= $escape($cor) ?>"></option>
+					<?php endforeach; ?>
+				</datalist>
 			</div>
 
 			<div class="field">

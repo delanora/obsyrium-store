@@ -1399,10 +1399,6 @@
 }
 /* ============ Categorias do produto ============ */
 
-.admin-product--novo {
-    grid-template-columns: minmax(0, 44rem);
-}
-
 .admin-categories {
     display: grid;
     gap: var(--space-2);
@@ -1567,9 +1563,6 @@
         grid-template-columns: minmax(0, 1fr) auto;
     }
 
-    .admin-product--novo {
-        grid-template-columns: minmax(0, 1fr);
-    }
 }
 /* ============ Celular ============ */
 

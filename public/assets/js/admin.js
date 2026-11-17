@@ -53,4 +53,35 @@
         marca.addEventListener('change', atualizar);
         atualizar();
     });
+
+    // Cor do produto: o que foi digitado e ainda não estava na lista passa a ser
+    // sugerido nela, sem sair do campo e sem recarregar a página.
+    cada(document.querySelectorAll('[data-color-input]'), function (campo) {
+        var lista = document.getElementById(campo.getAttribute('list') || '');
+
+        if (!lista) {
+            return;
+        }
+
+        campo.addEventListener('change', function () {
+            var valor = campo.value.trim();
+            var existe = false;
+
+            if (valor === '') {
+                return;
+            }
+
+            cada(lista.options, function (opcao) {
+                if (opcao.value.toLowerCase() === valor.toLowerCase()) {
+                    existe = true;
+                }
+            });
+
+            if (!existe) {
+                var nova = document.createElement('option');
+                nova.value = valor;
+                lista.appendChild(nova);
+            }
+        });
+    });
 })();

@@ -30,6 +30,25 @@ final class ProductAdminService
      */
     public const SIZES = ['PP', 'P', 'M', 'G', 'GG'];
 
+    /**
+     * Cores sugeridas no cadastro. O campo aceita qualquer cor digitada; estas
+     * são só o ponto de partida, e as cores já usadas no catálogo entram junto.
+     */
+    public const COLORS = [
+        'Preta',
+        'Off white',
+        'Branca',
+        'Grafite',
+        'Cinza',
+        'Marrom',
+        'Bege',
+        'Bordô',
+        'Vinho',
+        'Verde musgo',
+        'Azul marinho',
+        'Rosa',
+    ];
+
     private const PLACEHOLDER = '/assets/images/placeholder.svg';
 
     private const UPLOAD_PATH = '/uploads/produtos';
@@ -450,6 +469,31 @@ final class ProductAdminService
     public function photoLimitLabel(): string
     {
         return $this->tamanhoLimite();
+    }
+
+    /**
+     * Cores oferecidas no campo de cor: as de fábrica mais as que já existem no
+     * catálogo, para o que foi digitado uma vez voltar como sugestão.
+     *
+     * @return list<string>
+     */
+    public function colors(): array
+    {
+        $linhas = $this->pdo
+            ->query("SELECT DISTINCT color FROM products WHERE color <> ''")
+            ->fetchAll(PDO::FETCH_COLUMN);
+
+        $cores = self::COLORS;
+
+        foreach ($linhas as $cor) {
+            $cor = trim((string) $cor);
+
+            if ($cor !== '' && !in_array($cor, $cores, true)) {
+                $cores[] = $cor;
+            }
+        }
+
+        return $cores;
     }
 
     /**

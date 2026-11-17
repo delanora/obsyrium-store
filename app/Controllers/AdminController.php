@@ -241,12 +241,69 @@ final class AdminController
         $resultado = $this->products()->create($_POST);
 
         if (isset($resultado['id'])) {
-            Session::flash('success', 'Modelo criado. Envie as fotos para ele aparecer na vitrine.');
+            $id = (int) $resultado['id'];
+            [$fotos, $falhas] = $this->enviarFotosDoModelo($id);
 
-            $this->redirect($this->productUrl((int) $resultado['id'], $_POST));
+            if ($falhas !== []) {
+                Session::flash('error', sprintf('Modelo criado, mas as fotos ficaram: %s', implode(' ', $falhas)));
+            } else {
+                Session::flash('success', $fotos > 0
+                    ? sprintf('Modelo criado com %d foto%s.', $fotos, $fotos === 1 ? '' : 's')
+                    : 'Modelo criado. Envie as fotos para ele aparecer na vitrine.');
+            }
+
+            $this->redirect($this->productUrl($id, $_POST));
         }
 
         $this->renderNewProduct($admin, $resultado['errors'], $resultado['values']);
+    }
+
+    /**
+     * Envia as fotos escolhidas no formulário de criação do modelo.
+     *
+     * O `<input multiple>` chega em `$_FILES` como listas paralelas (nome,
+     * tipo, temporário, erro e tamanho); aqui cada arquivo vira uma entrada
+     * única, no mesmo formato do envio de uma foto pela página de edição.
+     *
+     * @return array{0: int, 1: list<string>} quantas entraram e os erros
+     */
+    private function enviarFotosDoModelo(int $id): array
+    {
+        $arquivos = $_FILES['photos'] ?? null;
+
+        if (!is_array($arquivos) || !is_array($arquivos['name'] ?? null)) {
+            return [0, []];
+        }
+
+        $servico = $this->products();
+        $enviadas = 0;
+        $falhas = [];
+
+        foreach (array_keys($arquivos['name']) as $indice) {
+            $erro = (int) ($arquivos['error'][$indice] ?? UPLOAD_ERR_NO_FILE);
+
+            if ($erro === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+
+            $resultado = $servico->upload($id, [
+                'name' => (string) ($arquivos['name'][$indice] ?? ''),
+                'type' => (string) ($arquivos['type'][$indice] ?? ''),
+                'tmp_name' => (string) ($arquivos['tmp_name'][$indice] ?? ''),
+                'error' => $erro,
+                'size' => (int) ($arquivos['size'][$indice] ?? 0),
+            ]);
+
+            if (isset($resultado['error'])) {
+                $falhas[] = $resultado['error'];
+
+                continue;
+            }
+
+            $enviadas++;
+        }
+
+        return [$enviadas, $falhas];
     }
 
     public function categories(): void
@@ -496,6 +553,7 @@ final class AdminController
                 'precos' => $servico->priceTags($produto),
                 'limiteFotos' => $servico->photoLimitLabel(),
                 'maxFotos' => ProductAdminService::MAX_IMAGES,
+                'cores' => $servico->colors(),
                 'voltar' => $this->stockFiltros($_GET),
             ]
         );
@@ -519,8 +577,9 @@ final class AdminController
             'erros' => $erros,
             'valores' => $valores,
             'precos' => [],
-            'limiteFotos' => '',
-            'maxFotos' => 0,
+            'limiteFotos' => $this->products()->photoLimitLabel(),
+            'maxFotos' => ProductAdminService::MAX_IMAGES,
+            'cores' => $this->products()->colors(),
             'voltar' => $this->stockFiltros($_GET),
         ]);
     }
@@ -661,6 +720,7 @@ final class AdminController
         $adminVoltar = $contexto['voltar'] ?? [];
         $adminLimiteFotos = $contexto['limiteFotos'] ?? '';
         $adminMaxFotos = $contexto['maxFotos'] ?? 0;
+        $adminCores = $contexto['cores'] ?? [];
         $content = $basePath . '/resources/views/admin/' . $view . '.php';
 
         require $basePath . '/resources/views/layouts/admin.php';
