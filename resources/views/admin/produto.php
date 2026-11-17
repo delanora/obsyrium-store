@@ -235,38 +235,61 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 			<p class="field__hint">Fica em /produto/<?= $escape($valor('slug', $novo ? '' : (string) $adminProduto['slug'])) ?>. Deixe vazio para gerar pelo nome.</p>
 		</div>
 
-		<fieldset class="field">
+		<fieldset class="field field--categories" data-categories-field>
 			<legend class="field__label">Categorias</legend>
-			<p class="field__hint">Marque uma ou mais categorias. Se a categoria tiver subcategoria, escolha abaixo para o produto entrar nela.</p>
 
-			<div class="admin-categories">
-				<?php foreach ($adminCategorias as $categoria): ?>
-					<?php
-						$raiz = (int) $categoria['id'];
-						$temFilhos = $categoria['children'] !== [];
-						$filhoAtual = (int) ($subs[$raiz] ?? 0);
-						$aberta = $raizMarcada($raiz);
-					?>
-					<div class="admin-category" data-category>
-						<label class="admin-category__label">
-							<input class="admin-category__check" type="checkbox" name="categories[]" value="<?= $raiz ?>" <?= $aberta ? 'checked' : '' ?> data-category-toggle>
-							<span><?= $escape((string) $categoria['name']) ?></span>
-						</label>
+			<details class="field__combo" data-categories-menu>
+				<summary class="field__input field__combo__trigger">
+					<span data-categories-summary>Escolha as categorias</span>
+					<svg viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+				</summary>
 
-						<?php if ($temFilhos): ?>
-							<div class="admin-category__sub" data-category-sub <?= $aberta ? '' : 'hidden' ?>>
-								<label class="field__label" for="sub-<?= $raiz ?>">Subcategoria de <?= $escape((string) $categoria['name']) ?></label>
-								<select class="field__input" id="sub-<?= $raiz ?>" name="subcategorias[<?= $raiz ?>]">
-									<option value="">Fica na categoria</option>
-									<?php foreach ($categoria['children'] as $filho): ?>
-										<option value="<?= (int) $filho['id'] ?>" <?= $filhoAtual === (int) $filho['id'] ? 'selected' : '' ?>><?= $escape((string) $filho['name']) ?></option>
-									<?php endforeach; ?>
-								</select>
-							</div>
-						<?php endif; ?>
-					</div>
-				<?php endforeach; ?>
-			</div>
+				<ul class="field__combo__panel" role="listbox" aria-multiselectable="true" aria-label="Categorias">
+					<?php foreach ($adminCategorias as $categoria): ?>
+						<?php $raiz = (int) $categoria['id']; ?>
+						<li class="field__combo__item">
+							<label class="field__combo__option">
+								<input
+									class="field__combo__check"
+									type="checkbox"
+									name="categories[]"
+									value="<?= $raiz ?>"
+									data-category-toggle
+									data-category-name="<?= $escape((string) $categoria['name']) ?>"
+									<?= $raizMarcada($raiz) ? 'checked' : '' ?>
+								>
+								<span class="field__combo__check-mark" aria-hidden="true">
+									<svg viewBox="0 0 12 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5.5 4.5 9 11 1.5"/></svg>
+								</span>
+								<span><?= $escape((string) $categoria['name']) ?></span>
+							</label>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			</details>
+
+			<ul class="field__chips" data-categories-chips></ul>
+
+			<?php foreach ($adminCategorias as $categoria): ?>
+				<?php if ($categoria['children'] === []) {
+					continue;
+				} ?>
+				<?php
+					$raiz = (int) $categoria['id'];
+					$filhoAtual = (int) ($subs[$raiz] ?? 0);
+				?>
+				<div class="field__subcategory" data-category-sub-for="<?= $raiz ?>" <?= $raizMarcada($raiz) ? '' : 'hidden' ?>>
+					<label class="field__label" for="sub-<?= $raiz ?>">Subcategoria de <?= $escape((string) $categoria['name']) ?></label>
+					<select class="field__input" id="sub-<?= $raiz ?>" name="subcategorias[<?= $raiz ?>]">
+						<option value="">Fica na categoria</option>
+						<?php foreach ($categoria['children'] as $filho): ?>
+							<option value="<?= (int) $filho['id'] ?>" <?= $filhoAtual === (int) $filho['id'] ? 'selected' : '' ?>><?= $escape((string) $filho['name']) ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+			<?php endforeach; ?>
+
+			<p class="field__hint">Escolha uma ou mais categorias: elas ficam lado a lado. A subcategoria de cada uma aparece abaixo.</p>
 		</fieldset>
 
 		<div class="admin-field-row">

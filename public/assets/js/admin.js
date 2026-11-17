@@ -1,10 +1,12 @@
 /*
- * Painel: os seletores de subcategoria só aparecem quando a categoria está
- * marcada — no produto, por categoria; no cadastro de categoria, pela marca
- * "Subcategoria".
+ * Painel: as categorias do produto ficam num menu de marcas (como o de cor),
+ * com as escolhidas em etiquetas lado a lado e a subcategoria de cada uma
+ * logo abaixo. No cadastro de categoria, a marca "Subcategoria" abre o
+ * "Subcategoria de".
  *
- * Sem este script os seletores ficam visíveis o tempo todo e o servidor ignora
- * o que não foi marcado — o formulário continua funcionando.
+ * Sem este script o menu abre pelo próprio <details> e as marcas continuam
+ * funcionando; só as etiquetas e o resumo ficam sem atualizar. O servidor
+ * ignora subcategoria de categoria não marcada.
  */
 (function () {
     'use strict';
@@ -13,28 +15,102 @@
         Array.prototype.forEach.call(lista, acao);
     };
 
-    // Produto: mostra a subcategoria de cada categoria marcada.
-    cada(document.querySelectorAll('[data-category-toggle]'), function (caixa) {
-        var bloco = caixa.closest('[data-category]');
-        var sub = bloco ? bloco.querySelector('[data-category-sub]') : null;
+    // Produto: menu de categorias com mais de uma escolha. As marcadas viram
+    // etiquetas lado a lado, a subcategoria de cada uma aparece abaixo e o
+    // "×" da etiqueta desmarca.
+    cada(document.querySelectorAll('[data-categories-field]'), function (campo) {
+        var menu = campo.querySelector('[data-categories-menu]');
+        var resumo = campo.querySelector('[data-categories-summary]');
+        var etiquetas = campo.querySelector('[data-categories-chips]');
+        var caixas = campo.querySelectorAll('[data-category-toggle]');
 
-        if (!sub) {
+        if (!menu || !etiquetas) {
             return;
         }
 
         var atualizar = function () {
-            sub.hidden = !caixa.checked;
+            etiquetas.innerHTML = '';
 
-            if (!caixa.checked) {
-                var seletor = sub.querySelector('select');
+            var marcadas = 0;
 
-                if (seletor) {
-                    seletor.value = '';
+            cada(caixas, function (caixa) {
+                var sub = campo.querySelector('[data-category-sub-for="' + caixa.value + '"]');
+
+                if (sub) {
+                    sub.hidden = !caixa.checked;
+
+                    if (!caixa.checked) {
+                        var seletor = sub.querySelector('select');
+
+                        if (seletor) {
+                            seletor.value = '';
+                        }
+                    }
                 }
+
+                if (!caixa.checked) {
+                    return;
+                }
+
+                marcadas += 1;
+
+                var nome = caixa.getAttribute('data-category-name');
+                var etiqueta = document.createElement('li');
+                var texto = document.createElement('span');
+                var remover = document.createElement('button');
+
+                etiqueta.className = 'field__chip';
+                texto.textContent = nome;
+                remover.type = 'button';
+                remover.className = 'field__chip__remove';
+                remover.setAttribute('data-category-remove', caixa.value);
+                remover.setAttribute('aria-label', 'Remover a categoria ' + nome);
+                remover.textContent = '×';
+
+                etiqueta.appendChild(texto);
+                etiqueta.appendChild(remover);
+                etiquetas.appendChild(etiqueta);
+            });
+
+            if (resumo) {
+                resumo.textContent = marcadas === 0
+                    ? 'Escolha as categorias'
+                    : (marcadas === 1 ? '1 categoria escolhida' : marcadas + ' categorias escolhidas');
             }
         };
 
-        caixa.addEventListener('change', atualizar);
+        cada(caixas, function (caixa) {
+            caixa.addEventListener('change', atualizar);
+        });
+
+        etiquetas.addEventListener('click', function (evento) {
+            var botao = evento.target.closest('[data-category-remove]');
+
+            if (!botao) {
+                return;
+            }
+
+            var caixa = campo.querySelector('[data-category-toggle][value="' + botao.getAttribute('data-category-remove') + '"]');
+
+            if (caixa) {
+                caixa.checked = false;
+                caixa.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+
+        document.addEventListener('click', function (evento) {
+            if (menu.open && !campo.contains(evento.target)) {
+                menu.open = false;
+            }
+        });
+
+        campo.addEventListener('keydown', function (evento) {
+            if (evento.key === 'Escape' && menu.open) {
+                menu.open = false;
+                menu.querySelector('summary').focus();
+            }
+        });
+
         atualizar();
     });
 

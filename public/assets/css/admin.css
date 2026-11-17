@@ -1561,47 +1561,155 @@
 
 /* ============ Categorias do produto ============ */
 
-.admin-categories {
+.field--categories {
     display: grid;
     gap: var(--space-2);
 }
 
-.admin-category {
-    display: grid;
+/* O menu abre pelo <details>: sem JavaScript ele já funciona. */
+
+.field__combo__trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background-color: var(--color-bg);
+    cursor: pointer;
+    list-style: none;
+    text-align: start;
 }
 
-.admin-category__label {
+.field__combo__trigger::-webkit-details-marker {
+    display: none;
+}
+
+.field__combo__trigger svg {
+    flex: 0 0 auto;
+    width: 0.75rem;
+    height: 0.75rem;
+    color: var(--color-accent);
+}
+
+.field--categories details[open] > .field__combo__trigger {
+    border-color: var(--color-accent);
+}
+
+.field__combo__option {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
-    cursor: pointer;
-}
-
-.admin-category__label:hover {
+    padding: var(--space-2) var(--space-3);
     color: var(--color-text);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
 }
 
-.admin-category__check {
+.field__combo__option:hover {
+    background-color: var(--color-accent-soft);
+}
+
+.field__combo__check {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.field__combo__check-mark {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
     width: 1.05rem;
     height: 1.05rem;
-    margin: 0;
-    accent-color: var(--color-accent);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-xs);
+    color: var(--color-bg);
 }
 
-.admin-category__sub {
+.field__combo__check-mark svg {
+    width: 0.7rem;
+    height: 0.7rem;
+    opacity: 0;
+}
+
+.field__combo__check:checked + .field__combo__check-mark {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent);
+}
+
+.field__combo__check:checked + .field__combo__check-mark svg {
+    opacity: 1;
+}
+
+.field__combo__check:focus-visible + .field__combo__check-mark {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
+/* Etiquetas das categorias escolhidas, uma ao lado da outra. */
+
+.field__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.field__chips:empty {
+    display: none;
+}
+
+.field__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    padding-inline-start: var(--space-3);
+    border: 1px solid var(--color-accent-strong);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.field__chip__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.field__chip__remove:hover {
+    color: var(--color-danger);
+}
+
+.field__chip__remove:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
+/* Subcategorias, abaixo das etiquetas. */
+
+.field__subcategory {
     display: grid;
     gap: var(--space-1);
-    padding-left: calc(1.05rem + var(--space-2));
 }
 
-.admin-category__sub[hidden] {
+.field__subcategory[hidden] {
     display: none;
 }
 
