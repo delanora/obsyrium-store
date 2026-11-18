@@ -85,6 +85,9 @@ final class CartController
         $limite = CartService::MAX_PER_ITEM;
         $content = $basePath . '/resources/views/cart/index.php';
 
+        // Carrinho é tela de passagem: não entra no índice de busca.
+        $metaRobots = 'noindex, follow';
+
         require $basePath . '/resources/views/layouts/site.php';
     }
 

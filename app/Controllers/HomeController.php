@@ -11,6 +11,7 @@ use App\Services\HomeHeroService;
 use App\Support\Csrf;
 use App\Support\Navegacao;
 use App\Support\ProductCard;
+use App\Support\Seo;
 use App\Support\Session;
 
 final class HomeController
@@ -84,6 +85,9 @@ final class HomeController
 
         $ideiaErros = $errors;
         $ideiaValores = $values + ['name' => '', 'email' => '', 'phone' => '', 'message' => ''];
+
+        $metaDescription = 'Camisetas de estampa autoral da Obsyrium Store: algodão de gramatura alta, caimento oversized e estoque atualizado a cada venda.';
+        $canonical = Seo::canonical('/');
 
         $title = 'Obsyrium Store — camisetas com estampas autorais';
         $content = $basePath . '/resources/views/home/index.php';

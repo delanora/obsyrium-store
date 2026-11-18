@@ -80,6 +80,8 @@ final class CheckoutController
         $confirmacaoPedido = $pedido;
         $content = $basePath . '/resources/views/checkout/confirmation.php';
 
+        $metaRobots = 'noindex, follow';
+
         require $basePath . '/resources/views/layouts/site.php';
     }
 
@@ -133,6 +135,8 @@ final class CheckoutController
         $checkoutPecas = $pecas;
         $checkoutTotal = Price::format($totalCentavos);
         $content = $basePath . '/resources/views/checkout/index.php';
+
+        $metaRobots = 'noindex, follow';
 
         require $basePath . '/resources/views/layouts/site.php';
     }

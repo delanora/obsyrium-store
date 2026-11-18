@@ -10,6 +10,7 @@ use App\Services\SizeGuideService;
 use App\Support\Navegacao;
 use App\Support\Price;
 use App\Support\ProductCard;
+use App\Support\Seo;
 
 final class ProductController
 {
@@ -118,6 +119,20 @@ final class ProductController
 
         // Guia de medidas só entra na página quando a loja já mediu alguma peça.
         $guia = (new SizeGuideService(Connection::get()))->visible();
+
+        $metaDescription = Seo::description(
+            (string) $product['description'],
+            sprintf('%s em %s, na cor %s, na Obsyrium Store.', $nome, (string) $product['material'], $cor)
+        );
+        $canonical = Seo::canonical('/produto/' . rawurlencode((string) $product['slug']));
+        $structuredData = [Seo::product(
+            $nome,
+            $metaDescription,
+            $canonical,
+            array_map(static fn (array $imagem): string => (string) $imagem['src'], $imagens),
+            $preco,
+            $estoqueTotal > 0
+        )];
 
         $title = sprintf('%s — Obsyrium Store', $nome);
         $content = $basePath . '/resources/views/product/show.php';

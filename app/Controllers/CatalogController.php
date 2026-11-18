@@ -8,6 +8,7 @@ use App\Database\Connection;
 use App\Services\CatalogService;
 use App\Support\Navegacao;
 use App\Support\ProductCard;
+use App\Support\Seo;
 
 final class CatalogController
 {
@@ -59,6 +60,9 @@ final class CatalogController
         $cores = $servico->colors();
         $precos = $servico->priceBounds();
         $totalDaLoja = $servico->totalProducts();
+
+        $metaDescription = 'Catálogo completo da Obsyrium Store: camisetas de estampa autoral, com filtro por categoria, tamanho, cor, preço e disponibilidade.';
+        $canonical = Seo::canonical('/catalogo');
 
         $title = 'Catálogo — Obsyrium Store';
         $content = $basePath . '/resources/views/catalog/index.php';
@@ -145,6 +149,12 @@ final class CatalogController
 
         $urlBase = '/categoria/' . ($categoria['parent'] !== null ? $categoria['parent']['slug'] . '/' : '') . $categoria['slug'];
         $categoriaPagina = $categoria;
+
+        $metaDescription = Seo::description(
+            (string) ($categoria['description'] ?? ''),
+            sprintf('Camisetas da categoria %s na Obsyrium Store, com estampa autoral e estoque atualizado.', (string) $categoria['name'])
+        );
+        $canonical = Seo::canonical($urlBase);
 
         $title = sprintf('%s — Obsyrium Store', (string) $categoria['name']);
         $content = $basePath . '/resources/views/catalog/index.php';

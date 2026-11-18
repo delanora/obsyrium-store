@@ -7,6 +7,10 @@ declare(strict_types=1);
  *
  * @var string $content Caminho da view de conteúdo.
  * @var string|null $title Título do documento.
+ * @var string|null $metaDescription Descrição para o resultado de busca.
+ * @var string|null $canonical Endereço canônico absoluto da página.
+ * @var string|null $metaRobots `noindex` nas telas que não devem ser indexadas.
+ * @var list<array<string, mixed>>|null $structuredData Blocos JSON-LD (schema.org).
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -29,6 +33,18 @@ $flash = App\Support\Session::takeFlash();
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title><?= $escape($title ?? 'Obsyrium Store') ?></title>
+	<?php if (($metaDescription ?? '') !== ''): ?>
+		<meta name="description" content="<?= $escape($metaDescription) ?>">
+	<?php endif; ?>
+	<?php if (($canonical ?? '') !== ''): ?>
+		<link rel="canonical" href="<?= $escape($canonical) ?>">
+	<?php endif; ?>
+	<?php if (($metaRobots ?? '') !== ''): ?>
+		<meta name="robots" content="<?= $escape($metaRobots) ?>">
+	<?php endif; ?>
+	<?php foreach (($structuredData ?? []) as $dados): ?>
+		<script type="application/ld+json"><?= json_encode($dados, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?></script>
+	<?php endforeach; ?>
 	<link rel="icon" href="/favicon.ico" sizes="any">
 	<link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32.png">
 	<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16.png">

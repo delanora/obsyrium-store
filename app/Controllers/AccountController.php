@@ -243,6 +243,8 @@ final class AccountController
         $contaPedidos = $contexto['pedidos'] ?? [];
         $content = $basePath . '/resources/views/account/' . $view . '.php';
 
+        $metaRobots = 'noindex, follow';
+
         require $basePath . '/resources/views/layouts/site.php';
     }
 

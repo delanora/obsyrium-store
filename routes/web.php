@@ -11,6 +11,7 @@ use App\Controllers\CheckoutController;
 use App\Controllers\HomeController;
 use App\Controllers\PageController;
 use App\Controllers\ProductController;
+use App\Controllers\SitemapController;
 use App\Routing\Router;
 
 /*
@@ -26,6 +27,8 @@ return static function (Router $router): void {
     $router->get('/categoria/{slug}', [CatalogController::class, 'category']);
     $router->get('/categoria/{categoria}/{sub}', [CatalogController::class, 'subcategory']);
     $router->get('/produto/{slug}', [ProductController::class, 'show']);
+    $router->get('/sitemap.xml', [SitemapController::class, 'sitemap']);
+    $router->get('/robots.txt', [SitemapController::class, 'robots']);
 
     $router->get('/sobre', [PageController::class, 'about']);
     $router->post('/ideia', [HomeController::class, 'requestIdea']);

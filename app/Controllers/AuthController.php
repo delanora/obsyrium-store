@@ -127,6 +127,8 @@ final class AuthController
         $old = $antigo;
         $content = $basePath . '/resources/views/auth/' . $view . '.php';
 
+        $metaRobots = 'noindex, follow';
+
         require $basePath . '/resources/views/layouts/site.php';
     }
 

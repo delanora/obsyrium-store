@@ -8,6 +8,7 @@ use App\Database\Connection;
 use App\Services\ContactService;
 use App\Services\PageService;
 use App\Support\Csrf;
+use App\Support\Seo;
 use App\Support\Session;
 
 /**
@@ -27,6 +28,20 @@ final class PageController
      *
      * @var array<string, list<array{0: string, 1: string}>>
      */
+    /**
+     * Endereço público de cada página do banco, pelo slug.
+     *
+     * @var array<string, string>
+     */
+    private const CAMINHOS = [
+        'sobre' => '/sobre',
+        'perguntas-frequentes' => '/perguntas-frequentes',
+        'entrega' => '/entrega',
+        'pagamento' => '/pagamento',
+        'termos' => '/termos',
+        'privacidade' => '/privacidade',
+    ];
+
     private const ACOES = [
         'sobre' => [['Ver o catálogo', '/catalogo'], ['Falar com a loja', '/contato']],
         'perguntas-frequentes' => [['Falar com a loja', '/contato'], ['Política de entrega', '/entrega']],
@@ -124,9 +139,16 @@ final class PageController
             return;
         }
 
+        $caminho = self::CAMINHOS[$slug] ?? '/';
+
         $this->render($pagina['title'] . ' — Obsyrium Store', 'pages/page.php', [
             'pagina' => $pagina,
             'acoes' => self::ACOES[$slug] ?? [],
+            'metaDescription' => Seo::description(
+                (string) $pagina['intro'],
+                $pagina['title'] . ' — ' . Seo::SITE
+            ),
+            'canonical' => Seo::canonical($caminho),
         ]);
     }
 
@@ -136,6 +158,8 @@ final class PageController
             'canais' => (new ContactService(Connection::get()))->channels(),
             'erros' => $erros,
             'valores' => $valores + ['name' => '', 'email' => '', 'phone' => '', 'message' => ''],
+            'metaDescription' => 'Fale com a Obsyrium Store: WhatsApp, Instagram e formulário para dúvidas sobre pedidos, tamanhos, trocas e devoluções.',
+            'canonical' => Seo::canonical('/contato'),
         ], $status);
     }
 
@@ -149,6 +173,10 @@ final class PageController
         $contatoValores = $contexto['valores'] ?? [];
         $paginaInstitucional = $contexto['pagina'] ?? null;
         $paginaAcoes = $contexto['acoes'] ?? [];
+        $metaDescription = $contexto['metaDescription'] ?? '';
+        $canonical = $contexto['canonical'] ?? '';
+        $metaRobots = $contexto['metaRobots'] ?? '';
+        $structuredData = $contexto['structuredData'] ?? [];
 
         http_response_code($status);
         header('Content-Type: text/html; charset=UTF-8');
