@@ -83,6 +83,7 @@ return static function (Router $router): void {
     $router->get('/admin/frete/melhor-envio/conectar', [AdminController::class, 'connectMelhorEnvio']);
     $router->get('/admin/frete/melhor-envio/callback', [AdminController::class, 'melhorEnvioCallback']);
     $router->post('/admin/frete/melhor-envio/desconectar', [AdminController::class, 'disconnectMelhorEnvio']);
+    $router->post('/admin/frete/melhor-envio/testar', [AdminController::class, 'testMelhorEnvio']);
     $router->get('/admin/estoque', [AdminController::class, 'stock']);
     $router->post('/admin/estoque/saldo', [AdminController::class, 'saveStock']);
     $router->post('/admin/estoque/fora-de-linha', [AdminController::class, 'discontinue']);

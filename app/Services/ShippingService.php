@@ -115,7 +115,7 @@ final class ShippingService
         }
 
         $modo = (string) ($valores[self::MODE_KEY] ?? self::MODE_TABLE);
-        $segredo = $this->decifrar((string) ($valores[self::CLIENT_SECRET_KEY] ?? ''));
+        $segredo = trim($this->decifrar((string) ($valores[self::CLIENT_SECRET_KEY] ?? '')));
 
         return [
             'free_from' => max(0, (int) ($valores[self::FREE_FROM_KEY] ?? '0')),
@@ -123,7 +123,7 @@ final class ShippingService
             'pickup_text' => (string) ($valores[self::PICKUP_TEXT_KEY] ?? ''),
             'mode' => $modo === self::MODE_MELHOR_ENVIO ? self::MODE_MELHOR_ENVIO : self::MODE_TABLE,
             'origin_postal_code' => Cep::normalize((string) ($valores[self::ORIGIN_KEY] ?? '')),
-            'melhorenvio_client_id' => (string) ($valores[self::CLIENT_ID_KEY] ?? ''),
+            'melhorenvio_client_id' => trim((string) ($valores[self::CLIENT_ID_KEY] ?? '')),
             'melhorenvio_client_secret' => $segredo,
             'melhorenvio_client_secret_set' => $segredo !== '',
             'melhorenvio_email' => (string) ($valores[self::EMAIL_KEY] ?? ''),
@@ -306,7 +306,9 @@ final class ShippingService
             'melhorenvio_email' => trim((string) ($dados['melhorenvio_email'] ?? '')),
             'melhorenvio_sandbox' => isset($dados['melhorenvio_sandbox']),
             'default_weight' => trim((string) ($dados['default_weight'] ?? '')),
-            'secret' => (string) ($dados['melhorenvio_client_secret'] ?? ''),
+            // Copiar e colar do painel costuma trazer espaço ou quebra de linha
+            // no fim; o Melhor Envio compara o segredo caractere por caractere.
+            'secret' => (string) preg_replace('/\s+/', '', (string) ($dados['melhorenvio_client_secret'] ?? '')),
             'rates' => [],
         ];
 

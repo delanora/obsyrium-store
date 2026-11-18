@@ -206,7 +206,18 @@ $melhorEnvioLigado = $modo === 'melhorenvio';
 				<p class="admin-frete__conexao">Conta do Melhor Envio não conectada.</p>
 				<a class="button" href="/admin/frete/melhor-envio/conectar">Conectar com Melhor Envio</a>
 			<?php endif; ?>
+
+			<form action="/admin/frete/melhor-envio/testar" method="post">
+				<?= Csrf::field() ?>
+				<button class="button button--ghost" type="submit">Testar credenciais</button>
+			</form>
 		</div>
+
+		<p class="admin-note">
+			O código devolvido na autorização vale <strong>uma vez só</strong> e expira em poucos minutos:
+			se a conexão falhar, clique em <strong>Conectar</strong> de novo em vez de recarregar a página de retorno.
+			Se as credenciais forem recusadas, <strong>Testar credenciais</strong> confere o par Client ID/Secret sem passar pela autorização.
+		</p>
 
 		<p class="admin-note admin-frete__callback">
 			Endereço de retorno para cadastrar no aplicativo: <code><?= $escape($adminCallback) ?></code>

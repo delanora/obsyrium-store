@@ -520,6 +520,31 @@ final class AdminController
     }
 
     /**
+     * Testa o par Client ID/Secret contra o `/oauth/token`, sem depender de uma
+     * autorização nova — se o Melhor Envio recusar a credencial, a mensagem diz
+     * isso em vez de culpar o código.
+     */
+    public function testMelhorEnvio(): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $pdo = Connection::get();
+        $erro = (new MelhorEnvioService($pdo))
+            ->verifyCredentials((new ShippingService($pdo))->settings());
+
+        Session::flash(
+            $erro === null ? 'success' : 'error',
+            $erro ?? 'Credenciais aceitas pelo Melhor Envio. Agora clique em Conectar.'
+        );
+
+        $this->redirect('/admin/frete');
+    }
+
+    /**
      * Volta da autorização com o `code`: confere o `state` guardado na sessão e
      * troca o código pelos tokens da conta.
      */

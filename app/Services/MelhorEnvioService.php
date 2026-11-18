@@ -102,10 +102,64 @@ final class MelhorEnvioService
         ], null);
 
         if ($resposta === null) {
+            // O código devolvido na autorização vale uma vez só e expira rápido:
+            // o caso comum aqui é ele ter sido usado ou ter demorado, não a
+            // credencial. Credencial recusada pede outro caminho de conserto.
+            $this->error = str_contains($this->error, 'invalid_client')
+                ? 'O Melhor Envio recusou as credenciais do aplicativo (Client ID/Secret). Use "Testar credenciais" e confira se os dois são do mesmo aplicativo.'
+                : $this->error . ' O código de autorização vale uma vez só: clique em Conectar de novo.';
+
             return false;
         }
 
         return $this->storeTokens($resposta);
+    }
+
+    /**
+     * Confere se o Client ID e o Client Secret são aceitos, sem precisar de uma
+     * autorização nova: com credencial válida o `/oauth/token` recusa o
+     * refresh_token de teste (erro de grant); com credencial errada devolve
+     * `invalid_client`.
+     *
+     * @param array<string, mixed> $config
+     *
+     * @return string|null mensagem de erro, ou null quando as credenciais valem
+     */
+    public function verifyCredentials(array $config): ?string
+    {
+        $this->error = '';
+
+        if ((string) ($config['melhorenvio_client_id'] ?? '') === ''
+            || (string) ($config['melhorenvio_client_secret'] ?? '') === ''
+        ) {
+            return 'Preencha o Client ID e o Client Secret antes de testar.';
+        }
+
+        $resposta = $this->request($this->base($config) . '/oauth/token', [
+            'grant_type' => 'refresh_token',
+            'client_id' => (int) $config['melhorenvio_client_id'],
+            'client_secret' => (string) $config['melhorenvio_client_secret'],
+            'refresh_token' => 'verificacao-de-credenciais',
+        ], null, $this->userAgent($config));
+
+        if ($resposta === null) {
+            return $this->error;
+        }
+
+        $dados = is_array($resposta['data']) ? $resposta['data'] : [];
+        $erro = strtolower((string) ($dados['error'] ?? ''));
+        $descricao = trim((string) ($dados['error_description'] ?? $dados['message'] ?? ''));
+
+        if (str_contains($erro, 'invalid_client')) {
+            return 'O Melhor Envio recusou as credenciais: o Client ID e o Client Secret não são do mesmo aplicativo, ou são de outro ambiente (sandbox x produção).'
+                . ($descricao !== '' ? ' ' . $descricao : '');
+        }
+
+        if ($resposta['status'] >= 500) {
+            return sprintf('O Melhor Envio respondeu %d ao teste. Tente de novo em instantes.', $resposta['status']);
+        }
+
+        return null;
     }
 
     public function disconnect(): void
@@ -374,6 +428,46 @@ final class MelhorEnvioService
         ?string $token,
         ?string $userAgent = null
     ): ?array {
+        $resposta = $this->request($url, $payload, $token, $userAgent);
+
+        if ($resposta === null) {
+            return null;
+        }
+
+        if ($resposta['status'] >= 400) {
+            $this->error = sprintf(
+                'Melhor Envio (%d): %s',
+                $resposta['status'],
+                $this->errorMessage($resposta['data'])
+            );
+
+            return null;
+        }
+
+        if (!is_array($resposta['data'])) {
+            $this->error = 'Resposta inesperada do Melhor Envio.';
+
+            return null;
+        }
+
+        return $resposta['data'];
+    }
+
+    /**
+     * POST cru: devolve o status e o corpo decodificado sem julgar o que é
+     * erro. A verificação de credenciais precisa ler o `invalid_client` do 401
+     * para separar credencial recusada de grant inválido.
+     *
+     * @param array<int|string, mixed> $payload
+     *
+     * @return array{status: int, data: mixed}|null
+     */
+    private function request(
+        string $url,
+        array $payload,
+        ?string $token,
+        ?string $userAgent = null
+    ): ?array {
         $cabecalhos = [
             'Content-Type: application/json',
             'Accept: application/json',
@@ -414,25 +508,7 @@ final class MelhorEnvioService
             }
         }
 
-        $dados = json_decode($corpo, true);
-
-        if ($status >= 400) {
-            $this->error = sprintf(
-                'Melhor Envio (%d): %s',
-                $status,
-                $this->errorMessage($dados)
-            );
-
-            return null;
-        }
-
-        if (!is_array($dados)) {
-            $this->error = 'Resposta inesperada do Melhor Envio.';
-
-            return null;
-        }
-
-        return $dados;
+        return ['status' => $status, 'data' => json_decode($corpo, true)];
     }
 
     /**
