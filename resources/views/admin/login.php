@@ -30,12 +30,12 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 			<div class="field">
 				<label class="field__label" for="email">E-mail</label>
-				<input class="field__input" id="email" name="email" type="email" autocomplete="username" required value="<?= $valor('email') ?>">
+				<input class="field__input" id="email" name="email" type="email" autocomplete="username" placeholder="seuemail@exemplo.com" required value="<?= $valor('email') ?>">
 			</div>
 
 			<div class="field">
 				<label class="field__label" for="password">Senha</label>
-				<input class="field__input" id="password" name="password" type="password" autocomplete="current-password" required>
+				<input class="field__input" id="password" name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required>
 			</div>
 
 			<button class="button" type="submit">Entrar</button>

@@ -740,6 +740,41 @@
     gap: var(--space-3);
 }
 
+/* Mesmo padrão dos campos de /login: 44px de altura, placeholder discreto e
+   foco dourado sutil. O layout do painel continua igual. */
+.admin-login .field__input {
+    height: var(--target-min);
+    min-height: var(--target-min);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    line-height: 1;
+    transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.admin-login .field__input::placeholder {
+    color: var(--color-text-subtle);
+    opacity: 1;
+}
+
+@media (hover: hover) {
+    .admin-login .field__input:hover {
+        border-color: var(--color-text-subtle);
+    }
+}
+
+.admin-login .field__input:focus,
+.admin-login .field__input:focus-visible {
+    border-color: var(--color-accent);
+    outline: 2px solid rgb(201 160 99 / 26%);
+    outline-offset: 0;
+}
+
+.admin-login .button {
+    height: var(--target-min);
+    min-height: var(--target-min);
+}
+
 /* Ajustes de tela */
 
 @media (min-width: 40rem) {
