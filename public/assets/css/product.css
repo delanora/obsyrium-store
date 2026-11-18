@@ -61,6 +61,7 @@
     height: auto;
     aspect-ratio: 3 / 4;
     object-fit: cover;
+    cursor: zoom-in;
 }
 
 .product-gallery__badge {
@@ -113,6 +114,96 @@
 }
 
 .product-gallery__thumb:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
+/* Botão da lupa: abre a foto grande ampliada. */
+.product-gallery__zoom {
+    position: absolute;
+    right: var(--space-3);
+    bottom: var(--space-3);
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-standard),
+        color var(--duration-fast) var(--ease-standard);
+}
+
+.product-gallery__zoom svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.product-gallery__zoom:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.product-gallery__zoom:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
+/* Janela da foto ampliada: fundo escuro, imagem no tamanho da tela e o
+   fechar no canto, que fica sob o polegar no celular. */
+.product-zoom {
+    max-width: none;
+    max-height: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text);
+}
+
+.product-zoom::backdrop {
+    background-color: rgb(10 8 6 / 88%);
+}
+
+.product-zoom__image {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: min(92vw, 46rem);
+    max-height: 86vh;
+    border-radius: var(--radius-md);
+}
+
+.product-zoom__close {
+    position: fixed;
+    top: var(--space-4);
+    right: var(--space-4);
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.product-zoom__close svg {
+    width: 1.15rem;
+    height: 1.15rem;
+}
+
+.product-zoom__close:hover,
+.product-zoom__close:focus-visible {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.product-zoom__close:focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
     outline-offset: var(--focus-ring-offset);
 }

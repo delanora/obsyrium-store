@@ -45,7 +45,19 @@ $principal = $product['images'][0];
 					<?php if ($product['discount'] > 0): ?>
 						<span class="product-gallery__badge">-<?= $product['discount'] ?>%</span>
 					<?php endif; ?>
+
+					<button
+						class="product-gallery__zoom"
+						type="button"
+						data-gallery-zoom
+						aria-label="Ampliar foto"
+						aria-haspopup="dialog"
+					>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/><path d="M8.5 11h5"/><path d="M11 8.5v5"/></svg>
+					</button>
 				</figure>
+
+				<p class="visually-hidden" role="status" aria-live="polite" data-gallery-status></p>
 
 				<?php if (count($product['images']) > 1): ?>
 					<ul class="product-gallery__thumbs">
@@ -65,6 +77,14 @@ $principal = $product['images'][0];
 						<?php endforeach; ?>
 					</ul>
 				<?php endif; ?>
+
+				<dialog class="product-zoom" data-gallery-dialog aria-label="Foto ampliada">
+					<button class="product-zoom__close" type="button" data-gallery-close aria-label="Fechar a foto ampliada">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+					</button>
+
+					<img class="product-zoom__image" data-gallery-zoom-image src="<?= $escape($principal['src']) ?>" alt="<?= $escape($principal['alt']) ?>">
+				</dialog>
 			</div>
 
 			<div class="product-info" data-reveal>

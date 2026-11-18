@@ -994,23 +994,110 @@
     // Galeria do produto: cada miniatura é um botão que troca a foto grande.
     // A miniatura da foto em exibição fica marcada com aria-pressed, e o foco
     // do teclado cai no próprio botão, então Enter e espaço funcionam sozinhos.
+    // No celular, arrastar de lado também troca de foto; o gesto avisa o leitor
+    // de tela pelo texto da região viva. A foto grande abre ampliada numa
+    // janela, pelo botão (teclado incluído) ou pelo clique na imagem.
     Array.prototype.forEach.call(document.querySelectorAll('.product-gallery'), function (galeria) {
         var principal = galeria.querySelector('[data-gallery-main]');
-        var miniaturas = galeria.querySelectorAll('[data-gallery-src]');
+        var miniaturas = Array.prototype.slice.call(galeria.querySelectorAll('[data-gallery-src]'));
+        var status = galeria.querySelector('[data-gallery-status]');
+        var atual = 0;
 
-        if (!principal || miniaturas.length < 2) {
+        if (!principal) {
             return;
         }
 
-        Array.prototype.forEach.call(miniaturas, function (miniatura) {
-            miniatura.addEventListener('click', function () {
-                principal.src = miniatura.getAttribute('data-gallery-src');
-                principal.alt = miniatura.getAttribute('data-gallery-alt');
+        var mostrar = function (indice) {
+            if (indice < 0 || indice >= miniaturas.length) {
+                return false;
+            }
 
-                Array.prototype.forEach.call(miniaturas, function (outra) {
-                    outra.setAttribute('aria-pressed', outra === miniatura ? 'true' : 'false');
-                });
+            atual = indice;
+            var miniatura = miniaturas[indice];
+            principal.src = miniatura.getAttribute('data-gallery-src');
+            principal.alt = miniatura.getAttribute('data-gallery-alt');
+
+            miniaturas.forEach(function (outra) {
+                outra.setAttribute('aria-pressed', outra === miniatura ? 'true' : 'false');
             });
+
+            return true;
+        };
+
+        miniaturas.forEach(function (miniatura, indice) {
+            miniatura.addEventListener('click', function () {
+                mostrar(indice);
+            });
+        });
+
+        // Arrastar troca de foto: só conta quando o movimento é mais horizontal
+        // que vertical, para não roubar a rolagem da página.
+        var area = galeria.querySelector('.product-gallery__main');
+        var inicio = null;
+
+        if (area && miniaturas.length > 1) {
+            area.addEventListener('touchstart', function (evento) {
+                var toque = evento.changedTouches[0];
+                inicio = { x: toque.clientX, y: toque.clientY };
+            }, { passive: true });
+
+            area.addEventListener('touchend', function (evento) {
+                if (inicio === null) {
+                    return;
+                }
+
+                var toque = evento.changedTouches[0];
+                var dx = toque.clientX - inicio.x;
+                var dy = toque.clientY - inicio.y;
+                inicio = null;
+
+                if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.2) {
+                    return;
+                }
+
+                if (mostrar(atual + (dx < 0 ? 1 : -1)) && status) {
+                    status.textContent = 'Foto ' + (atual + 1) + ' de ' + miniaturas.length;
+                }
+            }, { passive: true });
+        }
+
+        var botaoZoom = galeria.querySelector('[data-gallery-zoom]');
+        var janela = galeria.querySelector('[data-gallery-dialog]');
+        var ampliada = galeria.querySelector('[data-gallery-zoom-image]');
+
+        if (!botaoZoom || !janela || !ampliada || typeof janela.showModal !== 'function') {
+            return;
+        }
+
+        var abrirZoom = function () {
+            ampliada.src = principal.src;
+            ampliada.alt = principal.alt;
+            janela.showModal();
+        };
+
+        botaoZoom.addEventListener('click', abrirZoom);
+        principal.addEventListener('click', abrirZoom);
+
+        Array.prototype.forEach.call(janela.querySelectorAll('[data-gallery-close]'), function (botao) {
+            botao.addEventListener('click', function () {
+                janela.close();
+            });
+        });
+
+        // Esc fecha pelo próprio <dialog>; o tratamento aqui cobre o navegador
+        // que não dispara o cancelamento nativo, e o foco volta para a lupa.
+        janela.addEventListener('keydown', function (evento) {
+            if (evento.key === 'Escape') {
+                evento.preventDefault();
+                janela.close();
+            }
+        });
+
+        // Clique no fundo escuro fecha; a volta do foco é do <dialog>.
+        janela.addEventListener('click', function (evento) {
+            if (evento.target === janela) {
+                janela.close();
+            }
         });
     });
 

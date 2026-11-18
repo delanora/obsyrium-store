@@ -460,6 +460,8 @@ Rota `GET /produto/{slug}`, atendida por `App\Controllers\ProductController::sho
 - A view `resources/views/product/show.php` apenas apresenta: o controller resolve preço, valor no Pix, parcelas, desconto e o estado do estoque (`in`, `low`, `out`).
 - Tamanho sem estoque é renderizado com `disabled`, e a folha de estilo risca a opção por `.size-option__input:disabled + .size-option`. É o mesmo componente `.size-picker` usado na home.
 - A galeria mostra a primeira foto de `position` e, quando há mais de uma, uma lista de miniaturas. Cada miniatura é um `<button>` com `data-gallery-src`/`data-gallery-alt`; o `site.js` troca a foto grande (e o `alt`) no clique ou pelo teclado, marcando a escolhida com `aria-pressed="true"`. Sem JavaScript a galeria fica na primeira foto.
+- **Zoom**: o botão da lupa (ou o clique na própria foto) abre a imagem ampliada num `<dialog>` com fundo escuro, fechado pelo ×, pelo Esc ou por um clique no fundo, e o foco volta para o botão ao terminar. O `<dialog>` só é usado quando `showModal` existe.
+- **Arrastar no celular**: `touchstart`/`touchend` na foto grande trocam para a anterior ou a seguinte quando o movimento passa de 45 px e é mais horizontal que vertical, para não atrapalhar a rolagem da página. A troca não dá a volta na lista e é anunciada por uma região `role="status"` (`.visually-hidden`): "Foto 2 de 4".
 - O estilo fica em `public/assets/css/product.css`, carregado junto das demais folhas no layout.
 - O botão de compra segue desabilitado até o carrinho existir; a dica abaixo dele informa isso ao visitante.
 - Os cards da vitrine (`HomeController::toCard`) apontam para `/produto/{slug}`.
