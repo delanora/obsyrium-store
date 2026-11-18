@@ -8,17 +8,18 @@ use App\Support\Csrf;
 /*
  * Mensagens do formulário de contato, numa aba própria.
  *
- * As abas separam a caixa de entrada (todas e não lidas) da lixeira. Cada linha
- * carrega o formulário da ação: marcar como lida ou não lida, mover para a
- * lixeira e, na lixeira, restaurar ou apagar de vez. Toda ação exige CSRF e
- * volta para a mesma aba (`voltar`).
+ * As abas separam a caixa de entrada por origem (contatos e ideias de estampa),
+ * mostram as não lidas e guardam a lixeira. Cada linha carrega o formulário da
+ * ação: marcar como lida ou não lida, mover para a lixeira e, na lixeira,
+ * restaurar ou apagar de vez. Toda ação exige CSRF e volta para a mesma aba
+ * (`voltar`).
  *
  * O texto alternativo do botão da lixeira não existe: o rótulo é o próprio
  * texto, então a ação é legível sem ícone.
  *
  * @var list<array{id: int, name: string, email: string, phone: string, source: string, message: string, is_read: bool, created_at: string, deleted_at: string|null}> $adminMensagens
  * @var string $adminMensagensFiltro
- * @var array{todas: int, nao_lidas: int, lixeira: int} $adminMensagensContagem
+ * @var array{todas: int, contatos: int, ideias: int, nao_lidas: int, lixeira: int} $adminMensagensContagem
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -31,11 +32,19 @@ $data = static function (string $valor): string {
 
 $abas = [
     ContactService::FILTER_ALL => ['rotulo' => 'Todas', 'href' => '/admin/mensagens', 'total' => (int) ($adminMensagensContagem['todas'] ?? 0)],
+    ContactService::FILTER_CONTACT => ['rotulo' => 'Contatos', 'href' => '/admin/mensagens?filtro=contatos', 'total' => (int) ($adminMensagensContagem['contatos'] ?? 0)],
+    ContactService::FILTER_IDEA => ['rotulo' => 'Ideias', 'href' => '/admin/mensagens?filtro=ideias', 'total' => (int) ($adminMensagensContagem['ideias'] ?? 0)],
     ContactService::FILTER_UNREAD => ['rotulo' => 'Não lidas', 'href' => '/admin/mensagens?filtro=nao_lidas', 'total' => (int) ($adminMensagensContagem['nao_lidas'] ?? 0)],
     ContactService::FILTER_TRASH => ['rotulo' => 'Lixeira', 'href' => '/admin/mensagens?filtro=lixeira', 'total' => (int) ($adminMensagensContagem['lixeira'] ?? 0)],
 ];
 
 $naLixeira = $adminMensagensFiltro === ContactService::FILTER_TRASH;
+$caixaVazia = match ($adminMensagensFiltro) {
+    ContactService::FILTER_CONTACT => 'Nenhuma mensagem de contato recebida ainda.',
+    ContactService::FILTER_IDEA => 'Nenhuma ideia de estampa recebida ainda.',
+    ContactService::FILTER_TRASH => 'A lixeira está vazia.',
+    default => 'Nenhuma mensagem recebida ainda.',
+};
 ?>
 <p class="admin-crumb">
 	<a href="/admin">Dashboard</a>
@@ -47,7 +56,7 @@ $naLixeira = $adminMensagensFiltro === ContactService::FILTER_TRASH;
 	<div>
 		<p class="admin-head__eyebrow">Painel</p>
 		<h1 class="admin-head__title">Mensagens</h1>
-		<p class="admin-head__text">Mensagens do formulário de contato e ideias de estampa enviadas pela home.</p>
+		<p class="admin-head__text">As mensagens do formulário de contato e as ideias de estampa da home ficam em abas separadas.</p>
 	</div>
 
 	<p class="admin-head__actions">
@@ -65,9 +74,7 @@ $naLixeira = $adminMensagensFiltro === ContactService::FILTER_TRASH;
 </nav>
 
 <?php if ($adminMensagens === []): ?>
-	<p class="admin-empty">
-		<?= $naLixeira ? 'A lixeira está vazia.' : 'Nenhuma mensagem recebida ainda.' ?>
-	</p>
+	<p class="admin-empty"><?= $escape($caixaVazia) ?></p>
 <?php else: ?>
 	<div class="admin-table-wrap">
 		<table class="admin-table admin-table--mensagens">
@@ -90,11 +97,13 @@ $naLixeira = $adminMensagensFiltro === ContactService::FILTER_TRASH;
 								<?php if (!$mensagem['is_read'] && !$naLixeira): ?>
 									<span class="admin-message__badge">Nova</span>
 								<?php endif; ?>
-								<?php if ($mensagem['source'] === ContactService::SOURCE_IDEA): ?>
+								<?php if ($mensagem['source'] === ContactService::SOURCE_IDEA && $adminMensagensFiltro !== ContactService::FILTER_IDEA): ?>
 									<span class="admin-message__badge">Ideia de estampa</span>
 								<?php endif; ?>
 							</span>
-							<a class="admin-message__meta" href="mailto:<?= $escape($mensagem['email']) ?>"><?= $escape($mensagem['email']) ?></a>
+							<?php if ($mensagem['email'] !== ''): ?>
+								<a class="admin-message__meta" href="mailto:<?= $escape($mensagem['email']) ?>"><?= $escape($mensagem['email']) ?></a>
+							<?php endif; ?>
 							<span class="admin-message__meta"><?= $escape(ContactService::phoneLabel($mensagem['phone'])) ?></span>
 						</td>
 
@@ -109,7 +118,9 @@ $naLixeira = $adminMensagensFiltro === ContactService::FILTER_TRASH;
 
 						<td>
 							<div class="admin-message__reply">
-								<a class="admin-link-button" href="<?= $escape($resposta['mail']) ?>">Responder por e-mail</a>
+								<?php if ($resposta['mail'] !== null): ?>
+									<a class="admin-link-button" href="<?= $escape($resposta['mail']) ?>">Responder por e-mail</a>
+								<?php endif; ?>
 
 								<?php if ($resposta['whatsapp'] !== null): ?>
 									<a class="admin-link-button" href="<?= $escape($resposta['whatsapp']) ?>" target="_blank" rel="noopener">WhatsApp</a>

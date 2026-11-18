@@ -86,7 +86,7 @@ final class PageController
             return;
         }
 
-        Session::flash('success', 'Mensagem enviada. Respondemos no e-mail informado.');
+        Session::flash('success', 'Mensagem enviada. Respondemos pelo contato informado.');
         header('Location: /contato', true, 303);
         exit;
     }

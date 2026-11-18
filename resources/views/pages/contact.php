@@ -57,7 +57,7 @@ $valores = $contatoValores ?? ['name' => '', 'email' => '', 'phone' => '', 'mess
 
 		<section class="contact__form" aria-labelledby="contato-form-titulo">
 			<h2 class="page__block-title" id="contato-form-titulo">Enviar mensagem</h2>
-			<p class="page__text">Conte o que você precisa e respondemos no e-mail informado. Você pode enviar até <?= App\Services\ContactService::MAX_SENDS_PER_WINDOW ?> mensagens por hora.</p>
+			<p class="page__text">Conte o que você precisa e respondemos no telefone ou no e-mail informado. Você pode enviar até <?= App\Services\ContactService::MAX_SENDS_PER_WINDOW ?> mensagens por hora.</p>
 
 			<?php if ($erros !== []): ?>
 				<div class="contact__alert" role="alert">
@@ -84,8 +84,8 @@ $valores = $contatoValores ?? ['name' => '', 'email' => '', 'phone' => '', 'mess
 				</div>
 
 				<div class="field">
-					<label class="field__label" for="contato-email">E-mail</label>
-					<input class="field__input" id="contato-email" name="email" type="email" maxlength="<?= App\Services\ContactService::MAX_EMAIL ?>" autocomplete="email" required value="<?= $escape($valores['email']) ?>">
+					<label class="field__label" for="contato-email">E-mail (opcional)</label>
+					<input class="field__input" id="contato-email" name="email" type="email" maxlength="<?= App\Services\ContactService::MAX_EMAIL ?>" autocomplete="email" value="<?= $escape($valores['email']) ?>">
 				</div>
 
 				<div class="field">

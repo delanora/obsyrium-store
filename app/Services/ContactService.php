@@ -44,6 +44,10 @@ final class ContactService
 
     public const FILTER_ALL = 'todas';
 
+    public const FILTER_CONTACT = 'contatos';
+
+    public const FILTER_IDEA = 'ideias';
+
     public const FILTER_UNREAD = 'nao_lidas';
 
     public const FILTER_TRASH = 'lixeira';
@@ -165,8 +169,10 @@ final class ContactService
             $erros[] = 'Nome: escreva de 2 a 120 caracteres.';
         }
 
-        if ($email === '' || mb_strlen($email) > self::MAX_EMAIL || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            $erros[] = 'E-mail: informe um endereço válido.';
+        // O e-mail é opcional: basta o telefone para responder. Só é conferido
+        // quando a pessoa escreve alguma coisa.
+        if ($email !== '' && (mb_strlen($email) > self::MAX_EMAIL || filter_var($email, FILTER_VALIDATE_EMAIL) === false)) {
+            $erros[] = 'E-mail: informe um endereço válido ou deixe o campo em branco.';
         }
 
         $telefoneDigitos = $this->digits($telefone);
@@ -214,17 +220,28 @@ final class ContactService
     }
 
     /**
-     * Mensagens de uma aba: ativas, não lidas ou na lixeira.
+     * Mensagens de uma aba: todas as ativas, só as do Contato, só as ideias de
+     * estampa, as não lidas ou as da lixeira.
      *
      * @return list<array{id: int, name: string, email: string, phone: string, source: string, message: string, is_read: bool, created_at: string, deleted_at: string|null}>
      */
     public function messages(string $filtro = self::FILTER_ALL): array
     {
+        $origem = match ($filtro) {
+            self::FILTER_CONTACT => self::SOURCE_CONTACT,
+            self::FILTER_IDEA => self::SOURCE_IDEA,
+            default => null,
+        };
+
         $condicao = match ($filtro) {
             self::FILTER_UNREAD => 'deleted_at IS NULL AND is_read = 0',
             self::FILTER_TRASH => 'deleted_at IS NOT NULL',
             default => 'deleted_at IS NULL',
         };
+
+        if ($origem !== null) {
+            $condicao .= ' AND source = :origem';
+        }
 
         $consulta = $this->pdo->prepare(
             'SELECT id, name, email, phone, source, message, is_read, created_at, deleted_at
@@ -233,7 +250,7 @@ final class ContactService
              ORDER BY created_at DESC, id DESC
              LIMIT ' . self::LIST_LIMIT
         );
-        $consulta->execute();
+        $consulta->execute($origem === null ? [] : [':origem' => $origem]);
 
         return array_map(
             static fn (array $linha): array => [
@@ -252,22 +269,28 @@ final class ContactService
     }
 
     /**
-     * Quantidades para as abas do painel.
+     * Quantidades para as abas do painel, separadas por origem.
      *
-     * @return array{todas: int, nao_lidas: int, lixeira: int}
+     * @return array{todas: int, contatos: int, ideias: int, nao_lidas: int, lixeira: int}
      */
     public function counts(): array
     {
-        $linha = $this->pdo->query(
+        $consulta = $this->pdo->prepare(
             'SELECT
                 COALESCE(SUM(deleted_at IS NULL), 0) AS ativas,
+                COALESCE(SUM(deleted_at IS NULL AND source = :contato), 0) AS contatos,
+                COALESCE(SUM(deleted_at IS NULL AND source = :ideia), 0) AS ideias,
                 COALESCE(SUM(deleted_at IS NULL AND is_read = 0), 0) AS nao_lidas,
                 COALESCE(SUM(deleted_at IS NOT NULL), 0) AS lixeira
              FROM contact_messages'
-        )->fetch();
+        );
+        $consulta->execute([':contato' => self::SOURCE_CONTACT, ':ideia' => self::SOURCE_IDEA]);
+        $linha = $consulta->fetch();
 
         return [
             'todas' => (int) ($linha['ativas'] ?? 0),
+            'contatos' => (int) ($linha['contatos'] ?? 0),
+            'ideias' => (int) ($linha['ideias'] ?? 0),
             'nao_lidas' => (int) ($linha['nao_lidas'] ?? 0),
             'lixeira' => (int) ($linha['lixeira'] ?? 0),
         ];
@@ -331,9 +354,10 @@ final class ContactService
      * Links de resposta com a mensagem já citada, para o painel.
      *
      * O texto é cortado para a URL não virar um romance: quem responde já tem a
-     * mensagem inteira na tela. O WhatsApp só existe quando há telefone.
+     * mensagem inteira na tela. Cada canal só existe quando o cliente informou
+     * o dado: o e-mail é opcional, então o link de e-mail pode não existir.
      *
-     * @return array{mail: string, whatsapp: string|null}
+     * @return array{mail: string|null, whatsapp: string|null}
      */
     public static function replyLinks(string $nome, string $email, string $telefone, string $mensagem): array
     {
@@ -351,7 +375,7 @@ final class ContactService
         $digitos = preg_replace('/\D+/', '', $telefone) ?? '';
 
         return [
-            'mail' => 'mailto:' . $email . '?' . http_build_query(
+            'mail' => $email === '' ? null : 'mailto:' . $email . '?' . http_build_query(
                 ['subject' => 'Resposta — Obsyrium Store', 'body' => $corpoEmail],
                 '',
                 '&',

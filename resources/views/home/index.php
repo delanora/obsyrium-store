@@ -98,7 +98,7 @@ $valoresIdeia = $ideiaValores ?? ['name' => '', 'email' => '', 'phone' => '', 'm
 	<h2 class="idea__title" id="ideia-titulo">Tem alguma ideia?</h2>
 	<p class="idea__text">
 		Quer uma estampa que ainda não está na loja? Escreva qual é: lemos cada ideia
-		e respondemos no e-mail informado.
+		e respondemos no contato informado.
 	</p>
 
 	<?php if ($errosIdeia !== []): ?>
@@ -126,8 +126,8 @@ $valoresIdeia = $ideiaValores ?? ['name' => '', 'email' => '', 'phone' => '', 'm
 		</div>
 
 		<div class="field">
-			<label class="field__label" for="ideia-email">E-mail</label>
-			<input class="field__input" id="ideia-email" name="email" type="email" maxlength="<?= ContactService::MAX_EMAIL ?>" autocomplete="email" required value="<?= $escape($valoresIdeia['email']) ?>">
+			<label class="field__label" for="ideia-email">E-mail (opcional)</label>
+			<input class="field__input" id="ideia-email" name="email" type="email" maxlength="<?= ContactService::MAX_EMAIL ?>" autocomplete="email" value="<?= $escape($valoresIdeia['email']) ?>">
 		</div>
 
 		<div class="field">
@@ -146,6 +146,6 @@ $valoresIdeia = $ideiaValores ?? ['name' => '', 'email' => '', 'phone' => '', 'm
 	</form>
 
 	<p class="idea__note">
-		Sua ideia vai direto para a loja. Se ela virar estampa, avisamos no e-mail informado.
+		Sua ideia vai direto para a loja. Se ela virar estampa, avisamos no contato informado.
 	</p>
 </section>

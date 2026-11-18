@@ -409,8 +409,8 @@ final class AdminController
     }
 
     /**
-     * Caixa de entrada do formulário de contato, com as abas Todas, Não lidas
-     * e Lixeira.
+     * Caixa de entrada com as abas Todas, Contatos, Ideias, Não lidas e
+     * Lixeira.
      */
     public function messages(): void
     {
@@ -498,9 +498,12 @@ final class AdminController
 
     private function messagesFilter(string $filtro): string
     {
-        return in_array($filtro, [ContactService::FILTER_UNREAD, ContactService::FILTER_TRASH], true)
-            ? $filtro
-            : ContactService::FILTER_ALL;
+        return in_array($filtro, [
+            ContactService::FILTER_CONTACT,
+            ContactService::FILTER_IDEA,
+            ContactService::FILTER_UNREAD,
+            ContactService::FILTER_TRASH,
+        ], true) ? $filtro : ContactService::FILTER_ALL;
     }
 
     private function messagesBackUrl(string $filtro): string

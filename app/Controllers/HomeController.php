@@ -55,7 +55,7 @@ final class HomeController
             return;
         }
 
-        Session::flash('success', 'Ideia recebida. Se ela virar estampa, avisamos no e-mail informado.');
+        Session::flash('success', 'Ideia recebida. Se ela virar estampa, avisamos no contato informado.');
         header('Location: /#ideia', true, 303);
         exit;
     }
