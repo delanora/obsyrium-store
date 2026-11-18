@@ -773,6 +773,33 @@ final class AdminController
     }
 
     /**
+     * Troca só a foto de um slide do topo; textos, ordem e visibilidade ficam.
+     *
+     * @param array<string, string> $params
+     */
+    public function replaceHeroPhoto(array $params): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $arquivo = isset($_FILES['imagem']) && is_array($_FILES['imagem']) ? $_FILES['imagem'] : [];
+        $resultado = (new HomeHeroService(Connection::get()))->replaceImage(
+            (int) ($params['id'] ?? 0),
+            $arquivo
+        );
+
+        Session::flash(
+            isset($resultado['error']) ? 'error' : 'success',
+            $resultado['error'] ?? 'Foto trocada. Confira a descrição dela, que ainda fala da imagem anterior.'
+        );
+
+        $this->redirect('/admin/pagina-inicial');
+    }
+
+    /**
      * @param array<string, string> $params
      */
     public function saveHero(array $params): void

@@ -398,6 +398,27 @@
 		});
 	});
 
+	// Trocar a foto do slide: o lápis no canto da prévia abre o seletor de
+	// arquivo e o formulário é enviado assim que a foto é escolhida, para a
+	// imagem nova entrar sem passo extra.
+	cada(document.querySelectorAll('[data-hero-photo-open]'), function (botao) {
+		var campo = document.getElementById(botao.getAttribute('data-hero-photo-open'));
+
+		if (!campo) {
+			return;
+		}
+
+		botao.addEventListener('click', function () {
+			campo.click();
+		});
+
+		campo.addEventListener('change', function () {
+			if (campo.files && campo.files.length > 0 && campo.form) {
+				campo.form.submit();
+			}
+		});
+	});
+
 	// Ações destrutivas que pedem confirmação. Sem JavaScript o formulário já
 	// envia; aqui só evita a lixeira e a exclusão por engano.
 	cada(document.querySelectorAll('form[data-confirm]'), function (formulario) {

@@ -111,6 +111,64 @@ final class HomeHeroService
             return ['error' => sprintf('O topo já tem %d fotos: apague uma antes de enviar outra.', self::MAX_SLIDES)];
         }
 
+        $guardada = $this->store($arquivo);
+
+        if (isset($guardada['error'])) {
+            return ['error' => $guardada['error']];
+        }
+
+        $posicao = (int) $this->pdo->query(
+            'SELECT COALESCE(MAX(position) + 1, 0) FROM hero_slides'
+        )->fetchColumn();
+
+        $this->pdo->prepare(
+            'INSERT INTO hero_slides (image, position) VALUES (:image, :position)'
+        )->execute([':image' => $guardada['path'], ':position' => $posicao]);
+
+        return [];
+    }
+
+    /**
+     * Troca a foto de um slide que já existe: guarda a nova, aponta a linha para
+     * ela e apaga o arquivo antigo. Textos, descrição, ordem e visibilidade
+     * continuam os mesmos.
+     *
+     * @param array<string, mixed> $arquivo
+     *
+     * @return array{error?: string}
+     */
+    public function replaceImage(int $id, array $arquivo): array
+    {
+        $slide = $this->find($id);
+
+        if ($slide === null) {
+            return ['error' => 'Foto não encontrada no topo da loja.'];
+        }
+
+        $guardada = $this->store($arquivo);
+
+        if (isset($guardada['error'])) {
+            return ['error' => $guardada['error']];
+        }
+
+        $this->pdo->prepare('UPDATE hero_slides SET image = :image WHERE id = :id')
+            ->execute([':image' => $guardada['path'], ':id' => $id]);
+
+        $this->deleteFile($slide['image']);
+
+        return [];
+    }
+
+    /**
+     * Valida o arquivo enviado e o guarda em `uploads/hero`, devolvendo o
+     * caminho público. Não mexe no banco: quem chama decide onde a foto entra.
+     *
+     * @param array<string, mixed> $arquivo
+     *
+     * @return array{path?: string, error?: string}
+     */
+    private function store(array $arquivo): array
+    {
         $codigo = (int) ($arquivo['error'] ?? UPLOAD_ERR_NO_FILE);
 
         if ($codigo !== UPLOAD_ERR_OK) {
@@ -164,15 +222,7 @@ final class HomeHeroService
             return ['error' => 'Não foi possível guardar a foto.'];
         }
 
-        $posicao = (int) $this->pdo->query(
-            'SELECT COALESCE(MAX(position) + 1, 0) FROM hero_slides'
-        )->fetchColumn();
-
-        $this->pdo->prepare(
-            'INSERT INTO hero_slides (image, position) VALUES (:image, :position)'
-        )->execute([':image' => self::UPLOAD_PATH . '/' . $nomeArquivo, ':position' => $posicao]);
-
-        return [];
+        return ['path' => self::UPLOAD_PATH . '/' . $nomeArquivo];
     }
 
     /**

@@ -81,6 +81,7 @@ return static function (Router $router): void {
     $router->post('/admin/estoque/novo', [AdminController::class, 'createProduct']);
     $router->get('/admin/pagina-inicial', [AdminController::class, 'home']);
     $router->post('/admin/pagina-inicial/foto', [AdminController::class, 'uploadHero']);
+    $router->post('/admin/pagina-inicial/{id}/foto', [AdminController::class, 'replaceHeroPhoto']);
     $router->post('/admin/pagina-inicial/{id}/subir', [AdminController::class, 'moveHeroUp']);
     $router->post('/admin/pagina-inicial/{id}/descer', [AdminController::class, 'moveHeroDown']);
     $router->post('/admin/pagina-inicial/{id}', [AdminController::class, 'saveHero']);

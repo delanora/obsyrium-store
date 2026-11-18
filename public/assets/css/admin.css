@@ -2653,6 +2653,60 @@ a.admin-message__meta:hover {
     color: var(--color-accent);
 }
 
+/* Lápis sobre a prévia: troca a foto do slide sem sair da janela. */
+.admin-preview__pencil {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid rgb(255 255 255 / 35%);
+    border-radius: var(--radius-pill);
+    background-color: rgb(10 8 6 / 65%);
+    color: #fff;
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-standard),
+        color var(--duration-fast) var(--ease-standard);
+}
+
+.admin-preview__pencil svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.admin-preview__pencil:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.admin-preview__pencil:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
+.admin-hero__photo-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+    white-space: nowrap;
+}
+
+.admin-hero__photo-hint {
+    margin: var(--space-2) var(--space-4) 0;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-base);
+}
+
 .admin-hero__dialog-hint {
     margin: 0 var(--space-4) var(--space-2);
     color: var(--color-text-subtle);

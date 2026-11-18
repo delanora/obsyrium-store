@@ -115,9 +115,12 @@ $total = count($adminHero);
 							<button class="admin-hero__close" type="button" data-hero-close aria-label="Fechar a edição">×</button>
 						</header>
 
-						<p class="admin-hero__dialog-hint">Prévia do topo — acompanha o que você digitar.</p>
+						<p class="admin-hero__dialog-hint">Prévia do topo — acompanha o que você digitar. O lápis no canto da foto troca a imagem.</p>
 
-						<div class="admin-preview">
+						<form class="admin-hero__photo" action="/admin/pagina-inicial/<?= $slide['id'] ?>/foto" method="post" enctype="multipart/form-data">
+							<?= Csrf::field() ?>
+
+							<div class="admin-preview">
 							<img class="admin-preview__image" src="<?= $escape($slide['image']) ?>" alt="">
 
 							<span class="admin-preview__shade" data-preview-shade<?= $temTexto ? '' : ' hidden' ?>></span>
@@ -130,7 +133,30 @@ $total = count($adminHero);
 							</div>
 
 							<span class="admin-preview__flag" data-preview-hidden<?= $slide['is_active'] ? ' hidden' : '' ?>>Escondida na loja</span>
-						</div>
+
+								<button
+									class="admin-preview__pencil"
+									type="button"
+									data-hero-photo-open="hero-foto-<?= $slide['id'] ?>"
+									aria-label="Trocar a foto <?= $indice + 1 ?>"
+									title="Trocar a foto"
+								>
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="M13.5 6.5l3 3"/></svg>
+								</button>
+							</div>
+
+							<input
+								class="admin-hero__photo-input"
+								id="hero-foto-<?= $slide['id'] ?>"
+								name="imagem"
+								type="file"
+								accept="image/jpeg,image/png,image/webp"
+								tabindex="-1"
+								data-hero-photo-input
+							>
+
+							<p class="admin-hero__photo-hint">A foto nova entra na hora em que você a escolhe. JPG, PNG ou WebP, até <?= $escape($adminHeroLimite) ?>, de preferência na horizontal.</p>
+						</form>
 
 						<form class="admin-hero__form" action="/admin/pagina-inicial/<?= $slide['id'] ?>" method="post" data-hero-form>
 							<?= Csrf::field() ?>
