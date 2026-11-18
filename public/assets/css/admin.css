@@ -3116,3 +3116,39 @@ a.admin-message__meta:hover {
     border-radius: var(--radius-sm);
     font-size: var(--font-size-sm);
 }
+
+/* Conexão OAuth com o Melhor Envio. */
+.admin-frete__conexao-bloco {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-4);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+}
+
+.admin-frete__conexao {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.admin-frete__conexao--ok {
+    color: var(--color-text);
+}
+
+.admin-frete__callback {
+    margin-top: var(--space-3);
+}
+
+.admin-frete__callback code {
+    padding: 0.15em 0.4em;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+    font-size: var(--font-size-xs);
+    word-break: break-all;
+}

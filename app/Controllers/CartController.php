@@ -74,8 +74,8 @@ final class CartController
      * Página do carrinho, aberta para visitante e para cliente autenticado.
      *
      * O formulário de CEP da própria página volta para cá com `?cep=` e a
-     * lista de frete já calculada: é a mesma conta do checkout (Correios quando
-     * configurado, tabela por estado como plano B).
+     * lista de frete já calculada: é a mesma conta do checkout (Melhor Envio
+     * quando conectado, tabela por estado como plano B).
      */
     public function show(): void
     {
@@ -94,11 +94,7 @@ final class CartController
 
         if ($freteCep !== '') {
             $servicoFrete = new ShippingService(Connection::get());
-            $freteOpcoes = $servicoFrete->optionsForCep(
-                $freteCep,
-                $totalCentavos,
-                $servicoFrete->weightForItems($itens)
-            );
+            $freteOpcoes = $servicoFrete->optionsForCep($freteCep, $totalCentavos, $itens);
         }
 
         http_response_code(200);

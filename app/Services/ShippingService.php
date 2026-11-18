@@ -19,10 +19,11 @@ use Throwable;
  *   descobre a UF (faixas dos Correios, sem internet) e a opção sai da tabela.
  *   Nasce toda em zero, ou seja, entrega grátis com prazo a combinar, para o
  *   checkout fechar pedido antes de a loja configurar qualquer preço.
- * - `correios`: cotação real de PAC e SEDEX na API oficial, com o peso das
- *   peças do carrinho. Exige contrato e credenciais do CWS no painel; se a
- *   cotação falhar, a opção cai na tabela por estado em vez de deixar o cliente
- *   sem entrega.
+ * - `melhorenvio`: cotação real no Melhor Envio, que agrega Correios, Jadlog,
+ *   Loggi e outras transportadoras na mesma conta. Usa o peso das peças do
+ *   carrinho e exige a conta conectada por OAuth no painel; se a cotação
+ *   falhar, a opção cai na tabela por estado em vez de deixar o cliente sem
+ *   entrega.
  *
  * Além disso, a loja define a partir de quanto o frete sai de graça e se a
  * retirada está liberada. O pedido grava o que foi escolhido com o preço do
@@ -36,7 +37,7 @@ final class ShippingService
 
     public const MODE_TABLE = 'estado';
 
-    public const MODE_CORREIOS = 'correios';
+    public const MODE_MELHOR_ENVIO = 'melhorenvio';
 
     /** Unidades da federação, na ordem das regiões. */
     public const STATES = [
@@ -54,13 +55,13 @@ final class ShippingService
 
     private const ORIGIN_KEY = 'shipping_origin_postal_code';
 
-    private const USER_KEY = 'shipping_correios_user';
+    private const CLIENT_ID_KEY = 'shipping_melhorenvio_client_id';
 
-    private const PASSWORD_KEY = 'shipping_correios_password';
+    private const CLIENT_SECRET_KEY = 'shipping_melhorenvio_client_secret';
 
-    private const CONTRACT_KEY = 'shipping_correios_contract';
+    private const EMAIL_KEY = 'shipping_melhorenvio_email';
 
-    private const DR_KEY = 'shipping_correios_dr';
+    private const SANDBOX_KEY = 'shipping_melhorenvio_sandbox';
 
     private const WEIGHT_KEY = 'shipping_default_weight_grams';
 
@@ -78,8 +79,8 @@ final class ShippingService
     }
 
     /**
-     * Último motivo de a cotação dos Correios não ter sido usada (para a tela
-     * de teste do painel). Vazio quando deu tudo certo ou nem foi tentado.
+     * Último motivo de a cotação do Melhor Envio não ter sido usada (para a
+     * tela de teste do painel). Vazio quando deu tudo certo ou nem foi tentado.
      */
     public function lastError(): string
     {
@@ -95,11 +96,13 @@ final class ShippingService
      *     pickup_text: string,
      *     mode: string,
      *     origin_postal_code: string,
-     *     correios_user: string,
-     *     correios_password: string,
-     *     correios_password_set: bool,
-     *     correios_contract: string,
-     *     correios_dr: int,
+     *     melhorenvio_client_id: string,
+     *     melhorenvio_client_secret: string,
+     *     melhorenvio_client_secret_set: bool,
+     *     melhorenvio_email: string,
+     *     melhorenvio_sandbox: bool,
+     *     melhorenvio_connected: bool,
+     *     melhorenvio_expires_at: int,
      *     default_weight: int
      * }
      */
@@ -112,19 +115,21 @@ final class ShippingService
         }
 
         $modo = (string) ($valores[self::MODE_KEY] ?? self::MODE_TABLE);
-        $senha = $this->decifrar((string) ($valores[self::PASSWORD_KEY] ?? ''));
+        $segredo = $this->decifrar((string) ($valores[self::CLIENT_SECRET_KEY] ?? ''));
 
         return [
             'free_from' => max(0, (int) ($valores[self::FREE_FROM_KEY] ?? '0')),
             'pickup' => ($valores[self::PICKUP_KEY] ?? '0') === '1',
             'pickup_text' => (string) ($valores[self::PICKUP_TEXT_KEY] ?? ''),
-            'mode' => $modo === self::MODE_CORREIOS ? self::MODE_CORREIOS : self::MODE_TABLE,
+            'mode' => $modo === self::MODE_MELHOR_ENVIO ? self::MODE_MELHOR_ENVIO : self::MODE_TABLE,
             'origin_postal_code' => Cep::normalize((string) ($valores[self::ORIGIN_KEY] ?? '')),
-            'correios_user' => (string) ($valores[self::USER_KEY] ?? ''),
-            'correios_password' => $senha,
-            'correios_password_set' => $senha !== '',
-            'correios_contract' => (string) ($valores[self::CONTRACT_KEY] ?? ''),
-            'correios_dr' => max(0, (int) ($valores[self::DR_KEY] ?? '0')),
+            'melhorenvio_client_id' => (string) ($valores[self::CLIENT_ID_KEY] ?? ''),
+            'melhorenvio_client_secret' => $segredo,
+            'melhorenvio_client_secret_set' => $segredo !== '',
+            'melhorenvio_email' => (string) ($valores[self::EMAIL_KEY] ?? ''),
+            'melhorenvio_sandbox' => ($valores[self::SANDBOX_KEY] ?? '0') === '1',
+            'melhorenvio_connected' => $this->melhorEnvio()->hasToken(),
+            'melhorenvio_expires_at' => $this->melhorEnvio()->expiresAt(),
             'default_weight' => max(1, (int) ($valores[self::WEIGHT_KEY] ?? '300')),
         ];
     }
@@ -177,14 +182,17 @@ final class ShippingService
 
     /**
      * Opções para um CEP: UF pelas faixas dos Correios e, quando o modo é
-     * `correios` e a cotação responde, PAC e SEDEX com preço e prazo reais.
+     * `melhorenvio` e a conta está conectada, as transportadoras cotadas com o
+     * peso e as medidas das peças do carrinho.
+     *
+     * @param list<array<string, mixed>> $items linhas com `weight_grams`, `quantity` e `price_cents`
      *
      * @return list<array{key: string, label: string, price_cents: int, price_label: string, days: string, note: string}>
      */
     public function optionsForCep(
         string $postalCode,
         int $subtotalCents,
-        int $weightGrams = 0,
+        array $items = [],
         string $stateFallback = ''
     ): array {
         $config = $this->settings();
@@ -197,11 +205,11 @@ final class ShippingService
 
         $opcoes = [];
 
-        if ($config['mode'] === self::MODE_CORREIOS) {
-            $opcoes = $this->correiosOptions($config, $cep, $subtotalCents, $weightGrams);
+        if ($config['mode'] === self::MODE_MELHOR_ENVIO) {
+            $opcoes = $this->melhorEnvioOptions($config, $cep, $subtotalCents, $items);
         }
 
-        // Sem cotação (modo tabela, credenciais incompletas ou Correios fora do
+        // Sem cotação (modo tabela, conta não conectada ou Melhor Envio fora do
         // ar), a tabela por estado é o plano B — o cliente nunca fica sem
         // entrega por causa de uma chamada externa.
         if ($opcoes === []) {
@@ -216,16 +224,18 @@ final class ShippingService
     /**
      * A opção escolhida, se ela existir para o CEP e o subtotal informados.
      *
+     * @param list<array<string, mixed>> $items
+     *
      * @return array{key: string, label: string, price_cents: int, price_label: string, days: string, note: string}|null
      */
     public function optionForCep(
         string $postalCode,
         string $key,
         int $subtotalCents,
-        int $weightGrams = 0,
+        array $items = [],
         string $stateFallback = ''
     ): ?array {
-        foreach ($this->optionsForCep($postalCode, $subtotalCents, $weightGrams, $stateFallback) as $opcao) {
+        foreach ($this->optionsForCep($postalCode, $subtotalCents, $items, $stateFallback) as $opcao) {
             if ($opcao['key'] === $key) {
                 return $opcao;
             }
@@ -274,7 +284,7 @@ final class ShippingService
     }
 
     /**
-     * Salva as taxas, as escolhas da loja e a configuração dos Correios.
+     * Salva as taxas, as escolhas da loja e a configuração do Melhor Envio.
      * Preço vazio é zero (grátis), prazo vazio é zero (a combinar).
      *
      * @param array<string, mixed> $dados
@@ -292,15 +302,15 @@ final class ShippingService
             'pickup_text' => trim((string) ($dados['pickup_text'] ?? '')),
             'mode' => (string) ($dados['mode'] ?? self::MODE_TABLE),
             'origin_postal_code' => Cep::normalize((string) ($dados['origin_postal_code'] ?? '')),
-            'correios_user' => trim((string) ($dados['correios_user'] ?? '')),
-            'correios_contract' => trim((string) ($dados['correios_contract'] ?? '')),
-            'correios_dr' => trim((string) ($dados['correios_dr'] ?? '')),
+            'melhorenvio_client_id' => trim((string) ($dados['melhorenvio_client_id'] ?? '')),
+            'melhorenvio_email' => trim((string) ($dados['melhorenvio_email'] ?? '')),
+            'melhorenvio_sandbox' => isset($dados['melhorenvio_sandbox']),
             'default_weight' => trim((string) ($dados['default_weight'] ?? '')),
-            'password' => (string) ($dados['correios_password'] ?? ''),
+            'secret' => (string) ($dados['melhorenvio_client_secret'] ?? ''),
             'rates' => [],
         ];
 
-        if (!in_array($valores['mode'], [self::MODE_TABLE, self::MODE_CORREIOS], true)) {
+        if (!in_array($valores['mode'], [self::MODE_TABLE, self::MODE_MELHOR_ENVIO], true)) {
             $valores['mode'] = self::MODE_TABLE;
         }
 
@@ -327,29 +337,27 @@ final class ShippingService
             );
         }
 
-        if ($valores['correios_dr'] !== '' && preg_match('/^\d{1,4}$/', $valores['correios_dr']) !== 1) {
-            $erros[] = 'DR dos Correios: use só números.';
-        }
+        // O segredo é opcional no formulário: em branco mantém o que já está
+        // gravado, para a loja não precisar digitá-lo de novo a cada ajuste.
+        $segredoNovo = (string) $valores['secret'];
 
-        // A senha é opcional no formulário: em branco mantém a que já está
-        // gravada, para a loja não precisar digitá-la de novo a cada ajuste.
-        $senhaNova = (string) $valores['password'];
-
-        if ($valores['mode'] === self::MODE_CORREIOS) {
+        if ($valores['mode'] === self::MODE_MELHOR_ENVIO) {
             if (!Cep::isValid($valores['origin_postal_code'])) {
                 $erros[] = 'CEP de origem: informe os oito dígitos do CEP de onde as peças saem.';
             }
 
-            if ($valores['correios_user'] === '') {
-                $erros[] = 'Usuário dos Correios: informe o usuário do CWS.';
+            if ($valores['melhorenvio_client_id'] === '') {
+                $erros[] = 'Client ID: copie o identificador do aplicativo criado no Melhor Envio.';
             }
 
-            if ($valores['correios_contract'] === '') {
-                $erros[] = 'Contrato dos Correios: informe o número do contrato.';
+            if ($segredoNovo === '' && !$atual['melhorenvio_client_secret_set']) {
+                $erros[] = 'Client Secret: copie o segredo do aplicativo criado no Melhor Envio.';
             }
 
-            if ($senhaNova === '' && !$atual['correios_password_set']) {
-                $erros[] = 'Senha dos Correios: informe a senha do CWS.';
+            if ($valores['melhorenvio_email'] === ''
+                || filter_var($valores['melhorenvio_email'], FILTER_VALIDATE_EMAIL) === false
+            ) {
+                $erros[] = 'E-mail de contato: o Melhor Envio exige um e-mail no User-Agent da requisição.';
             }
         }
 
@@ -425,13 +433,13 @@ final class ShippingService
             $this->saveSetting(self::PICKUP_TEXT_KEY, $valores['pickup_text']);
             $this->saveSetting(self::MODE_KEY, $valores['mode']);
             $this->saveSetting(self::ORIGIN_KEY, $valores['origin_postal_code']);
-            $this->saveSetting(self::USER_KEY, $valores['correios_user']);
-            $this->saveSetting(self::CONTRACT_KEY, $valores['correios_contract']);
-            $this->saveSetting(self::DR_KEY, (string) (int) $valores['correios_dr']);
+            $this->saveSetting(self::CLIENT_ID_KEY, $valores['melhorenvio_client_id']);
+            $this->saveSetting(self::EMAIL_KEY, $valores['melhorenvio_email']);
+            $this->saveSetting(self::SANDBOX_KEY, $valores['melhorenvio_sandbox'] ? '1' : '0');
             $this->saveSetting(self::WEIGHT_KEY, (string) (int) $pesoPadrao);
 
-            if ($senhaNova !== '') {
-                $this->saveSetting(self::PASSWORD_KEY, Crypto::encrypt($senhaNova));
+            if ($segredoNovo !== '') {
+                $this->saveSetting(self::CLIENT_SECRET_KEY, Crypto::encrypt($segredoNovo));
             }
 
             $this->pdo->commit();
@@ -447,17 +455,18 @@ final class ShippingService
     }
 
     /**
-     * PAC e SEDEX cotados para o CEP, com frete grátis aplicado por cima.
+     * Transportadoras cotadas no Melhor Envio, com frete grátis por cima.
      *
-     * @param array<string, mixed> $config
+     * @param array<string, mixed>       $config
+     * @param list<array<string, mixed>> $items
      *
      * @return list<array{key: string, label: string, price_cents: int, price_label: string, days: string, note: string}>
      */
-    private function correiosOptions(
+    private function melhorEnvioOptions(
         array $config,
         string $postalCode,
         int $subtotalCents,
-        int $weightGrams
+        array $items
     ): array {
         $this->lastError = '';
 
@@ -467,9 +476,27 @@ final class ShippingService
             return [];
         }
 
-        $peso = $weightGrams > 0 ? $weightGrams : $config['default_weight'];
-        $servico = new CorreiosService($this->pdo);
-        $cotacoes = $servico->quote($config, $postalCode, $peso);
+        // Cada peça vira uma linha com peso e valor unitários; o Melhor Envio
+        // multiplica pela quantidade e soma o volume do envio.
+        $produtos = [];
+
+        foreach ($items as $indice => $item) {
+            $linha = MelhorEnvioService::productLine($item, $config['default_weight']);
+            $linha['id'] = (string) ($item['slug'] ?? $item['id'] ?? 'peca-' . $indice);
+            $produtos[] = $linha;
+        }
+
+        if ($produtos === []) {
+            $produtos[] = MelhorEnvioService::productLine([
+                'id' => 'pacote',
+                'weight_grams' => $config['default_weight'],
+                'price_cents' => $subtotalCents,
+                'quantity' => 1,
+            ], $config['default_weight']);
+        }
+
+        $servico = $this->melhorEnvio();
+        $cotacoes = $servico->quote($config, $postalCode, $produtos, $subtotalCents);
 
         if ($cotacoes === []) {
             $this->lastError = $servico->lastError();
@@ -482,10 +509,13 @@ final class ShippingService
 
         foreach ($cotacoes as $cotacao) {
             $preco = $gratis ? 0 : (int) $cotacao['price_cents'];
+            $empresa = (string) ($cotacao['company'] ?? '');
 
             $opcoes[] = [
-                'key' => $cotacao['code'],
-                'label' => $cotacao['name'],
+                'key' => (string) $cotacao['code'],
+                'label' => $empresa !== ''
+                    ? sprintf('%s · %s', $cotacao['name'], $empresa)
+                    : (string) $cotacao['name'],
                 'price_cents' => $preco,
                 'price_label' => $this->priceLabel($preco),
                 'days' => self::daysLabel((int) $cotacao['days'], (int) $cotacao['days']),
@@ -550,6 +580,11 @@ final class ShippingService
         return $cents === 0 ? 'Grátis' : Price::format($cents);
     }
 
+    private function melhorEnvio(): MelhorEnvioService
+    {
+        return new MelhorEnvioService($this->pdo);
+    }
+
     private function saveSetting(string $nome, string $valor): void
     {
         $consulta = $this->pdo->prepare(
@@ -561,8 +596,8 @@ final class ShippingService
     }
 
     /**
-     * Senha dos Correios gravada cifrada; se não abrir (chave trocada, valor
-     * antigo), devolve o que está lá para o painel não perder a configuração.
+     * Segredo do aplicativo gravado cifrado; se não abrir (chave trocada,
+     * valor antigo), devolve o que está lá para não perder a configuração.
      */
     private function decifrar(string $valor): string
     {

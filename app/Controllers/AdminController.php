@@ -13,6 +13,7 @@ use App\Services\ContactService;
 use App\Services\DashboardService;
 use App\Services\HomeHeroService;
 use App\Services\LoginThrottle;
+use App\Services\MelhorEnvioService;
 use App\Services\OrderService;
 use App\Services\PageService;
 use App\Services\ProductAdminService;
@@ -22,6 +23,7 @@ use App\Services\StockService;
 use App\Support\Cep;
 use App\Support\Csrf;
 use App\Support\Session;
+use Config\Env;
 
 /**
  * Painel da administração: login, dashboard, pedidos e estoque.
@@ -480,6 +482,99 @@ final class AdminController
         Session::flash('success', 'Frete salvo.');
 
         $this->redirect('/admin/frete');
+    }
+
+    /**
+     * Começa a autorização OAuth do Melhor Envio: guarda o `state` na sessão e
+     * manda o administrador para o painel do Melhor Envio escolher a conta.
+     */
+    public function connectMelhorEnvio(): void
+    {
+        $this->admin();
+
+        $pdo = Connection::get();
+        $servico = new MelhorEnvioService($pdo);
+        $config = (new ShippingService($pdo))->settings();
+        $state = bin2hex(random_bytes(16));
+        $url = $servico->authorizeUrl($config, $this->melhorEnvioRedirect(), $state);
+
+        if ($url === null) {
+            Session::flash('error', $servico->lastError());
+            $this->redirect('/admin/frete');
+        }
+
+        Session::put('melhorenvio_state', $state);
+
+        header('Location: ' . $url, true, 303);
+        exit;
+    }
+
+    /**
+     * Volta da autorização com o `code`: confere o `state` guardado na sessão e
+     * troca o código pelos tokens da conta.
+     */
+    public function melhorEnvioCallback(): void
+    {
+        $this->admin();
+
+        $esperado = (string) Session::get('melhorenvio_state', '');
+        Session::forget('melhorenvio_state');
+
+        $recebido = (string) ($_GET['state'] ?? '');
+        $codigo = (string) ($_GET['code'] ?? '');
+        $recusa = (string) ($_GET['error'] ?? '');
+
+        if ($recusa !== '') {
+            Session::flash('error', 'A autorização no Melhor Envio foi recusada.');
+            $this->redirect('/admin/frete');
+        }
+
+        if ($esperado === '' || $recebido === '' || !hash_equals($esperado, $recebido)) {
+            Session::flash('error', 'A autorização expirou. Clique em Conectar de novo.');
+            $this->redirect('/admin/frete');
+        }
+
+        if ($codigo === '') {
+            Session::flash('error', 'O Melhor Envio não devolveu o código de autorização.');
+            $this->redirect('/admin/frete');
+        }
+
+        $pdo = Connection::get();
+        $servico = new MelhorEnvioService($pdo);
+        $config = (new ShippingService($pdo))->settings();
+
+        if (!$servico->exchangeCode($config, $codigo, $this->melhorEnvioRedirect())) {
+            Session::flash('error', $servico->lastError());
+            $this->redirect('/admin/frete');
+        }
+
+        Session::flash('success', 'Conta do Melhor Envio conectada. Já dá para testar um CEP.');
+
+        $this->redirect('/admin/frete');
+    }
+
+    public function disconnectMelhorEnvio(): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        (new MelhorEnvioService(Connection::get()))->disconnect();
+
+        Session::flash('success', 'Conta do Melhor Envio desconectada. O frete volta para a tabela por estado.');
+
+        $this->redirect('/admin/frete');
+    }
+
+    /**
+     * Endereço de volta da autorização: precisa ser exatamente o cadastrado no
+     * aplicativo do Melhor Envio.
+     */
+    private function melhorEnvioRedirect(): string
+    {
+        return rtrim((string) Env::get('APP_URL', ''), '/') . '/admin/frete/melhor-envio/callback';
     }
 
     /**
@@ -1285,10 +1380,15 @@ final class AdminController
         $cepTeste = Cep::normalize((string) ($_GET['teste_cep'] ?? ''));
 
         // Teste da cotação direto do painel: mesmo caminho do checkout, com o
-        // CEP digitado e o peso padrão do pacote. Mostra o erro dos Correios
+        // CEP digitado e o peso padrão do pacote. Mostra o erro do Melhor Envio
         // sem precisar abrir o carrinho.
         if ($cepTeste !== '') {
-            $opcoes = $servico->optionsForCep($cepTeste, 0, $config['default_weight']);
+            $opcoes = $servico->optionsForCep($cepTeste, 0, [[
+                'id' => 'teste',
+                'weight_grams' => $config['default_weight'],
+                'quantity' => 1,
+                'price_cents' => 0,
+            ]]);
             $teste = [
                 'cep' => $cepTeste,
                 'opcoes' => $opcoes,
@@ -1303,6 +1403,7 @@ final class AdminController
             'erros' => $erros,
             'valores' => $valores,
             'teste' => $teste,
+            'callback' => $this->melhorEnvioRedirect(),
         ]);
     }
 
@@ -1516,6 +1617,7 @@ final class AdminController
         $adminFreteConfig = $contexto['config'] ?? [];
         $adminEstados = $contexto['estados'] ?? [];
         $adminTeste = $contexto['teste'] ?? null;
+        $adminCallback = (string) ($contexto['callback'] ?? '');
 
         // O contador da aba Mensagens aparece em todas as telas do painel; a
         // própria aba já calculou as contagens, então reaproveita o resultado.

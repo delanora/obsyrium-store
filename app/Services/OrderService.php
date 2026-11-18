@@ -129,13 +129,12 @@ final class OrderService
                 $pecas += (int) $item['quantity'];
             }
 
-            $frete = new ShippingService($this->pdo);
             $opcao = $this->shippingOption(
                 $endereco,
                 $subtotal,
                 $shippingKey,
-                $frete->weightForItems($itens),
-                $frete
+                $itens,
+                new ShippingService($this->pdo)
             );
 
             if ($opcao === null) {
@@ -376,11 +375,12 @@ final class OrderService
 
     /**
      * A forma de entrega escolhida, conferida contra o CEP do endereço e o peso
-     * do carrinho. Sem escolha, vale a primeira opção (PAC, quando a cotação
-     * dos Correios está ligada); escolha inválida devolve null e o pedido não
-     * fecha — melhor parar do que gravar frete errado.
+     * do carrinho. Sem escolha, vale a primeira opção (a mais barata cotada no
+     * Melhor Envio, quando conectado); escolha inválida devolve null e o pedido
+     * não fecha — melhor parar do que gravar frete errado.
      *
-     * @param array<string, mixed> $endereco
+     * @param array<string, mixed>        $endereco
+     * @param list<array<string, mixed>>  $itens
      *
      * @return array{key: string, label: string, price_cents: int, price_label: string, days: string, note: string}|null
      */
@@ -388,13 +388,13 @@ final class OrderService
         array $endereco,
         int $subtotal,
         string $shippingKey,
-        int $weightGrams,
+        array $itens,
         ShippingService $servico
     ): ?array {
         $opcoes = $servico->optionsForCep(
             (string) ($endereco['postal_code'] ?? ''),
             $subtotal,
-            $weightGrams,
+            $itens,
             (string) ($endereco['state'] ?? '')
         );
 
