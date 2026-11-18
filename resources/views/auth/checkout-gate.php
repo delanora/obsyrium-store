@@ -24,7 +24,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 		</header>
 
 		<div class="auth-gate__cards">
-			<article class="auth__card auth-gate__card">
+			<article class="auth__card auth-gate__card auth-gate__card--login">
 				<p class="auth__eyebrow">Já compro aqui</p>
 				<h2 class="auth-gate__card-title">Entrar</h2>
 				<p class="auth__text">Use o e-mail e a senha da sua conta para ir direto ao checkout.</p>
@@ -32,6 +32,11 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 				<?php if (isset($errors['credentials'])): ?>
 					<p class="auth__alert" role="alert"><?= $escape($errors['credentials']) ?></p>
 				<?php endif; ?>
+
+				<?php
+				$socialSuffix = '-gate-login';
+				require __DIR__ . '/../partials/social-login.php';
+				?>
 
 				<form class="auth__form" method="post" action="/login?compra=1" novalidate>
 					<?= Csrf::field() ?>
@@ -50,15 +55,20 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 				</form>
 			</article>
 
-			<article class="auth__card auth-gate__card">
+			<article class="auth__card auth-gate__card auth-gate__card--register">
 				<p class="auth__eyebrow">Primeira compra</p>
 				<h2 class="auth-gate__card-title">Criar conta</h2>
 				<p class="auth__text">Leva um minuto. CPF e telefone ficam cifrados e os dados servem para as próximas compras.</p>
 
+				<?php
+				$socialSuffix = '-gate-register';
+				require __DIR__ . '/../partials/social-login.php';
+				?>
+
 				<form class="auth__form" method="post" action="/cadastro?compra=1" novalidate>
 					<?= Csrf::field() ?>
 
-					<div class="field">
+					<div class="field auth-gate__field--full">
 						<label class="field__label" for="gate-name">Nome completo</label>
 						<input class="field__input" id="gate-name" name="name" type="text" autocomplete="name" required value="<?= $valor('name') ?>">
 						<?php if (isset($errors['name'])): ?>
@@ -82,7 +92,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 						<?php endif; ?>
 					</div>
 
-					<div class="field">
+					<div class="field auth-gate__field--full">
 						<label class="field__label" for="gate-email">E-mail</label>
 						<input class="field__input" id="gate-email" name="email" type="email" autocomplete="email" required value="<?= $valor('email') ?>">
 						<?php if (isset($errors['email'])): ?>
@@ -108,12 +118,12 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 						<?php endif; ?>
 					</div>
 
-					<div class="field field--check">
+					<div class="field field--check auth-gate__field--full">
 						<input class="field__check" id="gate-terms" name="terms" type="checkbox" value="1"<?= $valor('terms') !== '' ? ' checked' : '' ?>>
 						<label class="field__check-label" for="gate-terms">Li e aceito os termos de uso e a política de privacidade da Obsyrium Store.</label>
 					</div>
 					<?php if (isset($errors['terms'])): ?>
-						<p class="field__error"><?= $escape($errors['terms']) ?></p>
+						<p class="field__error auth-gate__field--full"><?= $escape($errors['terms']) ?></p>
 					<?php endif; ?>
 
 					<button class="button auth__submit" type="submit">Criar conta e continuar</button>

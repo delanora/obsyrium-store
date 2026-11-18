@@ -83,11 +83,13 @@
     }
 }
 
-/* Porta do checkout: login e cadastro lado a lado, sem aviso de erro. */
+/* Porta do checkout: login e cadastro lado a lado, sem aviso de erro. O
+   cartão de cadastro é mais largo (e o login acompanha a altura) para os
+   campos caberem em duas colunas sem apertar. */
 .auth--gate .auth__inner {
     gap: var(--space-7);
     justify-items: stretch;
-    max-width: 68rem;
+    max-width: 72rem;
     margin-inline: auto;
 }
 
@@ -108,18 +110,33 @@
 .auth-gate__cards {
     display: grid;
     gap: var(--space-5);
-    align-items: start;
+    align-items: stretch;
 }
 
 @media (min-width: 60.01em) {
     .auth-gate__cards {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
         gap: var(--space-6);
     }
 }
 
 .auth-gate__card {
     max-width: none;
+    align-content: start;
+}
+
+/* Cadastro em duas colunas: nome, e-mail, termos e o botão ocupam a linha
+   inteira; CPF/telefone e senha/confirmação ficam lado a lado. */
+@media (min-width: 60.01em) {
+    .auth-gate__card--register .auth__form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: var(--space-4);
+    }
+
+    .auth-gate__field--full,
+    .auth-gate__card--register .auth__submit {
+        grid-column: 1 / -1;
+    }
 }
 
 .auth-gate__card-title {
@@ -137,6 +154,18 @@
     display: grid;
     gap: var(--space-2);
     margin-bottom: var(--space-3);
+}
+
+/* Na porta do checkout os dois botões ficam na mesma linha enquanto houver
+   espaço, para o bloco social não empurrar o formulário. */
+@media (min-width: 60.01em) {
+    .auth--gate .auth__social {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .auth--gate .auth__social-button {
+        padding-inline: var(--space-3);
+    }
 }
 
 .auth__social-button {
@@ -166,6 +195,7 @@
 }
 
 .auth__social-note {
+    margin-top: 0;
     margin-bottom: var(--space-5);
     color: var(--color-text-subtle);
     font-size: var(--font-size-xs);
