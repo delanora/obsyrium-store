@@ -12,18 +12,18 @@ declare(strict_types=1);
 		<header class="page__header">
 			<p class="page__eyebrow">A marca</p>
 			<h1 class="page__title">Sobre a Obsyrium</h1>
-			<p class="page__text">Camisetas de estampa autoral, feitas em lotes pequenos e conferidas peça a peça antes de sair daqui.</p>
+			<p class="page__text">Camisetas de estampa autoral, feitas com atenção a cada detalhe e conferidas antes de sair daqui.</p>
 		</header>
 
 		<div class="page__blocks">
 			<article class="page__block">
 				<h2 class="page__block-title">O que fazemos</h2>
-				<p>Camisetas com estampas próprias, em modelagem reta e tecido confortável para o dia a dia. O catálogo é enxuto de propósito: cada modelo entra com poucas peças por tamanho, e o que está na loja é o que existe de verdade.</p>
+				<p>Camisetas com estampas próprias, em modelagem reta e tecido confortável para o dia a dia. Cada modelo é produzido com cuidado e revisado antes de entrar na loja — o que está no site é o que existe de verdade.</p>
 			</article>
 
 			<article class="page__block">
 				<h2 class="page__block-title">Como trabalhamos</h2>
-				<p>Trabalhamos em lotes pequenos. Quando um tamanho acaba, ele sai do ar até a próxima remessa — nada de vender o que não está no estoque. Por isso o seletor de tamanho mostra a disponibilidade real de cada peça.</p>
+				<p>O estoque é atualizado a cada venda: quando um tamanho acaba, ele sai do seletor da página do produto — nada de vender o que não está disponível. Assim o seletor mostra sempre a disponibilidade real de cada peça.</p>
 			</article>
 
 			<article class="page__block">

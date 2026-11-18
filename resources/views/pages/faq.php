@@ -28,7 +28,7 @@ $perguntas = [
     [
         'pergunta' => 'Como sei se o tamanho está disponível?',
         'resposta' => [
-            'A loja trabalha com estoque real. Quando um tamanho acaba, ele sai do seletor da página do produto até a próxima remessa — não vendemos o que não está no estoque.',
+            'O estoque é atualizado a cada venda. Quando um tamanho acaba, ele sai do seletor da página do produto — não vendemos o que não está disponível.',
         ],
         'link' => null,
     ],
@@ -42,7 +42,7 @@ $perguntas = [
     [
         'pergunta' => 'Qual é o prazo de entrega?',
         'resposta' => [
-            'O pedido é separado em lotes pequenos e cada peça é conferida antes de sair. O prazo depende do endereço e da transportadora, e é confirmado antes do envio.',
+            'Cada pedido é separado e conferido antes de sair. O prazo depende do endereço e da transportadora, e é confirmado antes do envio.',
         ],
         'link' => ['label' => 'Ver política de entrega', 'href' => '/entrega'],
     ],

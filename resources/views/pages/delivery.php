@@ -14,13 +14,13 @@ declare(strict_types=1);
 		<header class="page__header">
 			<p class="page__eyebrow">Políticas</p>
 			<h1 class="page__title">Política de entrega</h1>
-			<p class="page__text">Camisetas enviadas para todo o Brasil, separadas uma a uma em lotes pequenos. Aqui está como funciona do fechamento do pedido até a sua casa.</p>
+			<p class="page__text">Camisetas enviadas para todo o Brasil, com cada pedido separado e conferido individualmente. Aqui está como funciona do fechamento do pedido até a sua casa.</p>
 		</header>
 
 		<div class="page__blocks">
 			<article class="page__block">
 				<h2 class="page__block-title">Separação</h2>
-				<p>Cada pedido é conferido peça a peça antes de ser embalado: modelo, tamanho, estampa e endereço. Como o estoque é real, o que você comprou já está reservado para você.</p>
+				<p>Cada pedido é conferido antes de ser embalado: modelo, tamanho, estampa e endereço. O que você comprou é reservado no estoque assim que o pedido é confirmado.</p>
 			</article>
 
 			<article class="page__block">

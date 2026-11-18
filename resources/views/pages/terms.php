@@ -19,7 +19,7 @@ declare(strict_types=1);
 		<div class="page__blocks">
 			<article class="page__block">
 				<h2 class="page__block-title">Quem somos</h2>
-				<p>A Obsyrium Store é uma marca de camisetas de estampa autoral, vendidas em lotes pequenos e com estoque real. Os dados da empresa (razão social, CNPJ e endereço) são publicados nesta página antes da abertura da loja.</p>
+				<p>A Obsyrium Store é uma marca de camisetas de estampa autoral, com estoque atualizado no site. Os dados da empresa (razão social, CNPJ e endereço) são publicados nesta página antes da abertura da loja.</p>
 			</article>
 
 			<article class="page__block">

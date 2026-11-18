@@ -224,8 +224,8 @@ if ($resultado['paginas'] <= 7) {
 			<?php else: ?>
 				<h1 class="catalog__title">Catálogo</h1>
 				<p class="catalog__lead">
-					Camisetas de estampa autoral, feitas em lotes pequenos e conferidas peça a peça antes de sair.
-					Nada de catálogo infinito: quando o lote acaba, o tamanho sai do ar.
+					Camisetas de estampa autoral, feitas com atenção a cada detalhe e conferidas antes de sair.
+					Tudo o que está aqui tem estoque disponível.
 				</p>
 			<?php endif; ?>
 		</header>
@@ -440,7 +440,7 @@ if ($resultado['paginas'] <= 7) {
 							<p class="catalog__empty-text">Confira a escrita ou procure por uma cor, uma categoria ou uma parte do nome.</p>
 						<?php elseif ($categoriaPagina !== null && $filtrosAtivos === 0): ?>
 							<p class="catalog__empty-title">Ainda não há camisetas em <?= $escape((string) $categoriaPagina['name']) ?>.</p>
-							<p class="catalog__empty-text">Quando a próxima remessa chegar, as peças desta categoria aparecem aqui.</p>
+							<p class="catalog__empty-text">Assim que houver peças desta categoria, elas aparecem aqui.</p>
 						<?php else: ?>
 							<p class="catalog__empty-title">Nenhuma camiseta com esses filtros.</p>
 							<p class="catalog__empty-text">Tente uma faixa de preço mais ampla ou veja o catálogo inteiro.</p>

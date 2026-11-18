@@ -638,7 +638,7 @@ MD
 
 ## 30. Catálogo
 
-`/catalogo` lista todos os produtos ativos, sem depender da vitrine de oito da home. Cabeçalho centrado — título, sem sobretítulo, e um texto sobre a marca (lotes pequenos, estoque real) — e, no computador, filtros numa coluna de 17 rem à esquerda com a grade à direita.
+`/catalogo` lista todos os produtos ativos, sem depender da vitrine de oito da home. Cabeçalho centrado — título, sem sobretítulo, e um texto sobre a marca (estampas autorais, estoque disponível) — e, no computador, filtros numa coluna de 17 rem à esquerda com a grade à direita.
 
 - **Filtros** num formulário `GET`: **categoria** em `select` no topo do painel (com o total de cada uma), **subcategoria** num segundo `select` que só aparece quando a categoria escolhida tem filhas, **cor** em `select` com a contagem de cada uma, tamanho e disponibilidade em pílulas de rádio e **faixa de preço digitada** em dois campos (De/Até, em reais, cada ponta opcional). A árvore de categorias vai num `<script type="application/json" data-catalog-tree>` e o `site.js` monta as opções do menu de subcategorias na hora, sem nova consulta; sem script o servidor já entrega o menu da categoria da URL, e escolher categoria com filhas não envia o formulário sozinho — espera a subcategoria ou o "Aplicar filtros". Os campos de preço são `type="text"` com `inputmode="decimal"`: um `type="number"` recusa a vírgula e engolia `149,90` no envio. Com `data-money`, a máscara de `site.js` já deixa o campo em `,00` no foco e a pessoa digita só a parte inteira antes da vírgula (`129` vira `129,00`); os centavos continuam editáveis clicando depois da vírgula. Sem script o campo é texto livre, e quem converte reais para centavos é sempre o servidor (`149`, `149,90` e `149.90` entram igual). O botão "Aplicar filtros" funciona sem JavaScript; com script, o formulário se envia sozinho ao mudar um campo (`data-filter-form` em `site.js`).
 - **Ordenação**: novidades (padrão), menor preço, maior preço e nome de A a Z, num menu recolhível com ícone que mostra a ordem atual; clicar escolhe a ordem e o menu fecha ao clicar fora ou com Escape.
@@ -668,7 +668,7 @@ Fechar a compra termina numa página própria: `/pedido/OBS-000004/confirmacao`.
 ### Páginas Sobre e Contato
 
 - `GET /sobre` e `GET /contato` (`App\Controllers\PageController`) montam páginas fixas no layout do site: `resources/views/pages/about.php` e `resources/views/pages/contact.php`.
-- Sobre apresenta a marca, o trabalho em lotes pequenos, como a compra funciona e o cuidado com a estampa.
+- Sobre apresenta a marca, o cuidado com cada peça, como a compra funciona e o cuidado com a estampa.
 - Contato reúne o horário de atendimento (segunda a sexta, 9h às 18h), os cartões de **WhatsApp** e **Instagram** e o **formulário de mensagem** (`POST /contato`).
 - `App\Services\ContactService` lê os canais da tabela `settings` (chaves `contact_whatsapp` e `contact_instagram`), normaliza o número para só dígitos e o @ sem link e monta o `wa.me` e o `instagram.com`. Canal vazio não aparece com botão: o cartão avisa que ainda não foi publicado.
 - O formulário exige CSRF, valida nome (2–120), e-mail, telefone (10–13 dígitos, com DDD) e mensagem (10–4000), e grava em `contact_messages` — o telefone fica só com dígitos. O campo `data-phone-mask` mostra `(11) 99999-9999` enquanto a pessoa digita. Com erro, a página volta preenchida com 422; com sucesso, 303 para `/contato` e o aviso no layout. Não há envio de e-mail enquanto o domínio não existir — a mensagem fica no painel.

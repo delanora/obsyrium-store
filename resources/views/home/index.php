@@ -13,11 +13,11 @@ declare(strict_types=1);
 	<div class="hero__slides">
 		<article class="hero__slide" id="slide-1">
 			<div class="container hero__inner" data-reveal-stagger>
-				<p class="hero__eyebrow">Drop 01 · tiragem limitada</p>
-				<h1 class="hero__title">Estampas autorais em pequenos lotes</h1>
+				<p class="hero__eyebrow">Drop 01 · nova coleção</p>
+				<h1 class="hero__title">Estampas autorais com personalidade</h1>
 				<p class="hero__text">
-					Camisetas em algodão premium, com estampa serigráfica e tiragem limitada.
-					Sem reposição depois que o lote acaba.
+					Camisetas em algodão premium, com estampa serigráfica de alta definição
+					e acabamento cuidadoso para o dia a dia.
 				</p>
 				<p class="hero__actions">
 					<a class="button" href="#lancamentos">Ver lançamentos</a>
@@ -69,13 +69,13 @@ declare(strict_types=1);
 
 <section class="section section--alt">
 	<div class="container content-block" data-reveal>
-		<h2>Camisetas com estampas autorais, feitas em pequenos lotes</h2>
+		<h2>Camisetas com estampas autorais, feitas para o dia a dia</h2>
 		<p>
-			A <strong>Obsyrium Store</strong> trabalha com estampas próprias, produzidas em tiragens curtas,
-			em malha de algodão de gramatura alta e caimento oversized.
+			A <strong>Obsyrium Store</strong> trabalha com estampas próprias, em malha de algodão de gramatura alta
+			e caimento oversized.
 		</p>
 		<p>
-			Cada lote é estampado uma única vez: quando esgota, não volta. As peças vão do PP ao GG,
+			Cada estampa é produzida com atenção ao detalhe, do desenho à serigrafia. As peças vão do PP ao GG,
 			com tabela de medidas em centímetros ao lado do seletor de tamanho em cada produto.
 		</p>
 	</div>
