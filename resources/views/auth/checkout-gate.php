@@ -35,6 +35,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 				<?php
 				$socialSuffix = '-gate-login';
+				$socialCompact = true;
 				require __DIR__ . '/../partials/social-login.php';
 				?>
 
@@ -43,16 +44,18 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 					<div class="field">
 						<label class="field__label" for="gate-login-email">E-mail</label>
-						<input class="field__input" id="gate-login-email" name="email" type="email" autocomplete="email" required value="<?= $valor('email') ?>">
+						<input class="field__input" id="gate-login-email" name="email" type="email" autocomplete="email" placeholder="seuemail@exemplo.com" required value="<?= $valor('email') ?>">
 					</div>
 
 					<div class="field">
 						<label class="field__label" for="gate-login-password">Senha</label>
-						<input class="field__input" id="gate-login-password" name="password" type="password" autocomplete="current-password" required>
+						<input class="field__input" id="gate-login-password" name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required>
 					</div>
 
 					<button class="button auth__submit" type="submit">Entrar e continuar</button>
 				</form>
+
+				<p class="auth-gate__forgot"><a href="/contato">Esqueci minha senha</a></p>
 			</article>
 
 			<article class="auth__card auth-gate__card auth-gate__card--register">
@@ -62,6 +65,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 				<?php
 				$socialSuffix = '-gate-register';
+				$socialCompact = true;
 				require __DIR__ . '/../partials/social-login.php';
 				?>
 
@@ -70,7 +74,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 					<div class="field auth-gate__field--full">
 						<label class="field__label" for="gate-name">Nome completo</label>
-						<input class="field__input" id="gate-name" name="name" type="text" autocomplete="name" required value="<?= $valor('name') ?>">
+						<input class="field__input" id="gate-name" name="name" type="text" autocomplete="name" placeholder="Nome e sobrenome" required value="<?= $valor('name') ?>">
 						<?php if (isset($errors['name'])): ?>
 							<p class="field__error"><?= $escape($errors['name']) ?></p>
 						<?php endif; ?>
@@ -94,7 +98,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 					<div class="field auth-gate__field--full">
 						<label class="field__label" for="gate-email">E-mail</label>
-						<input class="field__input" id="gate-email" name="email" type="email" autocomplete="email" required value="<?= $valor('email') ?>">
+						<input class="field__input" id="gate-email" name="email" type="email" autocomplete="email" placeholder="seuemail@exemplo.com" required value="<?= $valor('email') ?>">
 						<?php if (isset($errors['email'])): ?>
 							<p class="field__error"><?= $escape($errors['email']) ?></p>
 						<?php endif; ?>
@@ -102,25 +106,27 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 					<div class="field">
 						<label class="field__label" for="gate-password">Senha</label>
-						<input class="field__input" id="gate-password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+						<input class="field__input" id="gate-password" name="password" type="password" autocomplete="new-password" placeholder="Sua senha" minlength="8" required>
 						<?php if (isset($errors['password'])): ?>
 							<p class="field__error"><?= $escape($errors['password']) ?></p>
-						<?php else: ?>
-							<p class="field__hint">Mínimo de 8 caracteres.</p>
 						<?php endif; ?>
 					</div>
 
 					<div class="field">
 						<label class="field__label" for="gate-password-confirmation">Repita a senha</label>
-						<input class="field__input" id="gate-password-confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required>
+						<input class="field__input" id="gate-password-confirmation" name="password_confirmation" type="password" autocomplete="new-password" placeholder="Repita a senha" minlength="8" required>
 						<?php if (isset($errors['password_confirmation'])): ?>
 							<p class="field__error"><?= $escape($errors['password_confirmation']) ?></p>
 						<?php endif; ?>
 					</div>
 
+					<?php if (!isset($errors['password'])): ?>
+						<p class="field__hint auth-gate__field--full">Mínimo de 8 caracteres.</p>
+					<?php endif; ?>
+
 					<div class="field field--check auth-gate__field--full">
 						<input class="field__check" id="gate-terms" name="terms" type="checkbox" value="1"<?= $valor('terms') !== '' ? ' checked' : '' ?>>
-						<label class="field__check-label" for="gate-terms">Li e aceito os termos de uso e a política de privacidade da Obsyrium Store.</label>
+						<label class="field__check-label" for="gate-terms">Li e aceito os <a href="/termos">termos de uso</a> e a <a href="/privacidade">política de privacidade</a> da Obsyrium Store.</label>
 					</div>
 					<?php if (isset($errors['terms'])): ?>
 						<p class="field__error auth-gate__field--full"><?= $escape($errors['terms']) ?></p>

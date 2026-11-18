@@ -83,13 +83,16 @@
     }
 }
 
-/* Porta do checkout: login e cadastro lado a lado, sem aviso de erro. O
-   cartão de cadastro é mais largo (e o login acompanha a altura) para os
-   campos caberem em duas colunas sem apertar. */
+/* ============ Porta do checkout ============
+ * Dois cards simétricos, mesma altura, sem aviso de erro. Só layout: as
+ * cores, as fontes e os textos continuam os mesmos de /login e /cadastro.
+ * Escala de espaçamento usada aqui: 8 / 12 / 16 / 24 / 32 px.
+ */
+
 .auth--gate .auth__inner {
-    gap: var(--space-7);
+    gap: var(--space-7); /* 40px entre o cabeçalho e os cards */
     justify-items: stretch;
-    max-width: 72rem;
+    max-width: 64rem; /* 1024px */
     margin-inline: auto;
 }
 
@@ -101,42 +104,45 @@
 }
 
 .auth-gate__title {
-    max-width: 38rem;
+    max-width: 34rem;
     font-size: var(--font-size-lg);
     letter-spacing: 0;
     text-transform: none;
+    text-wrap: balance;
 }
 
 .auth-gate__cards {
     display: grid;
-    gap: var(--space-5);
+    gap: var(--space-6); /* 32px entre os cards */
     align-items: stretch;
+    justify-items: stretch;
 }
 
 @media (min-width: 60.01em) {
     .auth-gate__cards {
         grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-        gap: var(--space-6);
     }
 }
 
-.auth-gate__card {
+/* Card em coluna: o formulário empurra o botão para a base, então os dois
+   cards terminam na mesma linha sem sobrar buraco embaixo. */
+.auth-gate__card,
+.auth-gate__card.auth__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
     max-width: none;
-    align-content: start;
+    padding: var(--space-6); /* 32px */
+    align-content: initial;
 }
 
-/* Cadastro em duas colunas: nome, e-mail, termos e o botão ocupam a linha
-   inteira; CPF/telefone e senha/confirmação ficam lado a lado. */
-@media (min-width: 60.01em) {
-    .auth-gate__card--register .auth__form {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        column-gap: var(--space-4);
-    }
+/* Destaque discreto do cadastro: só uma borda dourada de baixa opacidade. */
+.auth-gate__card--register {
+    border-color: rgb(201 160 99 / 22%);
+}
 
-    .auth-gate__field--full,
-    .auth-gate__card--register .auth__submit {
-        grid-column: 1 / -1;
-    }
+.auth-gate__card .auth__form {
+    margin-top: auto;
 }
 
 .auth-gate__card-title {
@@ -149,6 +155,171 @@
     text-transform: uppercase;
 }
 
+/* Ritmo interno: 16px entre grupos de campos, 6px entre rótulo e input. */
+.auth--gate .auth__form {
+    gap: var(--space-4);
+}
+
+.auth--gate .field {
+    gap: 6px;
+}
+
+@media (min-width: 60.01em) {
+    .auth-gate__card--register .auth__form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: var(--space-4);
+        row-gap: var(--space-4);
+    }
+
+    .auth-gate__field--full,
+    .auth-gate__card--register .auth__submit {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Inputs iguais: 44px de altura, mesmo padding, borda e raio. */
+.auth--gate .field__input {
+    height: var(--target-min);
+    min-height: var(--target-min);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+    line-height: 1;
+    transition:
+        border-color var(--duration-fast) var(--ease-standard),
+        outline-color var(--duration-fast) var(--ease-standard);
+}
+
+.auth--gate .field__input::placeholder {
+    color: var(--color-text-subtle);
+    opacity: 1;
+}
+
+@media (hover: hover) {
+    .auth--gate .field__input:hover {
+        border-color: var(--color-text-subtle);
+    }
+}
+
+/* Foco com borda dourada sutil, sem brilho forte. */
+.auth--gate .field__input:focus,
+.auth--gate .field__input:focus-visible {
+    border-color: var(--color-accent);
+    outline: 2px solid rgb(201 160 99 / 26%);
+    outline-offset: 0;
+}
+
+/* Textos de apoio com contraste melhor que o --color-text-subtle padrão. */
+.auth--gate .auth__eyebrow,
+.auth--gate .auth__text,
+.auth--gate .field__hint,
+.auth--gate .auth__social-badge {
+    color: var(--color-text-muted);
+}
+
+/* Termos: checkbox de 18px alinhado à primeira linha e links dourados. */
+.auth--gate .field--check {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-3);
+}
+
+.auth--gate .field__check {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--color-accent);
+}
+
+.auth--gate .field__check-label a {
+    color: var(--color-accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.auth--gate .field__check-label a:hover {
+    border-bottom-color: currentColor;
+}
+
+/* Social: dois botões em pilha, mesma altura, texto em uma linha. */
+.auth--gate .auth__social {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+    margin-bottom: 0;
+}
+
+.auth--gate .auth__social-button {
+    width: 100%;
+    height: var(--target-min);
+    padding: 0 var(--space-4);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    gap: var(--space-2);
+    white-space: nowrap;
+    transition:
+        border-color var(--duration-fast) var(--ease-standard),
+        color var(--duration-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+    .auth--gate .auth__social-button:not(:disabled):hover {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+    }
+}
+
+.auth--gate .auth__social-badge {
+    margin-left: auto;
+    padding: 2px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    font-size: 0.625rem;
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+}
+
+/* Divisor "ou" com 24px de respiro em cima e embaixo (8px + gap de 16px). */
+.auth--gate .auth__divider {
+    margin-block: var(--space-2);
+}
+
+.auth--gate .auth__submit {
+    min-height: var(--target-min);
+}
+
+/* "Esqueci minha senha" logo abaixo do botão, centralizado. */
+.auth-gate__forgot {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-align: center;
+}
+
+.auth-gate__forgot a {
+    color: var(--color-accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.auth-gate__forgot a:hover {
+    border-bottom-color: currentColor;
+}
+
+/* Abaixo de 900px os cards empilham, centrados e com no máximo 480px. */
+@media (max-width: 56.25em) {
+    .auth-gate__cards {
+        justify-items: center;
+    }
+
+    .auth-gate__card {
+        width: 100%;
+        max-width: 30rem;
+    }
+}
+
 /* Entrada com provedores externos (visual; o OAuth entra depois). */
 .auth__social {
     display: grid;
@@ -156,17 +327,6 @@
     margin-bottom: var(--space-3);
 }
 
-/* Na porta do checkout os dois botões ficam na mesma linha enquanto houver
-   espaço, para o bloco social não empurrar o formulário. */
-@media (min-width: 60.01em) {
-    .auth--gate .auth__social {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .auth--gate .auth__social-button {
-        padding-inline: var(--space-3);
-    }
-}
 
 .auth__social-button {
     display: inline-flex;
