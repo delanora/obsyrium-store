@@ -27,6 +27,26 @@ final class CatalogController
         $servico = new CatalogService(Connection::get());
 
         $estado = $servico->state($_GET);
+
+        // Categoria escolhida no painel de filtros: o endereço canônico é a
+        // página da categoria, então o catálogo manda para lá levando o resto
+        // dos filtros na URL.
+        if ($estado['categoria_id'] !== null) {
+            $query = $_GET;
+            unset($query['categoria'], $query['sub'], $query['pagina']);
+
+            $destino = '/categoria/' . $estado['categoria']
+                . ($estado['sub'] !== '' ? '/' . $estado['sub'] : '');
+
+            if ($query !== []) {
+                $destino .= '?' . http_build_query($query);
+            }
+
+            header('Location: ' . $destino, true, 301);
+
+            return;
+        }
+
         $resultado = $servico->results($estado);
 
         $produtos = array_map(

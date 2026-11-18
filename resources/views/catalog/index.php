@@ -13,6 +13,13 @@ use App\Services\CatalogService;
  * dois campos. O botão "Aplicar filtros" funciona sem JavaScript; com JS, o
  * formulário se envia sozinho quando um campo muda (site.js).
  *
+ * A categoria mora no painel de filtros, não numa fileira de atalhos: o menu
+ * lista as categorias principais e, quando a escolhida tem filhas, um segundo
+ * menu aparece com elas (o JavaScript monta as opções a partir do JSON da
+ * árvore; sem script o servidor já entrega o menu da categoria da URL). O
+ * formulário envia para `/catalogo` e o controlador redireciona para o caminho
+ * canônico da categoria, para o endereço continuar sendo `/categoria/...`.
+ *
  * O estado continua na URL — cada filtro ativo aparece numa faixa de chips
  * removíveis, e a ordenação é um menu recolhido que também é um link.
  *
@@ -76,13 +83,36 @@ $url = static function (array $mudancas = []) use ($estado, $urlBase, $categoria
     return $urlBase . ($query === [] ? '' : '?' . http_build_query($query));
 };
 
+// Numa subcategoria o menu de categoria mostra a mãe (a filha é a escolha do
+// menu de subcategorias); no catálogo vale a categoria escolhida.
+$categoriaMenuSlug = $categoriaPagina !== null && $categoriaPagina['parent'] !== null
+    ? (string) $categoriaPagina['parent']['slug']
+    : (string) $estado['categoria'];
+
 $categoriaAtual = null;
 
 foreach ($categorias as $categoria) {
-    if ($categoria['slug'] === $estado['categoria']) {
+    if ($categoria['slug'] === $categoriaMenuSlug) {
         $categoriaAtual = $categoria;
     }
 }
+
+// Filhas por categoria principal: o site.js usa este mapa para montar o menu
+// de subcategorias na hora, sem consultar o servidor de novo.
+$arvoreCategorias = [];
+
+foreach ($categorias as $categoria) {
+    $arvoreCategorias[(string) $categoria['slug']] = array_map(
+        static fn (array $filha): array => [
+            'slug' => (string) $filha['slug'],
+            'name' => (string) $filha['name'],
+            'total' => (int) $filha['total'],
+        ],
+        $categoria['children']
+    );
+}
+
+$filhasDaCategoria = $categoriaAtual !== null ? $categoriaAtual['children'] : [];
 
 // Chips dos filtros ligados: cada um leva de volta ao catálogo sem ele.
 $ativos = [];
@@ -94,23 +124,8 @@ if ($estado['q'] !== '') {
     ];
 }
 
-if ($categoriaPagina === null && $categoriaAtual !== null) {
-    $ativos[] = [
-        'rotulo' => (string) $categoriaAtual['name'],
-        'href' => $url(['categoria' => '', 'sub' => '', 'pagina' => 1]),
-    ];
-}
-
-if ($categoriaAtual !== null && $estado['sub'] !== '') {
-    foreach ($categoriaAtual['children'] as $filha) {
-        if ($filha['slug'] === $estado['sub']) {
-            $ativos[] = [
-                'rotulo' => (string) $filha['name'],
-                'href' => $url(['sub' => '', 'pagina' => 1]),
-            ];
-        }
-    }
-}
+// Categoria e subcategoria não entram nos chips: elas ficam nos menus do
+// painel de filtros (e, na página da categoria, no caminho).
 
 if ($estado['tamanho'] !== '') {
     $ativos[] = ['rotulo' => 'Tamanho ' . $estado['tamanho'], 'href' => $url(['tamanho' => '', 'pagina' => 1])];
@@ -221,40 +236,7 @@ if ($resultado['paginas'] <= 7) {
 			<?php endif; ?>
 		</header>
 
-		<?php
-		// Atalhos de categoria: o catálogo inteiro e as categorias principais.
-		// Numa subcategoria, a mãe é quem fica marcada.
-		$categoriaAtiva = $categoriaPagina !== null
-			? (string) ($categoriaPagina['parent']['slug'] ?? $categoriaPagina['slug'])
-			: (string) $estado['categoria'];
-
-		// Numa busca o atalho não representa o que está na tela, então nenhum
-		// fica marcado.
-		$marcarAtalho = $estado['q'] === '';
-		?>
-		<nav class="catalog-subcats" aria-label="Categorias">
-			<a class="catalog-subcat" href="/catalogo"<?= $marcarAtalho && $categoriaAtiva === '' ? ' aria-current="page"' : '' ?>>
-				Todas <span class="catalog-subcat__count"><?= $totalDaLoja ?></span>
-			</a>
-
-			<?php foreach ($categorias as $categoria): ?>
-				<a class="catalog-subcat" href="/categoria/<?= $escape((string) $categoria['slug']) ?>"<?= $marcarAtalho && $categoriaAtiva === (string) $categoria['slug'] ? ' aria-current="true"' : '' ?>>
-					<?= $escape((string) $categoria['name']) ?> <span class="catalog-subcat__count"><?= (int) $categoria['total'] ?></span>
-				</a>
-			<?php endforeach; ?>
-		</nav>
-
-		<?php if ($categoriaPagina !== null && $categoriaPagina['children'] !== []): ?>
-			<nav class="catalog-subcats catalog-subcats--filhas" aria-label="Subcategorias de <?= $escape((string) $categoriaPagina['name']) ?>">
-				<a class="catalog-subcat" href="<?= $escape($urlBase) ?>" aria-current="page">Todas de <?= $escape((string) $categoriaPagina['name']) ?></a>
-
-				<?php foreach ($categoriaPagina['children'] as $filha): ?>
-					<a class="catalog-subcat" href="/categoria/<?= $escape((string) $categoriaPagina['slug']) ?>/<?= $escape((string) $filha['slug']) ?>">
-						<?= $escape((string) $filha['name']) ?> <span class="catalog-subcat__count"><?= (int) $filha['total'] ?></span>
-					</a>
-				<?php endforeach; ?>
-			</nav>
-		<?php endif; ?>
+		<script type="application/json" data-catalog-tree><?= json_encode($arvoreCategorias, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 
 		<div class="catalog__layout">
 			<details class="catalog-filters" data-catalog-filters open<?= $filtrosAtivos > 0 ? ' data-active' : '' ?>>
@@ -268,49 +250,48 @@ if ($resultado['paginas'] <= 7) {
 					<span class="catalog-filters__chevron" aria-hidden="true"></span>
 				</summary>
 
-				<form class="catalog-filters__body" action="<?= $escape($urlBase) ?>" method="get" data-filter-form>
+				<?php /* O formulário envia sempre para o catálogo: a categoria escolhida
+				   vira o caminho canônico no controlador, com os outros filtros na URL. */ ?>
+				<form class="catalog-filters__body" action="/catalogo" method="get" data-filter-form>
 					<?php if ($estado['ordem'] !== 'novidades'): ?>
 						<input type="hidden" name="ordem" value="<?= $escape((string) $estado['ordem']) ?>">
 					<?php endif; ?>
 
-					<?php /* Na página de categoria a busca e a categoria já estão no caminho e nos atalhos acima. */ ?>
-					<?php if ($categoriaPagina === null): ?>
-						<div class="catalog-field">
-							<label class="catalog-field__label" for="filtro-busca">Busca</label>
+					<div class="catalog-field">
+						<label class="catalog-field__label" for="filtro-busca">Busca</label>
 
-							<input class="catalog-field__input" id="filtro-busca" name="q" type="search" value="<?= $escape((string) $estado['q']) ?>" placeholder="Nome, cor, categoria…" maxlength="60" autocomplete="off">
-						</div>
+						<input class="catalog-field__input" id="filtro-busca" name="q" type="search" value="<?= $escape((string) $estado['q']) ?>" placeholder="Nome, cor, categoria…" maxlength="60" autocomplete="off">
+					</div>
 
-						<div class="catalog-field">
-							<label class="catalog-field__label" for="filtro-categoria">Categoria</label>
+					<div class="catalog-field">
+						<label class="catalog-field__label" for="filtro-categoria">Categoria</label>
 
-							<select class="catalog-field__select" id="filtro-categoria" name="categoria">
-								<option value="">Todas as camisetas (<?= $totalDaLoja ?>)</option>
+						<select class="catalog-field__select" id="filtro-categoria" name="categoria" data-catalog-category>
+							<option value="">Todas as camisetas (<?= $totalDaLoja ?>)</option>
 
-								<?php foreach ($categorias as $categoria): ?>
-									<option value="<?= $escape((string) $categoria['slug']) ?>"<?= $categoria['slug'] === $estado['categoria'] ? ' selected' : '' ?>>
-										<?= $escape((string) $categoria['name']) ?> (<?= (int) $categoria['total'] ?>)
-									</option>
-								<?php endforeach; ?>
-							</select>
-						</div>
-					<?php endif; ?>
+							<?php foreach ($categorias as $categoria): ?>
+								<option value="<?= $escape((string) $categoria['slug']) ?>"<?= $categoria['slug'] === $categoriaMenuSlug ? ' selected' : '' ?>>
+									<?= $escape((string) $categoria['name']) ?> (<?= (int) $categoria['total'] ?>)
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</div>
 
-					<?php if ($categoriaAtual !== null && $categoriaAtual['children'] !== []): ?>
-						<div class="catalog-field">
-							<label class="catalog-field__label" for="filtro-subcategoria">Subcategoria</label>
+					<?php /* Só aparece quando a categoria tem filhas; o site.js liga e
+					   desliga o campo conforme a escolha. */ ?>
+					<div class="catalog-field" data-catalog-subfield<?= $filhasDaCategoria === [] ? ' hidden' : '' ?>>
+						<label class="catalog-field__label" for="filtro-subcategoria">Subcategoria</label>
 
-							<select class="catalog-field__select" id="filtro-subcategoria" name="sub">
-								<option value="">Todas de <?= $escape((string) $categoriaAtual['name']) ?></option>
+						<select class="catalog-field__select" id="filtro-subcategoria" name="sub"<?= $filhasDaCategoria === [] ? ' disabled' : '' ?>>
+							<option value="">Todas nesta categoria</option>
 
-								<?php foreach ($categoriaAtual['children'] as $filha): ?>
-									<option value="<?= $escape((string) $filha['slug']) ?>"<?= $filha['slug'] === $estado['sub'] ? ' selected' : '' ?>>
-										<?= $escape((string) $filha['name']) ?> (<?= (int) $filha['total'] ?>)
-									</option>
-								<?php endforeach; ?>
-							</select>
-						</div>
-					<?php endif; ?>
+							<?php foreach ($filhasDaCategoria as $filha): ?>
+								<option value="<?= $escape((string) $filha['slug']) ?>"<?= $filha['slug'] === $estado['sub'] ? ' selected' : '' ?>>
+									<?= $escape((string) $filha['name']) ?> (<?= (int) $filha['total'] ?>)
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</div>
 
 					<?php if ($cores !== []): ?>
 						<div class="catalog-field">

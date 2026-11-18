@@ -823,12 +823,69 @@
         filtros.open = false;
     }
 
+    // Categoria do catálogo: o menu de subcategorias nasce escondido e aparece
+    // quando a categoria escolhida tem filhas. As opções saem do JSON da árvore
+    // que a view imprime, então o servidor não é consultado de novo.
+    var categoriaFiltro = document.querySelector('[data-catalog-category]');
+    var subcategoriaCampo = document.querySelector('[data-catalog-subfield]');
+    var subcategoriaFiltro = subcategoriaCampo ? subcategoriaCampo.querySelector('select') : null;
+    var arvoreCategorias = document.querySelector('[data-catalog-tree]');
+    var filhasPorCategoria = {};
+
+    if (arvoreCategorias) {
+        try {
+            filhasPorCategoria = JSON.parse(arvoreCategorias.textContent) || {};
+        } catch (erro) {
+            filhasPorCategoria = {};
+        }
+    }
+
+    var montarSubcategorias = function () {
+        if (!categoriaFiltro || !subcategoriaCampo || !subcategoriaFiltro) {
+            return false;
+        }
+
+        var filhas = filhasPorCategoria[categoriaFiltro.value] || [];
+        var escolhida = subcategoriaFiltro.value;
+
+        subcategoriaFiltro.textContent = '';
+
+        var todas = document.createElement('option');
+        todas.value = '';
+        todas.textContent = 'Todas nesta categoria';
+        subcategoriaFiltro.appendChild(todas);
+
+        filhas.forEach(function (filha) {
+            var opcao = document.createElement('option');
+            opcao.value = filha.slug;
+            opcao.textContent = filha.name + ' (' + filha.total + ')';
+            subcategoriaFiltro.appendChild(opcao);
+        });
+
+        // A escolha anterior só fica se ainda existir na categoria nova.
+        var mantem = filhas.some(function (filha) {
+            return filha.slug === escolhida;
+        });
+
+        subcategoriaFiltro.value = mantem ? escolhida : '';
+        subcategoriaCampo.hidden = filhas.length === 0;
+        subcategoriaFiltro.disabled = filhas.length === 0;
+
+        return filhas.length > 0;
+    };
+
     // Com JavaScript o formulário de filtros se envia sozinho quando um campo
     // muda; o botão "Aplicar filtros" continua lá para quem está sem script.
     var formFiltros = document.querySelector('[data-filter-form]');
 
     if (formFiltros) {
-        formFiltros.addEventListener('change', function () {
+        formFiltros.addEventListener('change', function (evento) {
+            // Categoria com filhas só abre o menu de subcategorias: quem envia é
+            // a escolha da subcategoria ou o botão Aplicar filtros.
+            if (evento.target === categoriaFiltro && montarSubcategorias()) {
+                return;
+            }
+
             if (typeof formFiltros.requestSubmit === 'function') {
                 formFiltros.requestSubmit();
             } else {
