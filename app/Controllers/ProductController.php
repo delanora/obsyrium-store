@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Database\Connection;
 use App\Repositories\ProductRepository;
+use App\Services\SizeGuideService;
 use App\Support\Navegacao;
 use App\Support\Price;
 
@@ -101,6 +102,9 @@ final class ProductController
             'stock' => $this->stock($estoqueTotal),
             'voltar' => $voltarDoProduto,
         ];
+
+        // Guia de medidas só entra na página quando a loja já mediu alguma peça.
+        $guia = (new SizeGuideService(Connection::get()))->visible();
 
         $title = sprintf('%s — Obsyrium Store', $nome);
         $content = $basePath . '/resources/views/product/show.php';

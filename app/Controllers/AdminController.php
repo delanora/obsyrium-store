@@ -16,6 +16,7 @@ use App\Services\LoginThrottle;
 use App\Services\OrderService;
 use App\Services\PageService;
 use App\Services\ProductAdminService;
+use App\Services\SizeGuideService;
 use App\Services\StockService;
 use App\Support\Csrf;
 use App\Support\Session;
@@ -418,6 +419,36 @@ final class AdminController
     public function pages(): void
     {
         $this->renderPages($this->admin());
+    }
+
+    /**
+     * Guia de medidas: largura e comprimento de cada tamanho, mostrados na
+     * página do produto quando houver medida preenchida.
+     */
+    public function sizeGuide(): void
+    {
+        $this->renderSizeGuide($this->admin());
+    }
+
+    public function saveSizeGuide(): void
+    {
+        $admin = $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $resultado = (new SizeGuideService(Connection::get()))->save($_POST);
+
+        if ($resultado['errors'] !== []) {
+            $this->renderSizeGuide($admin, $resultado['errors'], $resultado['values']);
+
+            return;
+        }
+
+        Session::flash('success', 'Guia de medidas salvo.');
+
+        $this->redirect('/admin/guia-de-medidas');
     }
 
     /**
@@ -1157,6 +1188,20 @@ final class AdminController
     }
 
     /**
+     * @param array<string, mixed> $admin
+     * @param list<string> $erros
+     * @param array<int, array{chest: string, length: string}> $valores
+     */
+    private function renderSizeGuide(array $admin, array $erros = [], array $valores = []): void
+    {
+        $this->render('medidas', 'Guia de medidas — Administração Obsyrium', $admin, 'medidas', [
+            'medidas' => (new SizeGuideService(Connection::get()))->rows(),
+            'erros' => $erros,
+            'valores' => $valores,
+        ]);
+    }
+
+    /**
      * Aba das páginas institucionais: lista as páginas, mostra a escolhida e
      * os blocos dela prontos para editar.
      *
@@ -1348,6 +1393,7 @@ final class AdminController
         $adminHero = $contexto['hero'] ?? [];
         $adminHeroLimite = (string) ($contexto['heroLimite'] ?? '');
         $adminHeroMax = (int) ($contexto['heroMax'] ?? 0);
+        $adminMedidas = $contexto['medidas'] ?? [];
         $adminPaginas = $contexto['paginas'] ?? [];
         $adminPagina = $contexto['pagina'] ?? null;
         $adminBlocoErro = (int) ($contexto['blocoErro'] ?? 0);

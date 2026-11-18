@@ -39,6 +39,7 @@ $adminItens = [
 	'estoque' => ['rotulo' => 'Estoque', 'href' => '/admin/estoque'],
 	'categorias' => ['rotulo' => 'Categorias', 'href' => '/admin/categorias'],
 	'paginas' => ['rotulo' => 'Páginas', 'href' => '/admin/paginas'],
+	'medidas' => ['rotulo' => 'Guia de medidas', 'href' => '/admin/guia-de-medidas'],
 	'contato' => ['rotulo' => 'Contato', 'href' => '/admin/contato'],
 	'mensagens' => ['rotulo' => 'Mensagens', 'href' => '/admin/mensagens'],
 ];

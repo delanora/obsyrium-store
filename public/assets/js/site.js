@@ -1101,6 +1101,40 @@
         });
     });
 
+    // Guia de medidas do produto: a tabela abre numa janela pelo botão do
+    // tamanho e fecha pelo ×, pelo fundo escuro e pelo Esc, com o foco de volta
+    // no botão ao terminar.
+    Array.prototype.forEach.call(document.querySelectorAll('[data-guide-dialog]'), function (janela) {
+        var abridor = document.querySelector('[data-guide-open]');
+
+        if (!abridor || typeof janela.showModal !== 'function') {
+            return;
+        }
+
+        abridor.addEventListener('click', function () {
+            janela.showModal();
+        });
+
+        Array.prototype.forEach.call(janela.querySelectorAll('[data-guide-close]'), function (botao) {
+            botao.addEventListener('click', function () {
+                janela.close();
+            });
+        });
+
+        janela.addEventListener('keydown', function (evento) {
+            if (evento.key === 'Escape') {
+                evento.preventDefault();
+                janela.close();
+            }
+        });
+
+        janela.addEventListener('click', function (evento) {
+            if (evento.target === janela) {
+                janela.close();
+            }
+        });
+    });
+
     // Marca para o script inline que o comportamento carregou.
     window.__obsyriumReady = true;
 })();

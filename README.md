@@ -464,6 +464,7 @@ Rota `GET /produto/{slug}`, atendida por `App\Controllers\ProductController::sho
 - **Arrastar no celular**: `touchstart`/`touchend` na foto grande trocam para a anterior ou a seguinte quando o movimento passa de 45 px e é mais horizontal que vertical, para não atrapalhar a rolagem da página. A troca não dá a volta na lista e é anunciada por uma região `role="status"` (`.visually-hidden`): "Foto 2 de 4".
 - O estilo fica em `public/assets/css/product.css`, carregado junto das demais folhas no layout.
 - O botão de compra segue desabilitado até o carrinho existir; a dica abaixo dele informa isso ao visitante.
+- **Guia de medidas**: abaixo do seletor de tamanho, o link "Guia de medidas" abre uma janela com a tabela de tamanhos (largura e comprimento em cm). Os dados vêm de `size_guides`, pelo `SizeGuideService::visible()`, e a janela só é renderizada quando pelo menos um tamanho tem medida — guia vazio não aparece na loja. Fecha pelo ×, pelo Esc e pelo clique no fundo, devolvendo o foco ao link.
 - Os cards da vitrine (`HomeController::toCard`) apontam para `/produto/{slug}`.
 
 ## 19. Cadastro e login
@@ -711,3 +712,9 @@ As seis páginas institucionais ficam no banco e são editadas no painel: Sobre,
 - **No painel**: `GET /admin/paginas` é a aba **Páginas**, com abas por página e o endereço na URL (`?pagina=ID`). O primeiro formulário salva o cabeçalho (`POST /admin/paginas/{id}`); cada bloco tem o próprio formulário (`POST /admin/paginas/{id}/blocos/{block}`), as setas que sobem e descem (`/subir` e `/descer`), o botão de apagar (`/remover`) e o **Novo bloco** no fim (`POST /admin/paginas/{id}/blocos`, cria um bloco vazio para preencher). Toda escrita exige CSRF e responde 303 de volta para a mesma página; a ordem é renumerada de 0 a n-1 a cada movimento.
 - **Validação**: título da página de 2 a 140 caracteres, linha de cima até 60, introdução até 400, nota até 500, título do bloco até 160 e texto até 6000. O link exige rótulo e endereço juntos, aceita só `/`, `#` ou `http(s)` e é recusado se vier pela metade.
 - `pages.css` já desenhava `page__block`, `page__note` e o bloco `faq*` (pergunta com `+`/`−` no CSS); a view nova reaproveita tudo. O painel ganhou `admin-pages*` em `admin.css` para o cabeçalho, os cards de bloco e a linha de ações.
+
+### Guia de medidas
+
+- `size_guides` (migration `2026_11_18_000022_create_size_guides_table.php`) tem uma linha por tamanho (PP a XG), com `chest_cm` e `length_cm` **nulos** — as medidas são da peça real, quem mede é a loja.
+- `GET /admin/guia-de-medidas` é a aba **Guia de medidas**, com os dois campos por tamanho e um aviso enquanto nada estiver preenchido; `POST` para a mesma rota salva (`AdminController::saveSizeGuide()`). O `SizeGuideService` valida número inteiro entre 20 e 150 cm, aceita campo vazio e grava tudo em transação; texto e valor fora da faixa voltam com o formulário preenchido, e sem CSRF é 403.
+- Na loja, `ProductController::show()` passa `$guia` com só os tamanhos que têm alguma medida; a medida que falta vira "—" na tabela. Enquanto todas estiverem vazias, nem o link nem a janela são renderizados.

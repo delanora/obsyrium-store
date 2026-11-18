@@ -98,6 +98,8 @@ return static function (Router $router): void {
     $router->post('/admin/categorias/{id}/subir', [AdminController::class, 'moveCategoryUp']);
     $router->post('/admin/categorias/{id}/descer', [AdminController::class, 'moveCategoryDown']);
     $router->post('/admin/categorias/{id}', [AdminController::class, 'updateCategory']);
+    $router->get('/admin/guia-de-medidas', [AdminController::class, 'sizeGuide']);
+    $router->post('/admin/guia-de-medidas', [AdminController::class, 'saveSizeGuide']);
     $router->get('/admin/paginas', [AdminController::class, 'pages']);
     $router->post('/admin/paginas/{id}/blocos', [AdminController::class, 'addPageBlock']);
     $router->post('/admin/paginas/{id}/blocos/{block}/subir', [AdminController::class, 'movePageBlockUp']);

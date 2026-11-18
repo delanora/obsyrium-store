@@ -12,6 +12,7 @@ use App\Support\Csrf;
  * voltar para esta mesma página depois de gravar no carrinho.
  *
  * @var array<string, mixed> $product
+ * @var list<array{id: int, label: string, chest: int|null, length: int|null}> $guia
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -123,10 +124,50 @@ $principal = $product['images'][0];
 						</div>
 					</fieldset>
 
+					<?php if ($guia !== []): ?>
+						<p class="product-info__guide-line">
+							<button class="product-info__guide" type="button" data-guide-open aria-haspopup="dialog">Guia de medidas</button>
+						</p>
+					<?php endif; ?>
+
 					<p class="product-info__stock product-info__stock--<?= $escape($product['stock']['state']) ?>"><?= $escape($product['stock']['label']) ?></p>
 
 					<button class="button product-info__buy" type="submit"<?= $product['soldOut'] ? ' disabled aria-describedby="tamanho-ajuda"' : '' ?>>Adicionar ao carrinho</button>
 				</form>
+
+				<?php if ($guia !== []): ?>
+					<dialog class="product-guide" data-guide-dialog aria-labelledby="guia-titulo">
+						<div class="product-guide__head">
+							<h2 class="product-guide__title" id="guia-titulo">Guia de medidas</h2>
+
+							<button class="product-guide__close" type="button" data-guide-close aria-label="Fechar o guia de medidas">
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+							</button>
+						</div>
+
+						<table class="product-guide__table">
+							<caption class="visually-hidden">Medidas da camiseta em centímetros</caption>
+							<thead>
+								<tr>
+									<th scope="col">Tamanho</th>
+									<th scope="col">Largura</th>
+									<th scope="col">Comprimento</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ($guia as $medida): ?>
+									<tr>
+										<th scope="row"><?= $escape($medida['label']) ?></th>
+										<td><?= $medida['chest'] !== null ? $medida['chest'] . ' cm' : '—' ?></td>
+										<td><?= $medida['length'] !== null ? $medida['length'] . ' cm' : '—' ?></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+
+						<p class="product-guide__hint">Medidas aproximadas da peça estendida na mesa, com tolerância de 2 cm. Largura de uma axila à outra; comprimento do ombro até a barra.</p>
+					</dialog>
+				<?php endif; ?>
 
 				<p class="product-info__hint" id="tamanho-ajuda">
 					<?= $product['soldOut'] ? 'Todas as numerações estão esgotadas.' : 'Tamanhos riscados estão esgotados. Escolha um disponível para adicionar ao carrinho.' ?>
