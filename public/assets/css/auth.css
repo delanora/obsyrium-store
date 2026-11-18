@@ -109,18 +109,17 @@
     text-align: center;
 }
 
-/* Mesma fonte serifada do título "Entrar", mantendo o tom apagado que o
-   "Finalizar compra" já tinha, só maior. */
+/* "Finalizar compra" fica no rótulo pequeno em caixa alta (sans), e o convite
+   abaixo volta na serifada do site, em caixa mista e um pouco menor. */
 .auth-gate__title {
     margin: 0;
-    max-width: 34rem;
-    color: var(--color-text-muted);
+    max-width: 38rem;
     font-family: var(--font-display);
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: var(--font-weight-display);
-    line-height: var(--line-height-tight);
-    letter-spacing: var(--letter-spacing-display);
-    text-transform: uppercase;
+    line-height: var(--line-height-snug);
+    letter-spacing: 0;
+    text-transform: none;
     text-wrap: balance;
 }
 
@@ -191,6 +190,50 @@
     .auth-gate__card--register .auth__submit {
         grid-column: 1 / -1;
     }
+}
+
+/* Cadastro recolhido: aparece só o nome, os termos e o botão. O resto entra
+   quando o cliente começa a preencher o nome, com a transição de max-height.
+   O estado inicial depende de html.js, então sem JavaScript os campos ficam
+   todos visíveis. */
+.auth-gate__more {
+    display: grid;
+    grid-column: 1 / -1;
+    gap: var(--space-4);
+}
+
+.js .auth-gate__more {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition:
+        max-height 320ms var(--ease-standard),
+        opacity 220ms var(--ease-standard);
+}
+
+.js .auth-gate__more.is-open {
+    max-height: 40rem;
+    overflow: visible;
+    opacity: 1;
+}
+
+@media (min-width: 60.01em) {
+    .auth-gate__more {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Enquanto o cadastro está recolhido, os dois cards ficam com a mesma altura. */
+.auth-gate__cards.is-collapsed {
+    align-items: stretch;
+}
+
+.auth-gate__cards.is-collapsed .auth-gate__card--login {
+    align-self: stretch;
+}
+
+.auth-gate__card--register.is-collapsed {
+    justify-content: center;
 }
 
 /* Inputs iguais em todas as telas de conta: 44px de altura, mesmo padding,

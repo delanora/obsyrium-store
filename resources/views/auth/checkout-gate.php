@@ -15,11 +15,16 @@ use App\Support\Csrf;
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? ''));
+
+// Depois de uma tentativa recusada o cadastro já abre inteiro, para o cliente
+// ver o campo que precisa corrigir em vez de reabrir o formulário na mão.
+$camposAbertos = array_diff(array_keys($errors), ['credentials']) !== [];
 ?>
 <section class="auth auth--gate">
 	<div class="container auth__inner">
 		<header class="auth-gate__head">
-			<h1 class="auth-gate__title">Finalizar compra</h1>
+			<p class="auth__eyebrow">Finalizar compra</p>
+			<h1 class="auth-gate__title">Para prosseguir com a compra você deve fazer o login ou cadastrar-se</h1>
 		</header>
 
 		<div class="auth-gate__cards">
@@ -77,6 +82,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 						<?php endif; ?>
 					</div>
 
+					<div class="auth-gate__more<?= $camposAbertos ? ' is-open' : '' ?>" data-gate-more<?= $camposAbertos ? ' data-open="1"' : '' ?>>
 					<div class="field">
 						<label class="field__label" for="gate-cpf">CPF</label>
 						<input class="field__input" id="gate-cpf" name="cpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" data-cpf-mask required value="<?= $valor('cpf') ?>">
@@ -120,6 +126,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 					<?php if (!isset($errors['password'])): ?>
 						<p class="field__hint auth-gate__field--full">Mínimo de 8 caracteres.</p>
 					<?php endif; ?>
+					</div>
 
 					<div class="field field--check auth-gate__field--full">
 						<input class="field__check" id="gate-terms" name="terms" type="checkbox" value="1"<?= $valor('terms') !== '' ? ' checked' : '' ?>>

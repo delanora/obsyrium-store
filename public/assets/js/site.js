@@ -1135,6 +1135,57 @@
         });
     });
 
+    // Porta do checkout: o cadastro mostra só o nome até o cliente começar a
+    // preencher; aí os outros campos aparecem com a transição do CSS. Um clique
+    // fora do card recolhe de novo enquanto os campos estiverem vazios.
+    var gateMore = document.querySelector('[data-gate-more]');
+    var gateName = document.getElementById('gate-name');
+
+    if (gateMore && gateName && gateMore.getAttribute('data-open') !== '1') {
+        var gateCards = gateMore.closest('.auth-gate__cards');
+        var gateCard = gateMore.closest('.auth-gate__card--register');
+        var gateFields = gateMore.querySelectorAll('input');
+
+        var recolherCadastro = function (recolhido) {
+            gateMore.classList.toggle('is-open', !recolhido);
+            gateMore.toggleAttribute('inert', recolhido);
+
+            if (gateCards) {
+                gateCards.classList.toggle('is-collapsed', recolhido);
+            }
+
+            if (gateCard) {
+                gateCard.classList.toggle('is-collapsed', recolhido);
+            }
+        };
+
+        var temAlgoPreenchido = function () {
+            return Array.prototype.some.call(gateFields, function (campo) {
+                return campo.value.trim() !== '' || (campo.type === 'checkbox' && campo.checked);
+            });
+        };
+
+        recolherCadastro(true);
+
+        gateName.addEventListener('focus', function () {
+            recolherCadastro(false);
+        });
+
+        document.addEventListener('click', function (evento) {
+            if (!gateMore.classList.contains('is-open')) {
+                return;
+            }
+
+            if (gateCard && gateCard.contains(evento.target)) {
+                return;
+            }
+
+            if (!temAlgoPreenchido()) {
+                recolherCadastro(true);
+            }
+        });
+    }
+
     // Marca para o script inline que o comportamento carregou.
     window.__obsyriumReady = true;
 })();
