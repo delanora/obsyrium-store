@@ -81,6 +81,7 @@ final class ProductAdminService
                     p.category_id,
                     p.color,
                     p.material,
+                    p.weight_grams,
                     p.description,
                     p.price_cents,
                     p.compare_price_cents,
@@ -116,6 +117,7 @@ final class ProductAdminService
             'category_ids' => $categorias,
             'color' => (string) $linha['color'],
             'material' => (string) $linha['material'],
+            'weight_grams' => (int) ($linha['weight_grams'] ?? 300),
             'description' => trim((string) ($linha['description'] ?? '')),
             'price_cents' => (int) $linha['price_cents'],
             'compare_price_cents' => $linha['compare_price_cents'] !== null ? (int) $linha['compare_price_cents'] : null,
@@ -175,14 +177,15 @@ final class ProductAdminService
 
         try {
             $this->pdo->prepare(
-                'INSERT INTO products (category_id, name, slug, color, material, description, price_cents, compare_price_cents, is_active)
-                 VALUES (:category, :name, :slug, :color, :material, :description, :price, :compare, :active)'
+                'INSERT INTO products (category_id, name, slug, color, material, weight_grams, description, price_cents, compare_price_cents, is_active)
+                 VALUES (:category, :name, :slug, :color, :material, :weight, :description, :price, :compare, :active)'
             )->execute([
                 ':category' => $dadosNormalizados['categories'][0],
                 ':name' => $dadosNormalizados['name'],
                 ':slug' => $dadosNormalizados['slug'],
                 ':color' => $dadosNormalizados['color'],
                 ':material' => $dadosNormalizados['material'],
+                ':weight' => $dadosNormalizados['weight'],
                 ':description' => $dadosNormalizados['description'],
                 ':price' => $dadosNormalizados['price'],
                 ':compare' => $dadosNormalizados['compare'],
@@ -258,6 +261,7 @@ final class ProductAdminService
                         slug = :slug,
                         color = :color,
                         material = :material,
+                        weight_grams = :weight,
                         description = :description,
                         price_cents = :price,
                         compare_price_cents = :compare,
@@ -269,6 +273,7 @@ final class ProductAdminService
                 ':slug' => $dadosNormalizados['slug'],
                 ':color' => $dadosNormalizados['color'],
                 ':material' => $dadosNormalizados['material'],
+                ':weight' => $dadosNormalizados['weight'],
                 ':description' => $dadosNormalizados['description'],
                 ':price' => $dadosNormalizados['price'],
                 ':compare' => $dadosNormalizados['compare'],
@@ -737,6 +742,7 @@ final class ProductAdminService
         }
 
         $descricao = trim((string) ($dados['description'] ?? ''));
+        $pesoBruto = trim((string) ($dados['weight'] ?? ''));
         $precoBruto = trim((string) ($dados['price'] ?? ''));
         $comparativoBruto = trim((string) ($dados['compare_price'] ?? ''));
         $ativo = isset($dados['is_active']) ? 1 : 0;
@@ -749,6 +755,7 @@ final class ProductAdminService
             'slug' => $slug,
             'color' => $cor,
             'material' => $material,
+            'weight' => $pesoBruto,
             'description' => $descricao,
             'price' => $precoBruto,
             'compare_price' => $comparativoBruto,
@@ -784,6 +791,16 @@ final class ProductAdminService
             $erros[] = 'A descrição vai até 2000 caracteres.';
         }
 
+        // Peso da peça embalada, em gramas: entra na cotação dos Correios e no
+        // padrão de 300 g (o mínimo que PAC e SEDEX aceitam).
+        $peso = filter_var($pesoBruto, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 30000]]);
+
+        if ($pesoBruto === '') {
+            $peso = 300;
+        } elseif ($peso === false) {
+            $erros[] = 'O peso do pacote vai de 1 a 30000 gramas.';
+        }
+
         $preco = $this->cents($precoBruto);
 
         if ($preco === null || $preco <= 0) {
@@ -810,6 +827,7 @@ final class ProductAdminService
                 'slug' => $slug,
                 'color' => $cor,
                 'material' => $material,
+                'weight' => (int) $peso,
                 'description' => $descricao === '' ? null : $descricao,
                 'price' => (int) $preco,
                 'compare' => $comparativo,

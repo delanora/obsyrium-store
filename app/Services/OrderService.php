@@ -129,7 +129,14 @@ final class OrderService
                 $pecas += (int) $item['quantity'];
             }
 
-            $opcao = $this->shippingOption($endereco, $subtotal, $shippingKey);
+            $frete = new ShippingService($this->pdo);
+            $opcao = $this->shippingOption(
+                $endereco,
+                $subtotal,
+                $shippingKey,
+                $frete->weightForItems($itens),
+                $frete
+            );
 
             if ($opcao === null) {
                 $this->pdo->rollBack();
@@ -368,26 +375,44 @@ final class OrderService
     }
 
     /**
-     * A forma de entrega escolhida, conferida contra a tabela do estado do
-     * endereço. Sem escolha, vale a entrega padrão; escolha inválida devolve
-     * null e o pedido não fecha — melhor parar do que gravar frete errado.
+     * A forma de entrega escolhida, conferida contra o CEP do endereço e o peso
+     * do carrinho. Sem escolha, vale a primeira opção (PAC, quando a cotação
+     * dos Correios está ligada); escolha inválida devolve null e o pedido não
+     * fecha — melhor parar do que gravar frete errado.
      *
      * @param array<string, mixed> $endereco
      *
      * @return array{key: string, label: string, price_cents: int, price_label: string, days: string, note: string}|null
      */
-    private function shippingOption(array $endereco, int $subtotal, string $shippingKey): ?array
-    {
-        $servico = new ShippingService($this->pdo);
-        $estado = (string) ($endereco['state'] ?? '');
+    private function shippingOption(
+        array $endereco,
+        int $subtotal,
+        string $shippingKey,
+        int $weightGrams,
+        ShippingService $servico
+    ): ?array {
+        $opcoes = $servico->optionsForCep(
+            (string) ($endereco['postal_code'] ?? ''),
+            $subtotal,
+            $weightGrams,
+            (string) ($endereco['state'] ?? '')
+        );
 
-        if ($shippingKey === '') {
-            $opcoes = $servico->optionsFor($estado, $subtotal);
-
-            return $opcoes[0] ?? null;
+        if ($opcoes === []) {
+            return null;
         }
 
-        return $servico->option($estado, $shippingKey, $subtotal);
+        if ($shippingKey === '') {
+            return $opcoes[0];
+        }
+
+        foreach ($opcoes as $opcao) {
+            if ($opcao['key'] === $shippingKey) {
+                return $opcao;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -513,6 +538,7 @@ final class OrderService
                     p.name,
                     p.slug,
                     p.price_cents,
+                    p.weight_grams,
                     p.is_active,
                     COALESCE(s.quantity, 0) AS stock_quantity,
                     COALESCE(s.reserved, 0) AS stock_reserved

@@ -154,6 +154,7 @@ final class CartRepository
                     p.name,
                     p.slug,
                     p.price_cents,
+                    p.weight_grams,
                     p.is_active,
                     COALESCE(s.quantity, 0) - COALESCE(s.reserved, 0) AS available,
                     (SELECT i.path FROM product_images i

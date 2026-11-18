@@ -17,6 +17,7 @@ use App\Support\Csrf;
  * @var list<string> $adminEstados
  * @var list<string> $adminErros
  * @var array<string, mixed> $adminValores
+ * @var array{cep: string, opcoes: list<array<string, mixed>>, erro: string}|null $adminTeste
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -37,6 +38,15 @@ foreach ($taxas as $taxa) {
 		$comPreco++;
 	}
 }
+
+$modo = (string) ($valores['mode'] ?? $adminFreteConfig['mode']);
+$origem = (string) ($valores['origin_postal_code'] ?? $adminFreteConfig['origin_postal_code']);
+$usuario = (string) ($valores['correios_user'] ?? $adminFreteConfig['correios_user']);
+$contrato = (string) ($valores['correios_contract'] ?? $adminFreteConfig['correios_contract']);
+$dr = (string) ($valores['correios_dr'] ?? ((int) $adminFreteConfig['correios_dr'] > 0 ? (string) $adminFreteConfig['correios_dr'] : ''));
+$pesoPadrao = (string) ($valores['default_weight'] ?? (string) $adminFreteConfig['default_weight']);
+$senhaMarcada = $adminFreteConfig['correios_password_set'];
+$correiosLigado = $modo === 'correios';
 ?><p class="admin-crumb">
 	<a href="/admin">Painel</a>
 	<span aria-hidden="true">/</span>
@@ -47,11 +57,13 @@ foreach ($taxas as $taxa) {
 	<div>
 		<p class="admin-head__eyebrow">Loja</p>
 		<h1 class="admin-head__title">Frete e entrega</h1>
-		<p class="admin-head__text">
-			Valor e prazo por estado, frete grátis a partir de um valor e retirada na loja.
-			<?= $comPreco > 0
-				? sprintf('%d de %d estados com frete cobrado.', $comPreco, count($taxas))
-				: 'Hoje todos os estados estão com frete grátis e prazo a combinar.' ?>
+					<p class="admin-head__text">
+			Frete calculado pelo CEP do endereço: cotação de PAC e SEDEX nos Correios ou a tabela por estado, mais frete grátis e retirada na loja.
+			<?= $correiosLigado
+				? 'Hoje o cálculo automático pelos Correios está ligado.'
+				: ($comPreco > 0
+					? sprintf('%d de %d estados com frete cobrado.', $comPreco, count($taxas))
+					: 'Hoje todos os estados estão com frete grátis e prazo a combinar.') ?>
 		</p>
 	</div>
 
@@ -112,6 +124,60 @@ foreach ($taxas as $taxa) {
 			<input type="checkbox" name="pickup" value="1"<?= $retirada ? ' checked' : '' ?>>
 			<span>Oferecer retirada na loja (sem frete) no checkout</span>
 		</label>
+	</section>
+
+	<section class="admin-panel" aria-labelledby="frete-calculo">
+		<h2 class="admin-panel__title" id="frete-calculo">Cálculo automático (Correios)</h2>
+		<p class="admin-note">
+			Com a cotação ligada, o carrinho e o checkout pedem preço e prazo de PAC e SEDEX para o CEP do endereço,
+			usando o peso das peças. É preciso ter contrato com os Correios e as credenciais do CWS
+			(usuário, senha, contrato e DR). A senha fica guardada cifrada e não é exibida de volta.
+			Se a cotação falhar, o cliente vê a tabela por estado abaixo — nunca fica sem entrega.
+		</p>
+
+		<div class="admin-frete__regras">
+			<div class="field">
+				<label class="field__label" for="mode">Como calcular o frete</label>
+				<select class="field__input" id="mode" name="mode">
+					<option value="estado"<?= $modo !== 'correios' ? ' selected' : '' ?>>Tabela por estado</option>
+					<option value="correios"<?= $modo === 'correios' ? ' selected' : '' ?>>Correios (PAC e SEDEX)</option>
+				</select>
+			</div>
+
+			<div class="field">
+				<label class="field__label" for="origin-postal-code">CEP de origem</label>
+				<input class="field__input" id="origin-postal-code" name="origin_postal_code" type="text" inputmode="numeric" maxlength="9" autocomplete="off" placeholder="01234-567" value="<?= $escape($origem) ?>">
+				<p class="field__hint">De onde as peças saem. Obrigatório com a cotação ligada.</p>
+			</div>
+
+			<div class="field">
+				<label class="field__label" for="correios-user">Usuário do CWS</label>
+				<input class="field__input" id="correios-user" name="correios_user" type="text" maxlength="60" autocomplete="off" value="<?= $escape($usuario) ?>">
+			</div>
+
+			<div class="field">
+				<label class="field__label" for="correios-password">Senha do CWS</label>
+				<input class="field__input" id="correios-password" name="correios_password" type="password" maxlength="120" autocomplete="new-password" placeholder="<?= $senhaMarcada ? 'Senha guardada — deixe vazio para manter' : 'A senha do CWS' ?>">
+				<p class="field__hint">Em branco mantém a senha que já está gravada.</p>
+			</div>
+
+			<div class="field">
+				<label class="field__label" for="correios-contract">Contrato</label>
+				<input class="field__input" id="correios-contract" name="correios_contract" type="text" maxlength="20" autocomplete="off" value="<?= $escape($contrato) ?>">
+			</div>
+
+			<div class="field">
+				<label class="field__label" for="correios-dr">DR</label>
+				<input class="field__input" id="correios-dr" name="correios_dr" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0" value="<?= $escape($dr) ?>">
+				<p class="field__hint">Número da DR do contrato. Sem ele, deixe 0.</p>
+			</div>
+
+			<div class="field">
+				<label class="field__label" for="default-weight">Peso padrão do pacote (g)</label>
+				<input class="field__input" id="default-weight" name="default_weight" type="text" inputmode="numeric" maxlength="5" autocomplete="off" value="<?= $escape($pesoPadrao) ?>">
+				<p class="field__hint">Usado quando o produto não tem peso. O mínimo dos Correios é 300 g.</p>
+			</div>
+		</div>
 	</section>
 
 	<section class="admin-panel" aria-labelledby="frete-tabela">
@@ -190,3 +256,36 @@ foreach ($taxas as $taxa) {
 		<button class="button" type="submit">Salvar frete</button>
 	</p>
 </form>
+
+<section class="admin-panel admin-frete__teste" aria-labelledby="frete-teste">
+	<h2 class="admin-panel__title" id="frete-teste">Testar um CEP</h2>
+	<p class="admin-note">Faz a mesma conta do carrinho, com o CEP digitado e o peso padrão do pacote. Use para conferir as credenciais antes de abrir a loja.</p>
+
+	<form class="admin-frete__teste-form" action="/admin/frete" method="get">
+		<div class="field">
+			<label class="field__label" for="teste-cep">CEP de destino</label>
+			<input class="field__input" id="teste-cep" name="teste_cep" type="text" inputmode="numeric" maxlength="9" autocomplete="off" placeholder="01234-567" value="<?= $escape($adminTeste['cep'] ?? '') ?>" required>
+		</div>
+
+		<button class="button button--ghost" type="submit">Calcular</button>
+	</form>
+
+	<?php if ($adminTeste !== null): ?>
+		<?php if ($adminTeste['opcoes'] === []): ?>
+			<p class="admin-frete__teste-erro" role="alert">
+				Não foi possível calcular para <?= $escape($adminTeste['cep']) ?>.
+				<?= $adminTeste['erro'] !== '' ? $escape($adminTeste['erro']) : 'Confira o CEP.' ?>
+			</p>
+		<?php else: ?>
+			<ul class="admin-frete__teste-lista">
+				<?php foreach ($adminTeste['opcoes'] as $opcao): ?>
+					<li>
+						<span class="admin-frete__teste-nome"><?= $escape((string) $opcao['label']) ?></span>
+						<span class="admin-frete__teste-prazo"><?= $escape((string) $opcao['days']) ?></span>
+						<span class="admin-frete__teste-preco"><?= $escape((string) $opcao['price_label']) ?></span>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		<?php endif; ?>
+	<?php endif; ?>
+</section>

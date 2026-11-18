@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Support\Cep;
 use App\Support\Csrf;
 use App\Support\Price;
 
@@ -12,8 +13,13 @@ use App\Support\Price;
  * Cada item traz o próprio formulário de quantidade (enviado sozinho quando o
  * número muda, pelo site.js) e de remoção, que volta para o carrinho.
  *
+ * Abaixo da lista, o cálculo de frete por CEP: o formulário volta para
+ * /carrinho?cep=... e o controller entrega as opções já com preço e prazo.
+ *
  * @var list<array<string, mixed>> $itens
  * @var int $limite
+ * @var string $freteCep
+ * @var list<array{key: string, label: string, price_cents: int, price_label: string, days: string, note: string}> $freteOpcoes
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -91,6 +97,48 @@ $totalCentavos = array_sum(array_map(
 
 				<a class="button cart-page__checkout" href="/checkout">Finalizar compra</a>
 			</div>
+
+			<section class="cart-shipping" aria-labelledby="cart-frete">
+				<h2 class="cart-shipping__title" id="cart-frete">Calcular frete</h2>
+				<p class="cart-shipping__text">Informe o CEP de entrega para ver o frete e o prazo. O valor final aparece de novo no checkout.</p>
+
+				<form class="cart-shipping__form" action="/carrinho" method="get">
+					<label class="visually-hidden" for="frete-cep">CEP de entrega</label>
+					<input
+						class="field__input cart-shipping__input"
+						id="frete-cep"
+						name="cep"
+						type="text"
+						inputmode="numeric"
+						autocomplete="postal-code"
+						maxlength="9"
+						placeholder="01234-567"
+						value="<?= $escape(Cep::format($freteCep)) ?>"
+						required
+					>
+					<button class="button button--ghost" type="submit">Calcular</button>
+				</form>
+
+				<?php if ($freteCep !== ''): ?>
+					<?php if ($freteOpcoes === []): ?>
+						<p class="cart-shipping__error" role="alert">Não encontramos esse CEP. Confira os oito dígitos e tente de novo.</p>
+					<?php else: ?>
+						<p class="cart-shipping__caption">Entrega para o CEP <?= $escape(Cep::format($freteCep)) ?></p>
+
+						<ul class="cart-shipping__list">
+							<?php foreach ($freteOpcoes as $opcao): ?>
+								<li class="cart-shipping__option">
+									<span class="cart-shipping__label"><?= $escape($opcao['label']) ?></span>
+									<span class="cart-shipping__days"><?= $escape($opcao['days']) ?></span>
+									<span class="cart-shipping__price"><?= $escape($opcao['price_label']) ?></span>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+
+						<p class="cart-shipping__note">O frete é confirmado no checkout, com o endereço escolhido.</p>
+					<?php endif; ?>
+				<?php endif; ?>
+			</section>
 		<?php endif; ?>
 	</div>
 </section>

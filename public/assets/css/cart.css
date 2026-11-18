@@ -662,3 +662,95 @@
         animation: none;
     }
 }
+
+/* Frete por CEP na própria página do carrinho. */
+.cart-shipping {
+    max-width: 34rem;
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+}
+
+.cart-shipping__title {
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-display);
+    font-size: var(--font-size-sm);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.cart-shipping__text {
+    margin: 0 0 var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.cart-shipping__form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: flex-start;
+}
+
+.cart-shipping__input {
+    max-width: 11rem;
+}
+
+.cart-shipping__caption {
+    margin: var(--space-4) 0 var(--space-2);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.cart-shipping__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cart-shipping__option {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--space-1) var(--space-3);
+    align-items: baseline;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg-alt);
+    font-size: var(--font-size-sm);
+}
+
+.cart-shipping__days {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.cart-shipping__price {
+    color: var(--color-accent, #c9a063);
+    font-family: var(--font-display);
+}
+
+.cart-shipping__note {
+    margin: var(--space-3) 0 0;
+    color: var(--color-text-subtle, var(--color-text-muted));
+    font-size: var(--font-size-xs);
+}
+
+.cart-shipping__error {
+    margin: var(--space-3) 0 0;
+    color: var(--color-danger, #e05252);
+    font-size: var(--font-size-sm);
+}
+
+@media (max-width: 30rem) {
+    .cart-shipping__option {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .cart-shipping__days {
+        grid-column: 1 / -1;
+    }
+}

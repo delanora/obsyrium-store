@@ -296,6 +296,8 @@ final class CartService
                 'active' => (int) $linha['is_active'] === 1,
                 'price' => Price::format((int) $linha['price_cents']),
                 'price_cents' => (int) $linha['price_cents'],
+                // Peso da peça embalada: é a soma disso que vai para os Correios.
+                'weight_grams' => (int) ($linha['weight_grams'] ?? 0),
                 'image' => $imagem !== '' ? $imagem : self::FALLBACK_IMAGE,
                 'alt' => (string) ($linha['image_alt'] ?? ''),
             ];

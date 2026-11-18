@@ -421,6 +421,12 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 			</div>
 		</div>
 
+		<div class="field">
+			<label class="field__label" for="weight">Peso do pacote (gramas)</label>
+			<input class="field__input" id="weight" name="weight" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" value="<?= $escape($valor('weight', $novo ? '300' : (string) $adminProduto['weight_grams'])) ?>">
+			<p class="field__hint">Entra no cálculo do frete pelos Correios, junto com a quantidade. O mínimo aceito é 300 g.</p>
+		</div>
+
 		<div class="admin-field-row">
 			<div class="field">
 				<label class="field__label" for="price">Preço promocional</label>

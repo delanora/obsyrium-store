@@ -133,14 +133,22 @@ final class CheckoutController
 
         $enderecoId = $this->enderecoEscolhido($enderecos);
         $servicoFrete = new ShippingService(Connection::get());
+        $pesoTotal = $servicoFrete->weightForItems($itens);
 
-        // O frete depende do estado do endereço escolhido: cada endereço leva
-        // as próprias opções, e o formulário troca o total ao trocar a escolha.
+        // O frete depende do CEP do endereço escolhido (e do peso do carrinho):
+        // cada endereço leva as próprias opções, e o formulário troca o total
+        // ao trocar a escolha. Com os Correios configurados vêm PAC e SEDEX;
+        // sem eles, a tabela por estado.
         $checkoutFrete = [];
         $checkoutEntrega = '';
 
         foreach ($enderecos as $endereco) {
-            $opcoes = $servicoFrete->optionsFor((string) $endereco['state'], $totalCentavos);
+            $opcoes = $servicoFrete->optionsForCep(
+                (string) $endereco['postal_code'],
+                $totalCentavos,
+                $pesoTotal,
+                (string) $endereco['state']
+            );
             $checkoutFrete[(int) $endereco['id']] = $opcoes;
 
             if ((int) $endereco['id'] === $enderecoId) {

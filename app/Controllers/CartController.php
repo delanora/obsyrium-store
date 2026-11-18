@@ -6,6 +6,8 @@ namespace App\Controllers;
 
 use App\Database\Connection;
 use App\Services\CartService;
+use App\Services\ShippingService;
+use App\Support\Cep;
 use App\Support\Csrf;
 use App\Support\Navegacao;
 use App\Support\Session;
@@ -70,12 +72,34 @@ final class CartController
 
     /**
      * Página do carrinho, aberta para visitante e para cliente autenticado.
+     *
+     * O formulário de CEP da própria página volta para cá com `?cep=` e a
+     * lista de frete já calculada: é a mesma conta do checkout (Correios quando
+     * configurado, tabela por estado como plano B).
      */
     public function show(): void
     {
         Navegacao::registrar('/carrinho');
 
         $itens = $this->service()->itemsForDisplay();
+
+        $totalCentavos = 0;
+
+        foreach ($itens as $item) {
+            $totalCentavos += (int) $item['price_cents'] * (int) $item['quantity'];
+        }
+
+        $freteCep = Cep::normalize((string) ($_GET['cep'] ?? ''));
+        $freteOpcoes = [];
+
+        if ($freteCep !== '') {
+            $servicoFrete = new ShippingService(Connection::get());
+            $freteOpcoes = $servicoFrete->optionsForCep(
+                $freteCep,
+                $totalCentavos,
+                $servicoFrete->weightForItems($itens)
+            );
+        }
 
         http_response_code(200);
         header('Content-Type: text/html; charset=UTF-8');

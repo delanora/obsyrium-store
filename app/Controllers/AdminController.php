@@ -19,6 +19,7 @@ use App\Services\ProductAdminService;
 use App\Services\ShippingService;
 use App\Services\SizeGuideService;
 use App\Services\StockService;
+use App\Support\Cep;
 use App\Support\Csrf;
 use App\Support\Session;
 
@@ -1279,13 +1280,29 @@ final class AdminController
     private function renderShipping(array $admin, array $erros = [], array $valores = []): void
     {
         $servico = new ShippingService(Connection::get());
+        $config = $servico->settings();
+        $teste = null;
+        $cepTeste = Cep::normalize((string) ($_GET['teste_cep'] ?? ''));
+
+        // Teste da cotação direto do painel: mesmo caminho do checkout, com o
+        // CEP digitado e o peso padrão do pacote. Mostra o erro dos Correios
+        // sem precisar abrir o carrinho.
+        if ($cepTeste !== '') {
+            $opcoes = $servico->optionsForCep($cepTeste, 0, $config['default_weight']);
+            $teste = [
+                'cep' => $cepTeste,
+                'opcoes' => $opcoes,
+                'erro' => $servico->lastError(),
+            ];
+        }
 
         $this->render('frete', 'Frete — Administração Obsyrium', $admin, 'frete', [
             'taxas' => $servico->rates(),
-            'config' => $servico->settings(),
+            'config' => $config,
             'estados' => ShippingService::STATES,
             'erros' => $erros,
             'valores' => $valores,
+            'teste' => $teste,
         ]);
     }
 
@@ -1498,6 +1515,7 @@ final class AdminController
         $adminTaxas = $contexto['taxas'] ?? [];
         $adminFreteConfig = $contexto['config'] ?? [];
         $adminEstados = $contexto['estados'] ?? [];
+        $adminTeste = $contexto['teste'] ?? null;
 
         // O contador da aba Mensagens aparece em todas as telas do painel; a
         // própria aba já calculou as contagens, então reaproveita o resultado.
