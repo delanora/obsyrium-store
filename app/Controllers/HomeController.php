@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Database\Connection;
 use App\Repositories\ProductRepository;
 use App\Services\ContactService;
+use App\Services\HomeHeroService;
 use App\Support\Csrf;
 use App\Support\Navegacao;
 use App\Support\ProductCard;
@@ -78,6 +79,8 @@ final class HomeController
             static fn (array $linha): array => ProductCard::fromRow($linha),
             $repository->showcase(self::SHOWCASE_LIMIT)
         );
+
+        $heroSlides = (new HomeHeroService(Connection::get()))->slides();
 
         $ideiaErros = $errors;
         $ideiaValores = $values + ['name' => '', 'email' => '', 'phone' => '', 'message' => ''];

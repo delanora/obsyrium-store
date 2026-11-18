@@ -2286,3 +2286,74 @@ a.admin-message__meta:hover {
     gap: var(--space-2);
     margin-bottom: var(--space-2);
 }
+
+/* ============ Página inicial ============ */
+
+/* Cada foto do topo é um bloco: imagem à esquerda e textos à direita. */
+.admin-hero__list {
+    display: grid;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.admin-hero__item {
+    display: grid;
+    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.admin-hero__photo {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+}
+
+.admin-hero__photo img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+}
+
+.admin-hero__photo form {
+    justify-self: start;
+}
+
+.admin-hero__form {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.admin-hero__check {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.admin-hero__actions {
+    margin: 0;
+}
+
+.admin-hero__actions .button {
+    min-height: 2.5rem;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-xs);
+}
+
+@media (max-width: 60em) {
+    .admin-hero__item {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

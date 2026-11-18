@@ -12,7 +12,11 @@ use App\Support\Csrf;
  * O bloco "Tem alguma ideia?" pede estampas para a loja: a mensagem entra na
  * mesma caixa do contato, marcada como ideia, e os erros voltam para cá.
  *
+ * O topo recebe de `HomeHeroService` as fotos e os textos editados no painel.
+ * Sem foto publicada, o hero cai nos dois destaques de texto padrão abaixo.
+ *
  * @var list<array<string, mixed>> $products
+ * @var list<array{id: int, image: string, image_alt: string, eyebrow: string, title: string, text: string, button_label: string, button_href: string, is_active: bool, position: int}> $heroSlides
  * @var list<string> $ideiaErros
  * @var array{name: string, email: string, phone: string, message: string} $ideiaValores
  */
@@ -24,6 +28,7 @@ $valoresIdeia = $ideiaValores ?? ['name' => '', 'email' => '', 'phone' => '', 'm
 ?>
 <section class="hero" aria-label="Destaques da loja">
 	<div class="hero__slides">
+		<?php if ($heroSlides === []): ?>
 		<article class="hero__slide" id="slide-1">
 			<div class="container hero__inner" data-reveal-stagger>
 				<p class="hero__eyebrow">Drop 01 · nova coleção</p>
@@ -51,12 +56,55 @@ $valoresIdeia = $ideiaValores ?? ['name' => '', 'email' => '', 'phone' => '', 'm
 				</p>
 			</div>
 		</article>
+		<?php else: ?>
+			<?php foreach ($heroSlides as $indice => $slide): ?>
+				<?php
+				$temTexto = $slide['eyebrow'] !== '' || $slide['title'] !== '' || $slide['text'] !== '' || $slide['button_label'] !== '';
+				$descricao = $slide['image_alt'] !== '' ? $slide['image_alt'] : ($slide['title'] !== '' ? $slide['title'] : 'Estampa da Obsyrium Store');
+				?>
+				<article class="hero__slide hero__slide--foto<?= $temTexto ? ' hero__slide--texto' : '' ?>" id="slide-<?= $indice + 1 ?>">
+					<img class="hero__image" src="<?= $escape($slide['image']) ?>" alt="<?= $escape($descricao) ?>"<?= $indice === 0 ? ' fetchpriority="high"' : ' loading="lazy"' ?>>
+
+					<?php if ($temTexto): ?>
+						<span class="hero__shade" aria-hidden="true"></span>
+
+						<div class="container hero__inner" data-reveal-stagger>
+							<?php if ($slide['eyebrow'] !== ''): ?>
+								<p class="hero__eyebrow"><?= $escape($slide['eyebrow']) ?></p>
+							<?php endif; ?>
+
+							<?php if ($slide['title'] !== ''): ?>
+								<?php if ($indice === 0): ?>
+									<h1 class="hero__title"><?= $escape($slide['title']) ?></h1>
+								<?php else: ?>
+									<h2 class="hero__title"><?= $escape($slide['title']) ?></h2>
+								<?php endif; ?>
+							<?php endif; ?>
+
+							<?php if ($slide['text'] !== ''): ?>
+								<p class="hero__text"><?= nl2br($escape($slide['text'])) ?></p>
+							<?php endif; ?>
+
+							<?php if ($slide['button_label'] !== '' && $slide['button_href'] !== ''): ?>
+								<p class="hero__actions">
+									<a class="button" href="<?= $escape($slide['button_href']) ?>"><?= $escape($slide['button_label']) ?></a>
+								</p>
+							<?php endif; ?>
+						</div>
+					<?php endif; ?>
+				</article>
+			<?php endforeach; ?>
+		<?php endif; ?>
 	</div>
 
-	<p class="hero__dots">
-		<a class="hero__dot" href="#slide-1" aria-current="true"><span class="visually-hidden">Ir para o primeiro destaque</span></a>
-		<a class="hero__dot" href="#slide-2"><span class="visually-hidden">Ir para o segundo destaque</span></a>
-	</p>
+	<?php $totalSlides = $heroSlides === [] ? 2 : count($heroSlides); ?>
+	<?php if ($totalSlides > 1): ?>
+		<p class="hero__dots">
+			<?php for ($i = 1; $i <= $totalSlides; $i++): ?>
+				<a class="hero__dot" href="#slide-<?= $i ?>"<?= $i === 1 ? ' aria-current="true"' : '' ?>><span class="visually-hidden">Ir para o destaque <?= $i ?></span></a>
+			<?php endfor; ?>
+		</p>
+	<?php endif; ?>
 </section>
 
 <section class="section" id="lancamentos" aria-labelledby="lancamentos-titulo">

@@ -34,6 +34,7 @@ $adminMensagensNaoLidas = (int) ($adminMensagensNaoLidas ?? 0);
 
 $adminItens = [
 	'dashboard' => ['rotulo' => 'Dashboard', 'href' => '/admin'],
+	'home' => ['rotulo' => 'Página inicial', 'href' => '/admin/pagina-inicial'],
 	'pedidos' => ['rotulo' => 'Pedidos', 'href' => '/admin/pedidos'],
 	'estoque' => ['rotulo' => 'Estoque', 'href' => '/admin/estoque'],
 	'categorias' => ['rotulo' => 'Categorias', 'href' => '/admin/categorias'],

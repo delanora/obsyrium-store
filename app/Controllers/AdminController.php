@@ -11,6 +11,7 @@ use App\Services\AdminAuthService;
 use App\Services\CategoryService;
 use App\Services\ContactService;
 use App\Services\DashboardService;
+use App\Services\HomeHeroService;
 use App\Services\LoginThrottle;
 use App\Services\OrderService;
 use App\Services\ProductAdminService;
@@ -514,6 +515,76 @@ final class AdminController
     }
 
     /**
+     * Página inicial: as fotos do topo da loja e os textos de cada uma.
+     */
+    public function home(): void
+    {
+        $admin = $this->admin();
+        $servico = new HomeHeroService(Connection::get());
+
+        $this->render('home', 'Página inicial — Administração Obsyrium', $admin, 'home', [
+            'hero' => $servico->all(),
+            'heroLimite' => $servico->limitLabel(),
+            'heroMax' => HomeHeroService::MAX_SLIDES,
+        ]);
+    }
+
+    public function uploadHero(): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $arquivo = isset($_FILES['imagem']) && is_array($_FILES['imagem']) ? $_FILES['imagem'] : [];
+        $resultado = (new HomeHeroService(Connection::get()))->upload($arquivo);
+
+        Session::flash(
+            isset($resultado['error']) ? 'error' : 'success',
+            $resultado['error'] ?? 'Foto adicionada ao topo da loja. Escreva o texto que aparece sobre ela.'
+        );
+
+        $this->redirect('/admin/pagina-inicial');
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    public function saveHero(array $params): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $erro = (new HomeHeroService(Connection::get()))->save((int) ($params['id'] ?? 0), $_POST);
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Textos da foto salvos.');
+
+        $this->redirect('/admin/pagina-inicial');
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    public function removeHero(array $params): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $erro = (new HomeHeroService(Connection::get()))->remove((int) ($params['id'] ?? 0));
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Foto apagada do topo da loja.');
+
+        $this->redirect('/admin/pagina-inicial');
+    }
+
+    /**
      * Editor do produto. É a tela do item da loja, com todos os campos
      * editáveis e as fotos sendo enviadas por ela.
      *
@@ -927,6 +998,9 @@ final class AdminController
         $adminMensagens = $contexto['mensagens'] ?? [];
         $adminMensagensFiltro = $contexto['mensagensFiltro'] ?? ContactService::FILTER_ALL;
         $adminMensagensContagem = $contexto['mensagensContagem'] ?? [];
+        $adminHero = $contexto['hero'] ?? [];
+        $adminHeroLimite = (string) ($contexto['heroLimite'] ?? '');
+        $adminHeroMax = (int) ($contexto['heroMax'] ?? 0);
 
         // O contador da aba Mensagens aparece em todas as telas do painel; a
         // própria aba já calculou as contagens, então reaproveita o resultado.

@@ -426,6 +426,41 @@ html {
         radial-gradient(80% 80% at 85% 100%, rgb(201 160 99 / 10%), transparent 60%);
 }
 
+/* Topo com foto: a imagem cobre o slide e, quando há texto, um véu escuro
+   garante a leitura sobre qualquer estampa. Sem texto, a foto aparece limpa. */
+.hero__slide.hero__slide--foto {
+    min-height: clamp(18rem, 52vw, 32rem);
+}
+
+.hero__slide--foto::before {
+    display: none;
+}
+
+.hero__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero__shade {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(to top, rgb(10 8 6 / 80%), rgb(10 8 6 / 20%) 55%, rgb(10 8 6 / 45%));
+}
+
+.hero__slide--texto .hero__title {
+    color: #fff;
+    text-shadow: 0 2px 24px rgb(0 0 0 / 45%);
+}
+
+.hero__slide--texto .hero__text {
+    color: rgb(255 255 255 / 84%);
+    text-shadow: 0 1px 16px rgb(0 0 0 / 45%);
+}
+
 .hero__inner {
     position: relative;
     display: flex;
