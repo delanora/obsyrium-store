@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Database\Connection;
 use App\Services\ContactService;
+use App\Services\PageService;
 use App\Support\Csrf;
 use App\Support\Session;
 
@@ -13,15 +14,31 @@ use App\Support\Session;
  * Páginas institucionais: Sobre, Contato e as do rodapé (perguntas frequentes,
  * entrega, pagamento, termos e privacidade).
  *
- * O texto mora na view, sem banco: são páginas que mudam com o projeto, não com
- * a operação da loja. A exceção é o Contato, que lê do banco os canais
- * configurados no painel e grava as mensagens do formulário.
+ * O texto das institucionais mora no banco e é editado no painel; aqui só se
+ * escolhe a página pelo slug, com as ações fixas do fim de cada uma. O Contato
+ * continua lendo do banco os canais configurados e gravando as mensagens do
+ * formulário.
  */
 final class PageController
 {
+    /**
+     * Botões do fim de cada página, na ordem em que aparecem. O primeiro é o
+     * botão cheio e os seguintes são fantasmas.
+     *
+     * @var array<string, list<array{0: string, 1: string}>>
+     */
+    private const ACOES = [
+        'sobre' => [['Ver o catálogo', '/catalogo'], ['Falar com a loja', '/contato']],
+        'perguntas-frequentes' => [['Falar com a loja', '/contato'], ['Política de entrega', '/entrega']],
+        'entrega' => [['Falar com a loja', '/contato'], ['Perguntas frequentes', '/perguntas-frequentes']],
+        'pagamento' => [['Falar com a loja', '/contato'], ['Política de entrega', '/entrega']],
+        'termos' => [['Falar com a loja', '/contato'], ['Política de privacidade', '/privacidade']],
+        'privacidade' => [['Falar com a loja', '/contato'], ['Termos de uso', '/termos']],
+    ];
+
     public function about(): void
     {
-        $this->render('Sobre a Obsyrium — Obsyrium Store', 'pages/about.php');
+        $this->renderPage('sobre');
     }
 
     public function contact(): void
@@ -31,27 +48,27 @@ final class PageController
 
     public function faq(): void
     {
-        $this->render('Perguntas frequentes — Obsyrium Store', 'pages/faq.php');
+        $this->renderPage('perguntas-frequentes');
     }
 
     public function delivery(): void
     {
-        $this->render('Política de entrega — Obsyrium Store', 'pages/delivery.php');
+        $this->renderPage('entrega');
     }
 
     public function payment(): void
     {
-        $this->render('Formas de pagamento — Obsyrium Store', 'pages/payment.php');
+        $this->renderPage('pagamento');
     }
 
     public function terms(): void
     {
-        $this->render('Termos de uso — Obsyrium Store', 'pages/terms.php');
+        $this->renderPage('termos');
     }
 
     public function privacy(): void
     {
-        $this->render('Política de privacidade — Obsyrium Store', 'pages/privacy.php');
+        $this->renderPage('privacidade');
     }
 
     /**
@@ -91,6 +108,28 @@ final class PageController
         exit;
     }
 
+    /**
+     * Página institucional pelo slug, com o conteúdo que está no banco.
+     */
+    private function renderPage(string $slug): void
+    {
+        $pagina = (new PageService(Connection::get()))->findBySlug($slug);
+
+        if ($pagina === null) {
+            http_response_code(404);
+            header('Content-Type: text/html; charset=UTF-8');
+
+            require dirname(__DIR__, 2) . '/resources/views/errors/404.php';
+
+            return;
+        }
+
+        $this->render($pagina['title'] . ' — Obsyrium Store', 'pages/page.php', [
+            'pagina' => $pagina,
+            'acoes' => self::ACOES[$slug] ?? [],
+        ]);
+    }
+
     private function renderContact(array $erros = [], array $valores = [], int $status = 200): void
     {
         $this->render('Contato — Obsyrium Store', 'pages/contact.php', [
@@ -108,6 +147,8 @@ final class PageController
         $contatoCanais = $contexto['canais'] ?? [];
         $contatoErros = $contexto['erros'] ?? [];
         $contatoValores = $contexto['valores'] ?? [];
+        $paginaInstitucional = $contexto['pagina'] ?? null;
+        $paginaAcoes = $contexto['acoes'] ?? [];
 
         http_response_code($status);
         header('Content-Type: text/html; charset=UTF-8');

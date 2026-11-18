@@ -14,6 +14,7 @@ use App\Services\DashboardService;
 use App\Services\HomeHeroService;
 use App\Services\LoginThrottle;
 use App\Services\OrderService;
+use App\Services\PageService;
 use App\Services\ProductAdminService;
 use App\Services\StockService;
 use App\Support\Csrf;
@@ -412,6 +413,148 @@ final class AdminController
         return preg_match('#^/admin/estoque/(?:novo|produto/\d+)$#', $caminho) === 1
             ? $caminho
             : '/admin/categorias';
+    }
+
+    public function pages(): void
+    {
+        $this->renderPages($this->admin());
+    }
+
+    /**
+     * Salva o cabeçalho da página (linha de cima, título, introdução e nota).
+     *
+     * @param array<string, string> $params
+     */
+    public function savePage(array $params): void
+    {
+        $admin = $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $resultado = (new PageService(Connection::get()))->save($id, $_POST);
+
+        if ($resultado['errors'] !== []) {
+            $this->renderPages($admin, $resultado['errors'], $resultado['values'], $id);
+
+            return;
+        }
+
+        Session::flash('success', sprintf('Página \"%s\" salva.', (string) ($resultado['values']['title'] ?? '')));
+
+        $this->redirect($this->pageUrl($id));
+    }
+
+    /**
+     * Cria um bloco vazio no fim da página, para o painel preencher.
+     *
+     * @param array<string, string> $params
+     */
+    public function addPageBlock(array $params): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $erro = (new PageService(Connection::get()))->addBlock($id);
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Bloco criado. Escreva o texto e salve.');
+
+        $this->redirect($this->pageUrl($id));
+    }
+
+    /**
+     * Salva o texto de um bloco.
+     *
+     * @param array<string, string> $params
+     */
+    public function updatePageBlock(array $params): void
+    {
+        $admin = $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $blocoId = (int) ($params['block'] ?? 0);
+        $resultado = (new PageService(Connection::get()))->saveBlock($id, $blocoId, $_POST);
+
+        if ($resultado['errors'] !== []) {
+            $this->renderPages($admin, $resultado['errors'], [], $id, $blocoId, $resultado['values']);
+
+            return;
+        }
+
+        Session::flash('success', 'Bloco salvo.');
+
+        $this->redirect($this->pageUrl($id));
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    public function removePageBlock(array $params): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $erro = (new PageService(Connection::get()))->removeBlock($id, (int) ($params['block'] ?? 0));
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Bloco apagado.');
+
+        $this->redirect($this->pageUrl($id));
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    public function movePageBlockUp(array $params): void
+    {
+        $this->movePageBlock($params, -1);
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    public function movePageBlockDown(array $params): void
+    {
+        $this->movePageBlock($params, 1);
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    private function movePageBlock(array $params, int $direction): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $erro = (new PageService(Connection::get()))->moveBlock($id, (int) ($params['block'] ?? 0), $direction);
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Ordem dos blocos atualizada.');
+
+        $this->redirect($this->pageUrl($id));
+    }
+
+    private function pageUrl(int $id): string
+    {
+        return $id > 0
+            ? '/admin/paginas?' . http_build_query(['pagina' => $id])
+            : '/admin/paginas';
     }
 
     /**
@@ -1014,6 +1157,47 @@ final class AdminController
     }
 
     /**
+     * Aba das páginas institucionais: lista as páginas, mostra a escolhida e
+     * os blocos dela prontos para editar.
+     *
+     * @param array<string, mixed> $admin
+     * @param list<string> $erros
+     * @param array<string, string> $valores
+     * @param array<string, string> $valoresBloco
+     */
+    private function renderPages(
+        array $admin,
+        array $erros = [],
+        array $valores = [],
+        ?int $selecionar = null,
+        int $blocoErro = 0,
+        array $valoresBloco = []
+    ): void {
+        $servico = new PageService(Connection::get());
+        $paginas = $servico->all();
+        $id = $selecionar ?? (int) ($_GET['pagina'] ?? 0);
+        $pagina = null;
+
+        foreach ($paginas as $item) {
+            if ((int) $item['id'] === $id) {
+                $pagina = $item;
+            }
+        }
+
+        $pagina = $pagina ?? ($paginas[0] ?? null);
+        $completa = $pagina !== null ? $servico->find($pagina['id']) : null;
+
+        $this->render('paginas', 'Páginas — Administração Obsyrium', $admin, 'paginas', [
+            'paginas' => $paginas,
+            'pagina' => $completa,
+            'erros' => $erros,
+            'valores' => $valores,
+            'blocoErro' => $blocoErro,
+            'valoresBloco' => $valoresBloco,
+        ]);
+    }
+
+    /**
      * @param array<string, mixed> $admin
      * @param list<string> $erros
      * @param array<string, string> $valores
@@ -1164,6 +1348,10 @@ final class AdminController
         $adminHero = $contexto['hero'] ?? [];
         $adminHeroLimite = (string) ($contexto['heroLimite'] ?? '');
         $adminHeroMax = (int) ($contexto['heroMax'] ?? 0);
+        $adminPaginas = $contexto['paginas'] ?? [];
+        $adminPagina = $contexto['pagina'] ?? null;
+        $adminBlocoErro = (int) ($contexto['blocoErro'] ?? 0);
+        $adminValoresBloco = $contexto['valoresBloco'] ?? [];
 
         // O contador da aba Mensagens aparece em todas as telas do painel; a
         // própria aba já calculou as contagens, então reaproveita o resultado.

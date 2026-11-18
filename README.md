@@ -672,7 +672,7 @@ Fechar a compra termina numa página própria: `/pedido/OBS-000004/confirmacao`.
 
 ### Páginas Sobre e Contato
 
-- `GET /sobre` e `GET /contato` (`App\Controllers\PageController`) montam páginas fixas no layout do site: `resources/views/pages/about.php` e `resources/views/pages/contact.php`.
+- `GET /sobre` e `GET /contato` (`App\Controllers\PageController`) montam páginas no layout do site. O Contato continua em `resources/views/pages/contact.php`; o Sobre passou a vir do banco, como as demais institucionais.
 - Sobre apresenta a marca, o cuidado com cada peça, como a compra funciona e o cuidado com a estampa.
 - Contato reúne o horário de atendimento (segunda a sexta, 9h às 18h), os cartões de **WhatsApp** e **Instagram** e o **formulário de mensagem** (`POST /contato`).
 - `App\Services\ContactService` lê os canais da tabela `settings` (chaves `contact_whatsapp` e `contact_instagram`), normaliza o número para só dígitos e o @ sem link e monta o `wa.me` e o `instagram.com`. Canal vazio não aparece com botão: o cartão avisa que ainda não foi publicado.
@@ -689,19 +689,22 @@ Fechar a compra termina numa página própria: `/pedido/OBS-000004/confirmacao`.
 - O menu do topo ganhou os links reais, com `aria-current` nas duas páginas, e o "Fale conosco" do rodapé aponta para `/contato`. Nenhum link do menu ficou em `#`.
 - Estilos em `public/assets/css/pages.css`, carregado no layout do site: blocos em duas colunas a partir de 48 rem, canais de contato lado a lado e formulário com nome, e-mail e telefone na mesma linha no computador (mensagem e botão ocupam a largura toda). O painel usa `admin-contact*` em `admin.css`.
 
-### Páginas institucionais do rodapé
+### Páginas institucionais editáveis
 
-Cinco páginas fixas, com o texto na view e sem consulta ao banco, atendem os links do rodapé:
+As seis páginas institucionais ficam no banco e são editadas no painel: Sobre, Perguntas frequentes, Entrega, Pagamento, Termos e Privacidade.
 
-| Rota | View | Método |
+| Rota | Slug | Layout |
 | --- | --- | --- |
-| `/perguntas-frequentes` | `pages/faq.php` | `PageController::faq()` |
-| `/entrega` | `pages/delivery.php` | `PageController::delivery()` |
-| `/pagamento` | `pages/payment.php` | `PageController::payment()` |
-| `/termos` | `pages/terms.php` | `PageController::terms()` |
-| `/privacidade` | `pages/privacy.php` | `PageController::privacy()` |
+| `/sobre` | `sobre` | blocos |
+| `/perguntas-frequentes` | `perguntas-frequentes` | `faq` |
+| `/entrega` | `entrega` | blocos |
+| `/pagamento` | `pagamento` | blocos |
+| `/termos` | `termos` | blocos |
+| `/privacidade` | `privacidade` | blocos |
 
-- **Perguntas frequentes** monta as perguntas num array e desenha cada uma como `<details class="faq__item">`: abre e fecha sem JavaScript, o `summary` recebe foco pelo teclado e a primeira já vem aberta. Cada resposta aponta para a página que tem o texto completo, em vez de repetir as regras.
-- **Entrega, pagamento, termos e privacidade** usam os mesmos blocos de Sobre/Contato (`page__block`, `page__blocks` em duas colunas a partir de 48 rem) e fecham com `page__note`, um lembrete do que ainda falta definir. O texto não inventa prazo, valor, CNPJ nem e-mail: frete e prazo aparecem como confirmação pelo atendimento, os meios de pagamento como previstos, e a privacidade descreve o que o código realmente faz (senha com Argon2id, CPF/telefone/endereço com AES-256-GCM, IP só como hash no limite do contato e no bloqueio de login, cookie apenas de sessão).
-- O rodapé passou a apontar para as rotas reais e ganhou **Termos de uso** e **Política de privacidade** separados; só os três perfis de rede social continuam em `#`, até existirem.
-- `pages.css` ganhou o bloco `faq*` (pergunta com `+`/`−` desenhado pelo CSS), `page__note` e a lista dentro de `page__block`.
+- **Banco**: `pages` guarda o cabeçalho de cada página (slug único, linha de cima, título, introdução e a nota do fim) e `page_blocks` os blocos na ordem (`position`), com título, texto e um link opcional. A migration `2026_11_18_000021_create_pages_tables.php` cria as duas tabelas com o conteúdo que estava nas views, para a loja não perder o texto.
+- **Texto dos blocos**: é texto puro, sem HTML. Linha em branco separa parágrafos, linha começando com `- ` vira item de lista e `[rótulo](/caminho)` vira link. `PageService::renderBody()` escapa todo o texto **antes** de montar as tags; depois só os links no formato conhecido viram `<a class="page__link">`, e apenas quando o destino começa com `/`, `#` ou `http(s)` — o resto fica como texto.
+- **Na loja**: `PageController::renderPage()` procura a página pelo slug e desenha `resources/views/pages/page.php`, que usa `<details class="faq__item">` no layout `faq` (a primeira pergunta aberta) e `page__block` nos demais. Sem a página no banco, responde 404. As ações do fim de cada página ("Falar com a loja", "Política de entrega" etc.) continuam no código, no mapa `PageController::ACOES`.
+- **No painel**: `GET /admin/paginas` é a aba **Páginas**, com abas por página e o endereço na URL (`?pagina=ID`). O primeiro formulário salva o cabeçalho (`POST /admin/paginas/{id}`); cada bloco tem o próprio formulário (`POST /admin/paginas/{id}/blocos/{block}`), as setas que sobem e descem (`/subir` e `/descer`), o botão de apagar (`/remover`) e o **Novo bloco** no fim (`POST /admin/paginas/{id}/blocos`, cria um bloco vazio para preencher). Toda escrita exige CSRF e responde 303 de volta para a mesma página; a ordem é renumerada de 0 a n-1 a cada movimento.
+- **Validação**: título da página de 2 a 140 caracteres, linha de cima até 60, introdução até 400, nota até 500, título do bloco até 160 e texto até 6000. O link exige rótulo e endereço juntos, aceita só `/`, `#` ou `http(s)` e é recusado se vier pela metade.
+- `pages.css` já desenhava `page__block`, `page__note` e o bloco `faq*` (pergunta com `+`/`−` no CSS); a view nova reaproveita tudo. O painel ganhou `admin-pages*` em `admin.css` para o cabeçalho, os cards de bloco e a linha de ações.

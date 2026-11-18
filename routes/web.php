@@ -98,6 +98,13 @@ return static function (Router $router): void {
     $router->post('/admin/categorias/{id}/subir', [AdminController::class, 'moveCategoryUp']);
     $router->post('/admin/categorias/{id}/descer', [AdminController::class, 'moveCategoryDown']);
     $router->post('/admin/categorias/{id}', [AdminController::class, 'updateCategory']);
+    $router->get('/admin/paginas', [AdminController::class, 'pages']);
+    $router->post('/admin/paginas/{id}/blocos', [AdminController::class, 'addPageBlock']);
+    $router->post('/admin/paginas/{id}/blocos/{block}/subir', [AdminController::class, 'movePageBlockUp']);
+    $router->post('/admin/paginas/{id}/blocos/{block}/descer', [AdminController::class, 'movePageBlockDown']);
+    $router->post('/admin/paginas/{id}/blocos/{block}/remover', [AdminController::class, 'removePageBlock']);
+    $router->post('/admin/paginas/{id}/blocos/{block}', [AdminController::class, 'updatePageBlock']);
+    $router->post('/admin/paginas/{id}', [AdminController::class, 'savePage']);
     $router->get('/admin/estoque/produto/{id}', [AdminController::class, 'product']);
     $router->post('/admin/estoque/produto/{id}', [AdminController::class, 'saveProduct']);
     $router->post('/admin/estoque/produto/{id}/saldo', [AdminController::class, 'saveProductStock']);
