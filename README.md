@@ -488,6 +488,7 @@ Rota `GET /produto/{slug}`, atendida por `App\Controllers\ProductController::sho
 - `App\Services\LoginThrottle` aplica o bloqueio: 5 falhas por conta, 20 por IP, janela de 15 minutos, chaveada pelo índice cego do e-mail e pelo IP de origem.
 - O cabeçalho mostra "entrar" para visitante e um botão de sair (POST com CSRF) para quem está conectado. Mensagens de retorno usam flash e aparecem no topo do conteúdo.
 - Estilo em `public/assets/css/auth.css` (card, campos, erros) e a mensagem flash em `layout.css`.
+- **Porta do checkout**: `/login?compra=1` renderiza `resources/views/auth/checkout-gate.php` — o título "Para prosseguir com a compra você deve fazer o login ou cadastrar-se" e dois cards lado a lado (login e cadastro), sem aviso de erro. Os dois formulários postam em `/login?compra=1` e `/cadastro?compra=1`; `AuthController::compraPedida()` lê a flag e, depois de autenticar ou criar a conta, manda direto para `/checkout`.
 
 - As telas de login e cadastro mostram os botões “Continuar com Google” e “Continuar com Apple” (`resources/views/partials/social-login.php`). Eles são apenas visuais: ficam desabilitados e com o aviso “Login social em breve”, porque o OAuth ainda não foi implementado.
 
@@ -541,7 +542,7 @@ O ícone de pessoa no cabeçalho aponta para `/conta` quando há sessão aberta;
 
 `/checkout` deixou de ser só um portão de login e virou página: resumo dos itens, totais e escolha do endereço de entrega.
 
-- `GET /checkout` exige carrinho com itens (senão volta para `/carrinho` com aviso) e cliente logado (senão vai para `/login`). A página mostra cada linha do carrinho com imagem, nome, tamanho, quantidade e valor da linha, o resumo de valores (peças, subtotal, frete “a calcular” e total) e os endereços salvos no perfil em cartões de rádio, com o principal marcado.
+- `GET /checkout` exige carrinho com itens (senão volta para `/carrinho` com aviso) e cliente logado (senão vai para `/login?compra=1`, a porta do checkout descrita na seção 19, que mostra login e cadastro lado a lado sem mensagem de erro). A página mostra cada linha do carrinho com imagem, nome, tamanho, quantidade e valor da linha, o resumo de valores (peças, subtotal, frete “a calcular” e total) e os endereços salvos no perfil em cartões de rádio, com o principal marcado.
 - `POST /checkout` confere o CSRF e se o endereço escolhido pertence ao cliente; endereço de outra conta ou inexistente volta com “Escolha um endereço de entrega da sua conta.” e mantém a escolha anterior. Confirmar grava o pedido (seção 23), esvazia o carrinho e leva para a confirmação em `/pedido/{número}/confirmacao` (seção 31). Sem endereço salvo, a página mostra o estado vazio com link para `/conta/enderecos`.
 - `CheckoutController` monta os dados: `CartService::itemsForDisplay()` para as linhas, `AccountService::addressesFor()` para os endereços, e o total somando `price_cents × quantity`. O endereço principal já vem marcado; na falta dele, o primeiro da lista.
 - Layout em `public/assets/css/checkout.css`: uma coluna no celular e duas no computador (conteúdo à esquerda, resumo de valores numa coluna de 20 rem que acompanha a rolagem). O endereço marcado ganha a borda dourada e o fundo do acento.

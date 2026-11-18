@@ -21,6 +21,7 @@ final class AuthController
 {
     private const TITLE_REGISTER = 'Criar conta — Obsyrium Store';
     private const TITLE_LOGIN = 'Entrar — Obsyrium Store';
+    private const TITLE_GATE = 'Para prosseguir com a compra — Obsyrium Store';
 
     public function showRegister(): void
     {
@@ -33,23 +34,34 @@ final class AuthController
             return;
         }
 
+        $compra = $this->compraPedida();
         $erros = $this->service()->register($_POST);
 
         if ($erros === []) {
             Session::flash('success', 'Conta criada. Você já está conectado.' . $this->avisoDoCarrinho());
-            $this->redirect('/');
+            $this->redirect($compra ? '/checkout' : '/');
         }
 
-        $this->render('register', self::TITLE_REGISTER, $erros, $_POST);
+        $this->render(
+            $compra ? 'checkout-gate' : 'register',
+            $compra ? self::TITLE_GATE : self::TITLE_REGISTER,
+            $erros,
+            $_POST
+        );
     }
 
     public function showLogin(): void
     {
+        $compra = $this->compraPedida();
+
         if ($this->service()->currentUser() !== null) {
-            $this->redirect('/');
+            $this->redirect($compra ? '/checkout' : '/');
         }
 
-        $this->render('login', self::TITLE_LOGIN);
+        $this->render(
+            $compra ? 'checkout-gate' : 'login',
+            $compra ? self::TITLE_GATE : self::TITLE_LOGIN
+        );
     }
 
     public function login(): void
@@ -58,16 +70,20 @@ final class AuthController
             return;
         }
 
+        $compra = $this->compraPedida();
         $erro = $this->service()->login($_POST, (string) ($_SERVER['REMOTE_ADDR'] ?? ''));
 
         if ($erro === null) {
             Session::flash('success', 'Bem-vindo de volta.' . $this->avisoDoCarrinho());
-            $this->redirect('/');
+            $this->redirect($compra ? '/checkout' : '/');
         }
 
-        $this->render('login', self::TITLE_LOGIN, ['credentials' => $erro], [
-            'email' => (string) ($_POST['email'] ?? ''),
-        ]);
+        $this->render(
+            $compra ? 'checkout-gate' : 'login',
+            $compra ? self::TITLE_GATE : self::TITLE_LOGIN,
+            ['credentials' => $erro],
+            ['email' => (string) ($_POST['email'] ?? '')]
+        );
     }
 
     public function logout(): void
@@ -79,6 +95,15 @@ final class AuthController
         $this->service()->logout();
         Session::flash('success', 'Você saiu da conta.');
         $this->redirect('/');
+    }
+
+    /**
+     * A tela de dois cards (login + cadastro) é a porta do checkout: o visitante
+     * chega nela por `?compra=1`, vindo de "Finalizar compra".
+     */
+    private function compraPedida(): bool
+    {
+        return isset($_GET['compra']) && (string) $_GET['compra'] !== '';
     }
 
     /**

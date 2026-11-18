@@ -90,8 +90,8 @@ final class CheckoutController
     }
 
     /**
-     * Carrinho vazio volta para /carrinho e visitante sem conta vai para o
-     * login — comprar exige conta.
+     * Carrinho vazio volta para /carrinho e visitante sem conta vai para a tela
+     * de login com cadastro ao lado (comprar exige conta).
      *
      * @return array<int, array<string, mixed>>
      */
@@ -104,9 +104,10 @@ final class CheckoutController
             $this->redirect('/carrinho');
         }
 
+        // Visitante vai para a porta do checkout — login e cadastro lado a lado —
+        // sem mensagem de erro: comprar exige conta, mas isso não é uma falha.
         if (Session::userId() === null) {
-            Session::flash('error', 'Entre na sua conta para finalizar a compra.');
-            $this->redirect('/login');
+            $this->redirect('/login?compra=1');
         }
 
         return $itens;
