@@ -2,12 +2,25 @@
 
 declare(strict_types=1);
 
+use App\Services\ContactService;
+use App\Support\Csrf;
+
 /*
  * Vitrine da página inicial. Recebe de HomeController a lista de cards já
  * formatada (nome, cor, preço, imagem e selo), montada a partir do banco.
  *
+ * O bloco "Tem alguma ideia?" pede estampas para a loja: a mensagem entra na
+ * mesma caixa do contato, marcada como ideia, e os erros voltam para cá.
+ *
  * @var list<array<string, mixed>> $products
+ * @var list<string> $ideiaErros
+ * @var array{name: string, email: string, phone: string, message: string} $ideiaValores
  */
+
+$escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+
+$errosIdeia = $ideiaErros ?? [];
+$valoresIdeia = $ideiaValores ?? ['name' => '', 'email' => '', 'phone' => '', 'message' => ''];
 ?>
 <section class="hero" aria-label="Destaques da loja">
 	<div class="hero__slides">
@@ -81,20 +94,58 @@ declare(strict_types=1);
 	</div>
 </section>
 
-<section class="newsletter" data-reveal-stagger aria-labelledby="newsletter-titulo">
-	<h2 class="newsletter__title" id="newsletter-titulo">Cadastre-se e receba os próximos drops</h2>
-	<p class="newsletter__text">
-		Avisamos antes de cada lançamento e abrimos a lista de espera das estampas esgotadas.
+<section class="idea" id="ideia" data-reveal-stagger aria-labelledby="ideia-titulo">
+	<h2 class="idea__title" id="ideia-titulo">Tem alguma ideia?</h2>
+	<p class="idea__text">
+		Quer uma estampa que ainda não está na loja? Escreva qual é: lemos cada ideia
+		e respondemos no e-mail informado.
 	</p>
 
-	<div class="newsletter__form">
-		<label class="visually-hidden" for="newsletter-email">Seu e-mail</label>
-		<input class="newsletter__input" type="email" id="newsletter-email" name="email" placeholder="seu@email.com" autocomplete="email">
-		<button class="button" type="button" disabled>Cadastrar</button>
-	</div>
+	<?php if ($errosIdeia !== []): ?>
+		<div class="idea__alert" role="alert">
+			<ul>
+				<?php foreach ($errosIdeia as $erro): ?>
+					<li><?= $escape($erro) ?></li>
+				<?php endforeach; ?>
+			</ul>
+		</div>
+	<?php endif; ?>
 
-	<p class="newsletter__note">
-		Cadastro será habilitado quando o envio de e-mails estiver implementado.
-		Ao se cadastrar você concorda com a <a href="#">Política de Privacidade</a>.
+	<form class="idea__form" action="/ideia" method="post">
+		<?= Csrf::field() ?>
+
+		<?php /* Armadilha para robô: gente não vê, robô preenche. */ ?>
+		<div class="idea__honeypot" aria-hidden="true">
+			<label for="ideia-website">Não preencha este campo</label>
+			<input id="ideia-website" name="website" type="text" tabindex="-1" autocomplete="off">
+		</div>
+
+		<div class="field">
+			<label class="field__label" for="ideia-nome">Nome</label>
+			<input class="field__input" id="ideia-nome" name="name" type="text" maxlength="<?= ContactService::MAX_NAME ?>" autocomplete="name" required value="<?= $escape($valoresIdeia['name']) ?>">
+		</div>
+
+		<div class="field">
+			<label class="field__label" for="ideia-email">E-mail</label>
+			<input class="field__input" id="ideia-email" name="email" type="email" maxlength="<?= ContactService::MAX_EMAIL ?>" autocomplete="email" required value="<?= $escape($valoresIdeia['email']) ?>">
+		</div>
+
+		<div class="field">
+			<label class="field__label" for="ideia-telefone">Telefone</label>
+			<input class="field__input" id="ideia-telefone" name="phone" type="tel" maxlength="15" autocomplete="tel" inputmode="tel" placeholder="(11) 99999-9999" data-phone-mask required value="<?= $escape($valoresIdeia['phone']) ?>">
+		</div>
+
+		<div class="field idea__field--wide">
+			<label class="field__label" for="ideia-mensagem">Qual estampa você quer ver?</label>
+			<textarea class="field__input field__input--textarea" id="ideia-mensagem" name="message" maxlength="<?= ContactService::MAX_MESSAGE ?>" rows="5" placeholder="Conte o tema, a referência ou a frase que você imaginou." required><?= $escape($valoresIdeia['message']) ?></textarea>
+		</div>
+
+		<div class="idea__submit idea__field--wide">
+			<button class="button" type="submit">Enviar ideia</button>
+		</div>
+	</form>
+
+	<p class="idea__note">
+		Sua ideia vai direto para a loja. Se ela virar estampa, avisamos no e-mail informado.
 	</p>
 </section>

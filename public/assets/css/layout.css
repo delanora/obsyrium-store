@@ -1,6 +1,6 @@
 /*
  * Estrutura de página: cabeçalho, hero, vitrine,
- * bloco de conteúdo, newsletter e rodapé.
+ * bloco de conteúdo, ideia de estampa e rodapé.
  * Composição de layout; cores, tipografia e espaçamento vêm dos tokens.
  */
 
@@ -582,9 +582,9 @@ html {
     color: var(--color-text);
 }
 
-/* ============ Newsletter ============ */
+/* ============ Tem alguma ideia? ============ */
 
-.newsletter {
+.idea {
     display: grid;
     justify-items: center;
     gap: var(--space-4);
@@ -594,48 +594,72 @@ html {
     text-align: center;
 }
 
-.newsletter__title {
+.idea__title {
     margin: 0;
     font-size: var(--font-size-xl);
 }
 
-.newsletter__text {
+.idea__text {
     margin: 0;
-    max-width: 48ch;
+    max-width: 52ch;
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
 }
 
-.newsletter__form {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-2);
-    width: min(100%, 32rem);
+.idea__form {
+    display: grid;
+    gap: var(--space-4);
+    width: min(100%, 46rem);
+    text-align: left;
 }
 
-.newsletter__input {
-    flex: 1 1 14rem;
-    min-height: var(--target-min);
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--color-border-strong);
+.idea__field--wide .field__input--textarea {
+    min-height: 8rem;
+    padding: var(--space-3);
+    resize: vertical;
+}
+
+/* Campo armadilha: fora da tela, sem ocupar espaço nem receber foco. */
+
+.idea__honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.idea__alert {
+    width: min(100%, 46rem);
+    padding: var(--space-4);
+    border: 1px solid var(--color-danger);
     border-radius: var(--radius-sm);
-    background-color: var(--color-surface);
-    color: var(--color-text);
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+    text-align: left;
 }
 
-.newsletter__input::placeholder {
-    color: var(--color-text-subtle);
-}
-
-.newsletter__note {
+.idea__alert ul {
     margin: 0;
+    padding-left: var(--space-4);
+}
+
+.idea__note {
+    margin: 0;
+    max-width: 52ch;
     color: var(--color-text-subtle);
     font-size: var(--font-size-xs);
 }
 
-.newsletter__note a {
-    color: var(--color-accent);
+@media (min-width: 48rem) {
+    /* Nome, e-mail e telefone na mesma linha; ideia e botão logo abaixo. */
+    .idea__form {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .idea__field--wide {
+        grid-column: 1 / -1;
+    }
 }
 
 /* ============ Rodapé ============ */
@@ -765,27 +789,23 @@ html {
         min-height: var(--target-min);
     }
 
-    .newsletter {
+    .idea {
         gap: var(--space-3);
         padding: var(--space-7) var(--gutter);
     }
 
-    .newsletter__form {
-        flex-direction: column;
-        align-items: stretch;
+    .idea__form {
         gap: var(--space-3);
         width: 100%;
-        max-width: 24rem;
+        max-width: 26rem;
     }
 
-    .newsletter__input {
-        flex: none;
-        width: 100%;
+    .idea__form .field__input {
         min-height: 3rem;
         font-size: var(--font-size-base);
     }
 
-    .newsletter__form .button {
+    .idea__form .button {
         width: 100%;
     }
 

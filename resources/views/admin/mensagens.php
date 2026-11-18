@@ -16,7 +16,7 @@ use App\Support\Csrf;
  * O texto alternativo do botão da lixeira não existe: o rótulo é o próprio
  * texto, então a ação é legível sem ícone.
  *
- * @var list<array{id: int, name: string, email: string, phone: string, message: string, is_read: bool, created_at: string, deleted_at: string|null}> $adminMensagens
+ * @var list<array{id: int, name: string, email: string, phone: string, source: string, message: string, is_read: bool, created_at: string, deleted_at: string|null}> $adminMensagens
  * @var string $adminMensagensFiltro
  * @var array{todas: int, nao_lidas: int, lixeira: int} $adminMensagensContagem
  */
@@ -47,7 +47,7 @@ $naLixeira = $adminMensagensFiltro === ContactService::FILTER_TRASH;
 	<div>
 		<p class="admin-head__eyebrow">Painel</p>
 		<h1 class="admin-head__title">Mensagens</h1>
-		<p class="admin-head__text">Mensagens enviadas pelo formulário da página Contato.</p>
+		<p class="admin-head__text">Mensagens do formulário de contato e ideias de estampa enviadas pela home.</p>
 	</div>
 
 	<p class="admin-head__actions">
@@ -89,6 +89,9 @@ $naLixeira = $adminMensagensFiltro === ContactService::FILTER_TRASH;
 								<?= $escape($mensagem['name']) ?>
 								<?php if (!$mensagem['is_read'] && !$naLixeira): ?>
 									<span class="admin-message__badge">Nova</span>
+								<?php endif; ?>
+								<?php if ($mensagem['source'] === ContactService::SOURCE_IDEA): ?>
+									<span class="admin-message__badge">Ideia de estampa</span>
 								<?php endif; ?>
 							</span>
 							<a class="admin-message__meta" href="mailto:<?= $escape($mensagem['email']) ?>"><?= $escape($mensagem['email']) ?></a>

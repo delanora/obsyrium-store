@@ -405,7 +405,7 @@ A estrutura da página inicial segue a da referência Crown Training — a refer
 2. **Hero** (`.hero`): dois slides em faixa horizontal com `scroll-snap` e marcadores (`.hero__dot`) que ancoram em cada slide. Sem JavaScript.
 3. **Vitrine "Lançamentos"** (`.section` + `.product-grid`): oito cards com selo, cor, preço, valor no Pix e parcelamento, seguidos da `.pagination`.
 4. **Bloco de conteúdo** (`.section--alt` + `.content-block`): H2 e dois parágrafos institucionais.
-5. **Newsletter** (`.newsletter`): título, texto de apoio, campo de e-mail e botão desabilitado até o envio existir.
+5. **Tem alguma ideia?** (`.idea`): título, texto de apoio e formulário (nome, e-mail, telefone e a estampa desejada) que grava a ideia na caixa de mensagens do painel, marcada como "Ideia de estampa".
 6. **Rodapé** (`.site-footer`): colunas de políticas, atendimento, redes sociais e formas de pagamento, mais a linha legal.
 
 ### 17.2 Arquivos
@@ -413,8 +413,8 @@ A estrutura da página inicial segue a da referência Crown Training — a refer
 - `resources/views/layouts/site.php`: documento HTML e `<head>` com os quatro CSS na ordem `tokens` → `base` → `components` → `layout`; inclui o cabeçalho, o `<main id="conteudo">` com a view de conteúdo e o rodapé.
 - `resources/views/partials/header.php`: cabeçalho com marca, menu e ações. Links de categoria e botões de ação ainda apontam para `#`.
 - `resources/views/partials/footer.php`: colunas do rodapé e linha legal.
-- `resources/views/home/index.php`: hero, vitrine, bloco de conteúdo e newsletter. A vitrine recebe do `HomeController` os cards já formatados; os produtos saem do banco por `App\Repositories\ProductRepository` (o seed cria 8 de demonstração).
-- `public/assets/css/layout.css`: cabeçalho, navegação, hero, seções, paginação, newsletter, rodapé e `.skip-link`.
+- `resources/views/home/index.php`: hero, vitrine, bloco de conteúdo e o formulário "Tem alguma ideia?". A vitrine recebe do `HomeController` os cards já formatados; os produtos saem do banco por `App\Repositories\ProductRepository` (o seed cria 8 de demonstração).
+- `public/assets/css/layout.css`: cabeçalho, navegação, hero, seções, paginação, ideia de estampa, rodapé e `.skip-link`.
 - `public/assets/css/animations.css`: camada de movimento (entradas ao rolar, hover e transições).
 - `public/assets/js/site.js`: menu do celular, sombra do cabeçalho, entradas ao rolar e o comportamento do catálogo, sem dependências.
 - **Cache**: os dois layouts (`site.php` e `admin.php`) montam cada `<link>` e `<script>` com `?v=<filemtime>`. Mudou o arquivo, muda a URL e o navegador busca a versão nova na hora — sem isso, CSS e JS ficavam presos no cache heurístico do Apache por vários minutos.
@@ -426,6 +426,7 @@ Cabeçalho e rodapé são reaproveitados por qualquer página renderizada pelo l
 - O JavaScript do site é `public/assets/js/site.js`: menu do celular, sombra do cabeçalho e revelação dos blocos. Hero e estados continuam resolvidos em CSS; sem JavaScript o menu aparece em duas linhas e nada é escondido.
 - Toda classe nova parte de `tokens.css`; cor e espaçamento fixos não entram nos componentes.
 - `HomeController::index()` define `$title`, `$content` e inclui `layouts/site.php`. Novas páginas repetem esse contrato em vez de duplicar o HTML do documento.
+- O formulário "Tem alguma ideia?" posta em `/ideia` (`HomeController::requestIdea()`), que valida CSRF, chama `ContactService::send()` com a origem `ideia` e volta para `/#ideia` com 303. Com erro, a home é renderizada de novo (422) preenchida.
 - Um único `<h1>` por página (o do primeiro slide do hero); as seções usam `<h2>`.
 
 ### 17.4 Telas pequenas
@@ -435,7 +436,7 @@ O ajuste responsivo vive em `layout.css` e `components.css`, em duas faixas — 
 - **Cabeçalho**: uma linha com marca, ações e o menu recolhido no hamburger (`.nav-toggle`, 44px, com `aria-expanded` e `aria-controls`). O painel abre logo abaixo do cabeçalho, em lista vertical com 44px por item, e fecha com Escape, clique fora ou escolha de um item — o ícone vira X. Sem JavaScript, o menu volta ao formato de duas linhas em faixa rolável (`justify-content: safe center`). `--header-height` no celular é 4rem e `html { scroll-padding-block-start }` usa o token, então âncoras como `#lancamentos` não ficam sob o cabeçalho fixo.
 - **Hero**: sem altura mínima no celular, título em `clamp(1.75rem, 7vw, 2.25rem)`, botões empilhados com 100% de largura e marcadores com área de toque de 44px — o ponto visual é desenhado em `.hero__dot::after`. A faixa usa `scroll-behavior: smooth` (desligado por `prefers-reduced-motion`) e `overscroll-behavior-x: contain`.
 - **Vitrine**: duas colunas com card compacto (título 0.875rem, preço em coluna, selos menores). O card inteiro é área de toque: o link do título se estende por `::after` com `inset: 0`.
-- **Newsletter**: campo e botão empilhados em coluna, ambos com 100% de largura e 3rem de altura mínima.
+- **Tem alguma ideia?**: o formulário vira uma coluna única com 100% de largura, campos com 3rem de altura mínima e botão de largura total.
 - **Rodapé**: duas colunas de links no celular, com marca e formas de pagamento ocupando a linha inteira; cada link tem 44px de altura.
 - **Toque e rolagem**: todo alvo usa `--target-min` (44px); `body` recebe `overflow-x: clip` para nenhum elemento gerar rolagem horizontal; `-webkit-tap-highlight-color: transparent` remove o realce azul do toque; o efeito de zoom do card só existe em `@media (hover: hover)`.
 
@@ -446,7 +447,7 @@ A camada de animação fica em `public/assets/css/animations.css`, carregada por
 - **Entrada ao rolar**: blocos com `data-reveal` sobem 1.25rem e aparecem em 600ms; `data-reveal-stagger` aplica o mesmo aos filhos em cascata de 70ms. A vitrine escalona por linha (`4n+2`, `4n+3`, `4n+4`). Quem dispara é um `IntersectionObserver` que adiciona `.is-visible` uma única vez e para de observar o elemento.
 - **Sem JavaScript nada fica escondido**: os estados iniciais dependem de `html.js`, marcado por script inline no `<head>`. Se `site.js` não carregar, um fallback no evento `load` remove a classe e o conteúdo aparece estático.
 - **Cabeçalho**: ganha sombra e fundo mais opaco ao sair do topo (`.is-scrolled`). No celular o painel do menu entra com `menu-panel-in` e os itens em cascata de 40ms.
-- **Microinterações**: sublinhado que cresce no menu (desktop), botões com elevação no hover e afundamento no toque, cards com `translateY(-4px)` e sombra (só em `hover: hover`), imagem com zoom de 500ms, foco do campo de newsletter com halo dourado e brilho do hero pulsando em 9s.
+- **Microinterações**: sublinhado que cresce no menu (desktop), botões com elevação no hover e afundamento no toque, cards com `translateY(-4px)` e sombra (só em `hover: hover`), imagem com zoom de 500ms, foco dos campos do formulário de ideia com halo dourado e brilho do hero pulsando em 9s.
 - **Rolagem suave**: `html { scroll-behavior: smooth }` para as âncoras internas.
 - Tudo respeita `prefers-reduced-motion`: o bloco em `base.css` zera as durações e desliga a pulsação do hero.
 
@@ -671,14 +672,15 @@ Fechar a compra termina numa página própria: `/pedido/OBS-000004/confirmacao`.
 - Sobre apresenta a marca, o cuidado com cada peça, como a compra funciona e o cuidado com a estampa.
 - Contato reúne o horário de atendimento (segunda a sexta, 9h às 18h), os cartões de **WhatsApp** e **Instagram** e o **formulário de mensagem** (`POST /contato`).
 - `App\Services\ContactService` lê os canais da tabela `settings` (chaves `contact_whatsapp` e `contact_instagram`), normaliza o número para só dígitos e o @ sem link e monta o `wa.me` e o `instagram.com`. Canal vazio não aparece com botão: o cartão avisa que ainda não foi publicado.
-- O formulário exige CSRF, valida nome (2–120), e-mail, telefone (10–13 dígitos, com DDD) e mensagem (10–4000), e grava em `contact_messages` — o telefone fica só com dígitos. O campo `data-phone-mask` mostra `(11) 99999-9999` enquanto a pessoa digita. Com erro, a página volta preenchida com 422; com sucesso, 303 para `/contato` e o aviso no layout. Não há envio de e-mail enquanto o domínio não existir — a mensagem fica no painel.
+- O formulário exige CSRF, valida nome (2–120), e-mail, telefone (10–13 dígitos, com DDD) e mensagem (10–4000), e grava em `contact_messages` com `source = 'contato'` — o telefone fica só com dígitos. O campo `data-phone-mask` mostra `(11) 99999-9999` enquanto a pessoa digita. Com erro, a página volta preenchida com 422; com sucesso, 303 para `/contato` e o aviso no layout. Não há envio de e-mail enquanto o domínio não existir — a mensagem fica no painel.
 - **Anti-spam**: o campo armadilha `website` fica fora da tela (`contact__honeypot`, `aria-hidden`, `tabindex="-1"`). Se vier preenchido, o controlador responde igual ao sucesso e não grava nada. Além disso, no máximo 5 envios por IP a cada 60 minutos (`ContactService::MAX_SENDS_PER_WINDOW`/`WINDOW_MINUTES`): o IP entra só como SHA-256 em `contact_attempts`, o excedente recebe 429 com “Muitas mensagens em pouco tempo” e as linhas com mais de um dia são apagadas no próximo envio.
+- **Tem alguma ideia?**: o formulário da home posta em `/ideia` (`HomeController::requestIdea()`) e reaproveita `ContactService::send()` com `source = 'ideia'` — mesmas validações, armadilha de robô e limite por IP do contato. Com erro, a home volta preenchida com 422; com sucesso, 303 para `/#ideia` e o aviso no layout. A ideia chega na aba Mensagens marcada com o selo "Ideia de estampa".
 - **Responder em um clique**: cada linha da aba Mensagens traz “Responder por e-mail” (`mailto:` com assunto e a mensagem citada) e “WhatsApp” (`wa.me` com o texto pronto), montados por `ContactService::replyLinks()`. A citação é cortada em 600 caracteres para a URL não ficar enorme; sem telefone, o link do WhatsApp não aparece.
 - `GET /admin/contato` (`AdminController::contact()`) edita os dois canais (`POST /admin/contato`, com CSRF). A seção entrou na navegação lateral do painel.
-- `GET /admin/mensagens` (`AdminController::messages()`) é a aba **Mensagens**, com as abas Todas, Não lidas e Lixeira e a contagem de cada uma. Mostra nome, e-mail, telefone formatado, texto e data; mensagem não lida ganha o selo "Nova".
+- `GET /admin/mensagens` (`AdminController::messages()`) é a aba **Mensagens**, com as abas Todas, Não lidas e Lixeira e a contagem de cada uma. Mostra nome, e-mail, telefone formatado, texto e data; mensagem não lida ganha o selo "Nova" e ideia de estampa ganha o selo "Ideia de estampa", para separar do que veio do Contato.
 - A aba **Mensagens** do menu lateral mostra um contador com as não lidas. `AdminController::render()` calcula o número (reaproveitando as contagens quando a própria aba já consultou) e o layout desenha `admin-nav__count`; com zero, o selo desaparece. Mensagens na lixeira não entram na conta.
 - Ações por linha, cada uma no próprio formulário com CSRF: marcar como lida/não lida (`/admin/mensagens/ler`), mover para a lixeira (`/admin/mensagens/lixeira`), restaurar (`/admin/mensagens/restaurar`) e apagar de vez (`/admin/mensagens/apagar`, só a partir da lixeira). A lixeira é `deleted_at` (soft delete) e o `admin.js` pede confirmação nas duas ações destrutivas. Cada ação volta para a aba de origem (`voltar`).
-- Migrations: `2026_11_17_000015_create_settings_and_contact_messages.php` cria `settings` (chave/valor, já com os dois canais vazios) e `contact_messages`; `2026_11_17_000016_add_contact_message_status.php` acrescenta `phone`, `is_read` e `deleted_at` com índice para as abas; `2026_11_17_000017_create_contact_attempts_table.php` cria `contact_attempts` (`ip_hash`, `created_at`).
+- Migrations: `2026_11_17_000015_create_settings_and_contact_messages.php` cria `settings` (chave/valor, já com os dois canais vazios) e `contact_messages`; `2026_11_17_000016_add_contact_message_status.php` acrescenta `phone`, `is_read` e `deleted_at` com índice para as abas; `2026_11_17_000017_create_contact_attempts_table.php` cria `contact_attempts` (`ip_hash`, `created_at`); `2026_11_18_000018_add_contact_message_source.php` acrescenta `source` (padrão `contato`) para separar as mensagens das ideias de estampa.
 - O menu do topo ganhou os links reais, com `aria-current` nas duas páginas, e o "Fale conosco" do rodapé aponta para `/contato`. Nenhum link do menu ficou em `#`.
 - Estilos em `public/assets/css/pages.css`, carregado no layout do site: blocos em duas colunas a partir de 48 rem, canais de contato lado a lado e formulário com nome, e-mail e telefone na mesma linha no computador (mensagem e botão ocupam a largura toda). O painel usa `admin-contact*` em `admin.css`.
 

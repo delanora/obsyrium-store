@@ -273,13 +273,13 @@ html {
         transform var(--duration-fast) var(--ease-standard);
 }
 
-.newsletter__input {
+.idea__form .field__input {
     transition:
         border-color var(--duration-fast) var(--ease-standard),
         box-shadow var(--duration-base) var(--ease-standard);
 }
 
-.newsletter__input:focus {
+.idea__form .field__input:focus {
     border-color: var(--color-accent);
     box-shadow: 0 0 0 3px var(--color-accent-soft);
 }

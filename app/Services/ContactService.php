@@ -37,6 +37,11 @@ final class ContactService
 
     public const MAX_MESSAGE = 4000;
 
+    /** Origem da mensagem: formulário do Contato ou ideia de estampa da home. */
+    public const SOURCE_CONTACT = 'contato';
+
+    public const SOURCE_IDEA = 'ideia';
+
     public const FILTER_ALL = 'todas';
 
     public const FILTER_UNREAD = 'nao_lidas';
@@ -143,7 +148,7 @@ final class ContactService
      *
      * @return array{errors: list<string>, values: array{name: string, email: string, phone: string, message: string}, spam: bool, throttled: bool}
      */
-    public function send(array $dados, string $ip = ''): array
+    public function send(array $dados, string $ip = '', string $origem = self::SOURCE_CONTACT): array
     {
         $nome = trim((string) ($dados['name'] ?? ''));
         $email = trim((string) ($dados['email'] ?? ''));
@@ -188,11 +193,13 @@ final class ContactService
         }
 
         $this->pdo->prepare(
-            'INSERT INTO contact_messages (name, email, phone, message) VALUES (:nome, :email, :telefone, :mensagem)'
+            'INSERT INTO contact_messages (name, email, phone, source, message)
+             VALUES (:nome, :email, :telefone, :origem, :mensagem)'
         )->execute([
             ':nome' => $nome,
             ':email' => $email,
             ':telefone' => $telefoneDigitos,
+            ':origem' => $origem === self::SOURCE_IDEA ? self::SOURCE_IDEA : self::SOURCE_CONTACT,
             ':mensagem' => $mensagem,
         ]);
 
@@ -209,7 +216,7 @@ final class ContactService
     /**
      * Mensagens de uma aba: ativas, não lidas ou na lixeira.
      *
-     * @return list<array{id: int, name: string, email: string, phone: string, message: string, is_read: bool, created_at: string, deleted_at: string|null}>
+     * @return list<array{id: int, name: string, email: string, phone: string, source: string, message: string, is_read: bool, created_at: string, deleted_at: string|null}>
      */
     public function messages(string $filtro = self::FILTER_ALL): array
     {
@@ -220,7 +227,7 @@ final class ContactService
         };
 
         $consulta = $this->pdo->prepare(
-            'SELECT id, name, email, phone, message, is_read, created_at, deleted_at
+            'SELECT id, name, email, phone, source, message, is_read, created_at, deleted_at
              FROM contact_messages
              WHERE ' . $condicao . '
              ORDER BY created_at DESC, id DESC
@@ -234,6 +241,7 @@ final class ContactService
                 'name' => (string) $linha['name'],
                 'email' => (string) $linha['email'],
                 'phone' => (string) $linha['phone'],
+                'source' => (string) $linha['source'],
                 'message' => (string) $linha['message'],
                 'is_read' => (int) $linha['is_read'] === 1,
                 'created_at' => (string) $linha['created_at'],
@@ -386,6 +394,14 @@ final class ContactService
     private function ipHash(string $ip): string
     {
         return hash('sha256', $ip === '' ? 'desconhecido' : $ip);
+    }
+
+    /**
+     * Rótulo da origem da mensagem, como aparece no painel.
+     */
+    public static function sourceLabel(string $origem): string
+    {
+        return $origem === self::SOURCE_IDEA ? 'Ideia de estampa' : 'Contato';
     }
 
     /**

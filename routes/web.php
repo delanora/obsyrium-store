@@ -28,6 +28,8 @@ return static function (Router $router): void {
     $router->get('/produto/{slug}', [ProductController::class, 'show']);
 
     $router->get('/sobre', [PageController::class, 'about']);
+    $router->post('/ideia', [HomeController::class, 'requestIdea']);
+
     $router->get('/contato', [PageController::class, 'contact']);
     $router->post('/contato', [PageController::class, 'sendMessage']);
 
