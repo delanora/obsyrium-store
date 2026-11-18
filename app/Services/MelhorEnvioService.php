@@ -392,7 +392,9 @@ final class MelhorEnvioService
 
     /**
      * Produz uma linha de produto no formato aceito pelo cálculo do Melhor
-     * Envio: medidas em cm, peso em kg e valor unitário do seguro.
+     * Envio: medidas em cm, peso em kg e valor unitário do seguro. As medidas
+     * podem vir no próprio item (`width`, `height`, `length`), como faz a
+     * consulta da página do produto; sem elas vale o pacote pequeno padrão.
      *
      * @param array<string, mixed> $item
      *
@@ -410,9 +412,9 @@ final class MelhorEnvioService
 
         return [
             'id' => (string) ($item['id'] ?? $item['slug'] ?? 'peca'),
-            'width' => 20,
-            'height' => 10,
-            'length' => 15,
+            'width' => max(1, (int) ($item['width'] ?? 20)),
+            'height' => max(1, (int) ($item['height'] ?? 10)),
+            'length' => max(1, (int) ($item['length'] ?? 15)),
             'weight' => round($quilos, 3),
             'insurance_value' => round(max(0, (int) ($item['price_cents'] ?? 0)) / 100, 2),
             'quantity' => max(1, (int) ($item['quantity'] ?? 1)),

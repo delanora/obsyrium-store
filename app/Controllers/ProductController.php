@@ -6,7 +6,9 @@ namespace App\Controllers;
 
 use App\Database\Connection;
 use App\Repositories\ProductRepository;
+use App\Services\ShippingService;
 use App\Services\SizeGuideService;
+use App\Support\Cep;
 use App\Support\Navegacao;
 use App\Support\Price;
 use App\Support\ProductCard;
@@ -18,6 +20,16 @@ final class ProductController
     private const INSTALLMENTS = 3;
     private const FALLBACK_IMAGE = '/assets/images/placeholder.svg';
     private const LOW_STOCK = 3;
+
+    /**
+     * Pacote padrão da consulta de frete na página do produto: 26 × 8 × 36 cm
+     * e 1 kg. A peça ainda não está escolhida (tamanho) e o Melhor Envio só
+     * cota com peso e medidas, então vale uma embalagem única.
+     */
+    private const PACKAGE_WIDTH_CM = 26;
+    private const PACKAGE_HEIGHT_CM = 8;
+    private const PACKAGE_LENGTH_CM = 36;
+    private const PACKAGE_WEIGHT_GRAMS = 1000;
 
     /**
      * Página individual do produto: galeria, preço, tamanhos e estoque por
@@ -117,6 +129,39 @@ final class ProductController
             ),
         ];
 
+        // Consulta de frete da própria página: o cliente digita o CEP e vê
+        // preço e prazo de uma peça, na embalagem padrão. Sem CEP, o bloco fica
+        // só com o convite para consultar.
+        $freteCep = Cep::normalize((string) ($_GET['cep'] ?? ''));
+        $freteOpcoes = [];
+        $freteErro = '';
+
+        if ($freteCep !== '') {
+            if (!Cep::isValid($freteCep)) {
+                $freteErro = 'Confira o CEP: são oito dígitos.';
+            } else {
+                $freteOpcoes = (new ShippingService(Connection::get()))->optionsForCep(
+                    $freteCep,
+                    $preco,
+                    [[
+                        'id' => (string) $id,
+                        'slug' => (string) $linha['slug'],
+                        'quantity' => 1,
+                        'price_cents' => $preco,
+                        'weight_grams' => self::PACKAGE_WEIGHT_GRAMS,
+                        'width' => self::PACKAGE_WIDTH_CM,
+                        'height' => self::PACKAGE_HEIGHT_CM,
+                        'length' => self::PACKAGE_LENGTH_CM,
+                    ]],
+                    (string) ($linha['state'] ?? '')
+                );
+
+                if ($freteOpcoes === []) {
+                    $freteErro = 'Não conseguimos calcular para esse CEP agora. Tente de novo em instantes.';
+                }
+            }
+        }
+
         // Guia de medidas só entra na página quando a loja já mediu alguma peça.
         $guia = (new SizeGuideService(Connection::get()))->visible();
 
@@ -133,6 +178,8 @@ final class ProductController
             $preco,
             $estoqueTotal > 0
         )];
+
+        $productFrete = ['cep' => $freteCep, 'opcoes' => $freteOpcoes, 'erro' => $freteErro];
 
         $title = sprintf('%s — Obsyrium Store', $nome);
         $content = $basePath . '/resources/views/product/show.php';

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Support\Cep;
 use App\Support\Csrf;
 
 /*
@@ -13,6 +14,7 @@ use App\Support\Csrf;
  *
  * @var array<string, mixed> $product
  * @var list<array{id: int, label: string, chest: int|null, length: int|null}> $guia
+ * @var array{cep: string, opcoes: list<array<string, mixed>>, erro: string} $productFrete
  */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -172,6 +174,49 @@ $principal = $product['images'][0];
 				<p class="product-info__hint" id="tamanho-ajuda">
 					<?= $product['soldOut'] ? 'Todas as numerações estão esgotadas.' : 'Tamanhos riscados estão esgotados. Escolha um disponível para adicionar ao carrinho.' ?>
 				</p>
+
+				<details class="product-shipping"<?= $productFrete['cep'] !== '' ? ' open' : '' ?>>
+					<summary class="product-shipping__toggle">Consultar frete</summary>
+
+					<div class="product-shipping__body">
+						<p class="product-shipping__text">Digite o CEP de entrega para ver o frete e o prazo desta peça.</p>
+
+						<form class="product-shipping__form" action="/produto/<?= rawurlencode($product['slug']) ?>" method="get">
+							<label class="visually-hidden" for="frete-cep-produto">CEP de entrega</label>
+							<input
+								class="field__input product-shipping__input"
+								id="frete-cep-produto"
+								name="cep"
+								type="text"
+								inputmode="numeric"
+								autocomplete="postal-code"
+								maxlength="9"
+								placeholder="01234-567"
+								value="<?= $escape(Cep::format($productFrete['cep'])) ?>"
+								required
+							>
+							<button class="button button--ghost" type="submit">Calcular</button>
+						</form>
+
+						<?php if ($productFrete['erro'] !== ''): ?>
+							<p class="product-shipping__error" role="alert"><?= $escape($productFrete['erro']) ?></p>
+						<?php elseif ($productFrete['opcoes'] !== []): ?>
+							<p class="product-shipping__caption">Entrega para o CEP <?= $escape(Cep::format($productFrete['cep'])) ?></p>
+
+							<ul class="product-shipping__list">
+								<?php foreach ($productFrete['opcoes'] as $opcao): ?>
+									<li class="product-shipping__option">
+										<span class="product-shipping__label"><?= $escape((string) $opcao['label']) ?></span>
+										<span class="product-shipping__days"><?= $escape((string) $opcao['days']) ?></span>
+										<span class="product-shipping__price"><?= $escape((string) $opcao['price_label']) ?></span>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+
+							<p class="product-shipping__note">Estimativa para uma peça. O frete final é confirmado no checkout, com o endereço escolhido.</p>
+						<?php endif; ?>
+					</div>
+				</details>
 
 				<?php if ($product['description'] !== ''): ?>
 					<div class="product-info__description">

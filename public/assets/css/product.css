@@ -489,3 +489,124 @@
         align-items: start;
     }
 }
+
+/* Consulta de frete na página do produto: abre um campo de CEP e lista as
+   transportadoras cotadas, no mesmo tom do resto da página. */
+.product-shipping {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.product-shipping__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: var(--target-min);
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-accent);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-caps);
+    text-transform: uppercase;
+    cursor: pointer;
+    list-style: none;
+}
+
+.product-shipping__toggle::-webkit-details-marker {
+    display: none;
+}
+
+.product-shipping__toggle::after {
+    content: "+";
+    font-size: var(--font-size-md);
+    line-height: 1;
+}
+
+.product-shipping[open] .product-shipping__toggle::after {
+    content: "\2212";
+}
+
+.product-shipping__body {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0 var(--space-4) var(--space-4);
+}
+
+.product-shipping__text,
+.product-shipping__note,
+.product-shipping__caption,
+.product-shipping__error {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+}
+
+.product-shipping__text,
+.product-shipping__note {
+    color: var(--color-text-muted);
+}
+
+.product-shipping__caption {
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.product-shipping__error {
+    color: var(--color-danger);
+}
+
+.product-shipping__form {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.product-shipping__input {
+    flex: 1;
+    min-width: 0;
+}
+
+.product-shipping__list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.product-shipping__option {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+}
+
+.product-shipping__label {
+    font-weight: var(--font-weight-semibold);
+}
+
+.product-shipping__days {
+    grid-column: 1;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.product-shipping__price {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    color: var(--color-accent);
+    font-weight: var(--font-weight-semibold);
+}
+
+@media (hover: hover) {
+    .product-shipping__toggle:hover {
+        color: var(--color-text);
+    }
+}
