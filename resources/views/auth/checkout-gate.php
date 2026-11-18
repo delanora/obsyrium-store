@@ -19,8 +19,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 <section class="auth auth--gate">
 	<div class="container auth__inner">
 		<header class="auth-gate__head">
-			<p class="auth__eyebrow">Finalizar compra</p>
-			<h1 class="auth__title auth-gate__title">Para prosseguir com a compra você deve fazer o login ou cadastrar-se</h1>
+			<h1 class="auth-gate__title">Finalizar compra</h1>
 		</header>
 
 		<div class="auth-gate__cards">

@@ -89,8 +89,14 @@
  * Escala de espaçamento usada aqui: 8 / 12 / 16 / 24 / 32 px.
  */
 
+/* Entrada mais curta: sem texto de apoio, a página começa mais para cima
+   e os dois cards cabem numa tela de 1920x1080 sem rolagem. */
+.auth--gate {
+    padding-block: var(--space-5); /* 24px */
+}
+
 .auth--gate .auth__inner {
-    gap: var(--space-7); /* 40px entre o cabeçalho e os cards */
+    gap: var(--space-5);
     justify-items: stretch;
     max-width: 64rem; /* 1024px */
     margin-inline: auto;
@@ -103,11 +109,18 @@
     text-align: center;
 }
 
+/* Mesma fonte serifada do título "Entrar", mantendo o tom apagado que o
+   "Finalizar compra" já tinha, só maior. */
 .auth-gate__title {
+    margin: 0;
     max-width: 34rem;
-    font-size: var(--font-size-lg);
-    letter-spacing: 0;
-    text-transform: none;
+    color: var(--color-text-muted);
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-display);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-display);
+    text-transform: uppercase;
     text-wrap: balance;
 }
 
