@@ -16,6 +16,7 @@ use App\Services\LoginThrottle;
 use App\Services\OrderService;
 use App\Services\PageService;
 use App\Services\ProductAdminService;
+use App\Services\ShippingService;
 use App\Services\SizeGuideService;
 use App\Services\StockService;
 use App\Support\Csrf;
@@ -449,6 +450,57 @@ final class AdminController
         Session::flash('success', 'Guia de medidas salvo.');
 
         $this->redirect('/admin/guia-de-medidas');
+    }
+
+    /**
+     * Aba do frete: taxa e prazo por estado, frete grátis e retirada.
+     */
+    public function shipping(): void
+    {
+        $this->renderShipping($this->admin());
+    }
+
+    public function saveShipping(): void
+    {
+        $admin = $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $resultado = (new ShippingService(Connection::get()))->save($_POST);
+
+        if ($resultado['errors'] !== []) {
+            $this->renderShipping($admin, $resultado['errors'], $resultado['values']);
+
+            return;
+        }
+
+        Session::flash('success', 'Frete salvo.');
+
+        $this->redirect('/admin/frete');
+    }
+
+    /**
+     * Guarda o código de rastreio do pedido, editado no detalhe do pedido.
+     *
+     * @param array<string, string> $params
+     */
+    public function saveTracking(array $params): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $numero = (string) ($params['number'] ?? '');
+        $erro = (new OrderService(Connection::get()))
+            ->saveTracking($numero, (string) ($_POST['tracking_code'] ?? ''));
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Código de rastreio salvo.');
+
+        $this->redirect('/admin/pedidos/' . rawurlencode($numero));
     }
 
     /**
@@ -1219,6 +1271,24 @@ final class AdminController
      * @param list<string> $erros
      * @param array<int, array{chest: string, length: string}> $valores
      */
+    /**
+     * @param array<string, mixed> $admin
+     * @param list<string> $erros
+     * @param array<string, mixed> $valores
+     */
+    private function renderShipping(array $admin, array $erros = [], array $valores = []): void
+    {
+        $servico = new ShippingService(Connection::get());
+
+        $this->render('frete', 'Frete — Administração Obsyrium', $admin, 'frete', [
+            'taxas' => $servico->rates(),
+            'config' => $servico->settings(),
+            'estados' => ShippingService::STATES,
+            'erros' => $erros,
+            'valores' => $valores,
+        ]);
+    }
+
     private function renderSizeGuide(array $admin, array $erros = [], array $valores = []): void
     {
         $this->render('medidas', 'Guia de medidas — Administração Obsyrium', $admin, 'medidas', [
@@ -1425,6 +1495,9 @@ final class AdminController
         $adminPagina = $contexto['pagina'] ?? null;
         $adminBlocoErro = (int) ($contexto['blocoErro'] ?? 0);
         $adminValoresBloco = $contexto['valoresBloco'] ?? [];
+        $adminTaxas = $contexto['taxas'] ?? [];
+        $adminFreteConfig = $contexto['config'] ?? [];
+        $adminEstados = $contexto['estados'] ?? [];
 
         // O contador da aba Mensagens aparece em todas as telas do painel; a
         // própria aba já calculou as contagens, então reaproveita o resultado.

@@ -147,6 +147,29 @@ final class AccountController
     }
 
     /**
+     * Cancelamento pelo cliente: só vale enquanto o pedido aguarda pagamento.
+     * A regra mora no OrderService, que devolve as peças ao estoque junto.
+     */
+    public function cancelOrder(): void
+    {
+        $usuario = $this->usuario();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $numero = trim((string) ($_POST['number'] ?? ''));
+        $erro = (new OrderService(Connection::get()))->cancelForUser((int) $usuario['id'], $numero);
+
+        Session::flash(
+            $erro === null ? 'success' : 'error',
+            $erro ?? 'Pedido cancelado. As peças voltaram ao estoque.'
+        );
+
+        $this->redirect('/conta/compras');
+    }
+
+    /**
      * @param array<string, mixed> $usuario
      * @param array<string, string> $erros
      * @param array<string, mixed> $antigo

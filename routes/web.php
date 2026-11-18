@@ -62,6 +62,7 @@ return static function (Router $router): void {
     $router->get('/conta/enderecos/{id}', [AccountController::class, 'editAddress']);
 
     $router->get('/conta/compras', [AccountController::class, 'orders']);
+    $router->post('/conta/compras/cancelar', [AccountController::class, 'cancelOrder']);
 
     $router->get('/cadastro', [AuthController::class, 'showRegister']);
     $router->post('/cadastro', [AuthController::class, 'register']);
@@ -76,6 +77,9 @@ return static function (Router $router): void {
     $router->get('/admin/pedidos', [AdminController::class, 'orders']);
     $router->get('/admin/pedidos/{number}', [AdminController::class, 'order']);
     $router->post('/admin/pedidos/{number}/status', [AdminController::class, 'changeStatus']);
+    $router->post('/admin/pedidos/{number}/rastreio', [AdminController::class, 'saveTracking']);
+    $router->get('/admin/frete', [AdminController::class, 'shipping']);
+    $router->post('/admin/frete', [AdminController::class, 'saveShipping']);
     $router->get('/admin/estoque', [AdminController::class, 'stock']);
     $router->post('/admin/estoque/saldo', [AdminController::class, 'saveStock']);
     $router->post('/admin/estoque/fora-de-linha', [AdminController::class, 'discontinue']);

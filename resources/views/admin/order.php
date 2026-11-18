@@ -62,6 +62,13 @@ $podeCancelar = array_key_exists('cancelado', $adminPedido['next_statuses']);
 				<dd><?= $escape((string) $adminPedido['shipping']) ?></dd>
 			</div>
 
+			<?php if (($adminPedido['shipping_label'] ?? '') !== ''): ?>
+				<div class="admin-totals__row">
+					<dt>Entrega</dt>
+					<dd><?= $escape((string) $adminPedido['shipping_label']) ?></dd>
+				</div>
+			<?php endif; ?>
+
 			<div class="admin-totals__row admin-totals__row--total">
 				<dt>Total</dt>
 				<dd><?= $escape((string) $adminPedido['total']) ?></dd>
@@ -95,6 +102,30 @@ $podeCancelar = array_key_exists('cancelado', $adminPedido['next_statuses']);
 					<p class="admin-note admin-note--warning">Cancelar devolve as peças deste pedido ao estoque.</p>
 				<?php endif; ?>
 			<?php endif; ?>
+		</section>
+
+		<section class="admin-panel">
+			<h2 class="admin-panel__title">Rastreio</h2>
+
+			<form class="admin-status-form" method="post" action="/admin/pedidos/<?= $escape((string) $adminPedido['number']) ?>/rastreio">
+				<?= Csrf::field() ?>
+
+				<div class="field">
+					<label class="field__label" for="tracking_code">Código de rastreio</label>
+					<input
+						class="field__input"
+						id="tracking_code"
+						name="tracking_code"
+						type="text"
+						maxlength="60"
+						autocomplete="off"
+						value="<?= $escape((string) ($adminPedido['tracking_code'] ?? '')) ?>"
+					>
+					<p class="field__hint">Aparece na aba Compras do cliente. Deixe vazio para limpar.</p>
+				</div>
+
+				<button class="button" type="submit">Salvar código</button>
+			</form>
 		</section>
 
 		<section class="admin-panel">

@@ -68,6 +68,8 @@ final class OrderService
                     o.total_cents,
                     o.created_at,
                     o.ship_label,
+                    o.shipping_label,
+                    o.tracking_code,
                     o.ship_recipient_encrypted,
                     o.ship_postal_code,
                     o.ship_street_encrypted,
@@ -82,11 +84,13 @@ final class OrderService
     }
 
     /**
-     * Cria o pedido a partir do carrinho e do endereço escolhidos.
+     * Cria o pedido a partir do carrinho, do endereço e da forma de entrega
+     * escolhidos. O frete é conferido de novo aqui: o preço que vale é o da
+     * tabela no momento do fechamento, não o que veio do formulário.
      *
      * @return array{id: int, number: string}|array{error: string}
      */
-    public function place(int $userId, int $addressId): array
+    public function place(int $userId, int $addressId, string $shippingKey = ''): array
     {
         if ($userId <= 0) {
             return ['error' => 'Entre na sua conta para finalizar a compra.'];
@@ -125,7 +129,15 @@ final class OrderService
                 $pecas += (int) $item['quantity'];
             }
 
-            [$orderId, $numero] = $this->insertOrder($userId, $endereco, $subtotal, $pecas);
+            $opcao = $this->shippingOption($endereco, $subtotal, $shippingKey);
+
+            if ($opcao === null) {
+                $this->pdo->rollBack();
+
+                return ['error' => 'A forma de entrega escolhida não vale para este endereço. Confira o frete e tente de novo.'];
+            }
+
+            [$orderId, $numero] = $this->insertOrder($userId, $endereco, $subtotal, $pecas, $opcao);
             $this->insertItems($orderId, $itens);
             $this->debitStock($itens);
             $this->clearCart($userId);
@@ -355,6 +367,110 @@ final class OrderService
         }
     }
 
+    /**
+     * A forma de entrega escolhida, conferida contra a tabela do estado do
+     * endereço. Sem escolha, vale a entrega padrão; escolha inválida devolve
+     * null e o pedido não fecha — melhor parar do que gravar frete errado.
+     *
+     * @param array<string, mixed> $endereco
+     *
+     * @return array{key: string, label: string, price_cents: int, price_label: string, days: string, note: string}|null
+     */
+    private function shippingOption(array $endereco, int $subtotal, string $shippingKey): ?array
+    {
+        $servico = new ShippingService($this->pdo);
+        $estado = (string) ($endereco['state'] ?? '');
+
+        if ($shippingKey === '') {
+            $opcoes = $servico->optionsFor($estado, $subtotal);
+
+            return $opcoes[0] ?? null;
+        }
+
+        return $servico->option($estado, $shippingKey, $subtotal);
+    }
+
+    /**
+     * Guarda o código de rastreio do pedido. Devolve a mensagem de erro, ou
+     * null quando salvou.
+     */
+    public function saveTracking(string $number, string $code): ?string
+    {
+        $codigo = trim($code);
+
+        if (mb_strlen($codigo) > 60) {
+            return 'Código de rastreio: até 60 caracteres.';
+        }
+
+        if ($codigo !== '' && preg_match('/^[A-Za-z0-9 .-]+$/', $codigo) !== 1) {
+            return 'Código de rastreio: use letras, números, ponto, hífen ou espaço.';
+        }
+
+        $existe = $this->pdo->prepare('SELECT 1 FROM orders WHERE number = :numero LIMIT 1');
+        $existe->execute([':numero' => $number]);
+
+        if ($existe->fetchColumn() === false) {
+            return 'Pedido não encontrado.';
+        }
+
+        $this->pdo->prepare('UPDATE orders SET tracking_code = :codigo WHERE number = :numero')
+            ->execute([':codigo' => $codigo, ':numero' => $number]);
+
+        return null;
+    }
+
+    /**
+     * Cancelamento pelo próprio cliente, só enquanto o pedido aguarda
+     * pagamento — depois disso, quem decide é a loja. A peça volta ao estoque
+     * na mesma transação. Devolve a mensagem de erro, ou null quando cancelou.
+     */
+    public function cancelForUser(int $userId, string $number): ?string
+    {
+        if ($userId <= 0 || $number === '') {
+            return 'Pedido não encontrado.';
+        }
+
+        $this->pdo->beginTransaction();
+
+        try {
+            $consulta = $this->pdo->prepare(
+                'SELECT id, status FROM orders
+                  WHERE user_id = :user AND number = :numero
+                  LIMIT 1 FOR UPDATE'
+            );
+
+            $consulta->execute([':user' => $userId, ':numero' => $number]);
+            $pedido = $consulta->fetch();
+
+            if ($pedido === false) {
+                $this->pdo->rollBack();
+
+                return 'Pedido não encontrado.';
+            }
+
+            if ((string) $pedido['status'] !== 'aguardando_pagamento') {
+                $this->pdo->rollBack();
+
+                return 'Este pedido já saiu do aguardando pagamento. Fale com a loja para cancelar.';
+            }
+
+            $this->pdo->prepare("UPDATE orders SET status = 'cancelado' WHERE id = :id")
+                ->execute([':id' => (int) $pedido['id']]);
+
+            $this->returnStock((int) $pedido['id']);
+
+            $this->pdo->commit();
+
+            return null;
+        } catch (Throwable $erro) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $erro;
+        }
+    }
+
     public static function statusLabel(string $status): string
     {
         return self::STATUS_LABELS[$status] ?? 'Em análise';
@@ -450,23 +566,25 @@ final class OrderService
 
     /**
      * @param array<string, mixed> $endereco
+     * @param array{key: string, label: string, price_cents: int, price_label: string, days: string, note: string} $opcao
      *
      * @return array{0: int, 1: string}
      */
-    private function insertOrder(int $userId, array $endereco, int $subtotal, int $pecas): array
+    private function insertOrder(int $userId, array $endereco, int $subtotal, int $pecas, array $opcao): array
     {
+        $frete = $opcao['price_cents'];
         // O número legível nasce do id, que só existe depois do INSERT: a linha
         // entra com um marcador aleatório e é renomeada logo em seguida, ainda
         // dentro da transação. A coluna continua NOT NULL e UNIQUE.
         $consulta = $this->pdo->prepare(
             'INSERT INTO orders
                 (number, user_id, status, pieces, subtotal_cents, shipping_cents, total_cents,
-                 ship_label, ship_recipient_encrypted, ship_postal_code, ship_street_encrypted,
+                 ship_label, shipping_label, ship_recipient_encrypted, ship_postal_code, ship_street_encrypted,
                  ship_number_encrypted, ship_complement_encrypted, ship_district_encrypted,
                  ship_city_encrypted, ship_state)
              VALUES
                 (:marcador, :user, :status, :pieces, :subtotal, :frete, :total,
-                 :label, :recipient, :postal_code, :street, :numero_endereco, :complement,
+                 :label, :shipping_label, :recipient, :postal_code, :street, :numero_endereco, :complement,
                  :district, :city, :state)'
         );
 
@@ -475,9 +593,10 @@ final class OrderService
         $consulta->bindValue(':status', 'aguardando_pagamento');
         $consulta->bindValue(':pieces', $pecas, PDO::PARAM_INT);
         $consulta->bindValue(':subtotal', $subtotal, PDO::PARAM_INT);
-        $consulta->bindValue(':frete', 0, PDO::PARAM_INT);
-        $consulta->bindValue(':total', $subtotal, PDO::PARAM_INT);
+        $consulta->bindValue(':frete', $frete, PDO::PARAM_INT);
+        $consulta->bindValue(':total', $subtotal + $frete, PDO::PARAM_INT);
         $consulta->bindValue(':label', $endereco['label']);
+        $consulta->bindValue(':shipping_label', $this->shippingLabel($opcao));
         $consulta->bindValue(':recipient', Crypto::encrypt((string) $endereco['recipient']));
         $consulta->bindValue(':postal_code', (string) $endereco['postal_code']);
         $consulta->bindValue(':street', Crypto::encrypt((string) $endereco['street']));
@@ -501,6 +620,23 @@ final class OrderService
             ->execute([':numero' => $numero, ':id' => $id]);
 
         return [$id, $numero];
+    }
+
+    /**
+     * O que o cliente escolheu, do jeito que aparece no pedido: "Entrega · SP ·
+     * 5 a 12 dias úteis" ou "Retirada na loja".
+     *
+     * @param array{label: string, days: string} $opcao
+     */
+    private function shippingLabel(array $opcao): string
+    {
+        $rotulo = $opcao['label'];
+
+        if ($opcao['days'] !== '' && $opcao['days'] !== 'Combinada com a loja') {
+            $rotulo .= ' · ' . $opcao['days'];
+        }
+
+        return mb_substr($rotulo, 0, 60);
     }
 
     /**
@@ -673,7 +809,9 @@ final class OrderService
             'subtotal' => Price::format((int) $linha['subtotal_cents']),
             'shipping' => (int) $linha['shipping_cents'] > 0
                 ? Price::format((int) $linha['shipping_cents'])
-                : 'A calcular',
+                : ((string) ($linha['shipping_label'] ?? '') !== '' ? 'Grátis' : 'A calcular'),
+            'shipping_label' => (string) ($linha['shipping_label'] ?? ''),
+            'tracking_code' => (string) ($linha['tracking_code'] ?? ''),
             'total' => Price::format((int) $linha['total_cents']),
             'address' => [
                 'label' => (string) $linha['ship_label'],

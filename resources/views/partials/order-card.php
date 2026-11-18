@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Support\Csrf;
+
 /*
  * Cartão de um pedido: número, data, situação, itens, endereço de entrega e
  * valores. Usado na aba Compras e na confirmação do checkout, sempre a partir
@@ -42,12 +44,22 @@ $cepDoPedido = static function (string $cep): string {
 	</ul>
 
 	<footer class="order__footer">
-		<p class="order__address">
+		<div class="order__address-wrap">
+			<?php if (($pedido['shipping_label'] ?? '') !== ''): ?>
+				<p class="order__shipping"><?= $escape((string) $pedido['shipping_label']) ?></p>
+			<?php endif; ?>
+
+			<p class="order__address">
 			<span class="order__address-label">Entrega · <?= $escape((string) $pedido['address']['label']) ?></span><br>
 			<?= $escape((string) $pedido['address']['recipient']) ?><br>
 			<?= $escape((string) $pedido['address']['street']) ?>, <?= $escape((string) $pedido['address']['number']) ?><?= $pedido['address']['complement'] !== '' ? ' — ' . $escape((string) $pedido['address']['complement']) : '' ?><br>
-			<?= $escape((string) $pedido['address']['district']) ?> · <?= $escape((string) $pedido['address']['city']) ?>/<?= $escape((string) $pedido['address']['state']) ?> · CEP <?= $escape($cepDoPedido((string) $pedido['address']['postal_code'])) ?>
-		</p>
+				<?= $escape((string) $pedido['address']['district']) ?> · <?= $escape((string) $pedido['address']['city']) ?>/<?= $escape((string) $pedido['address']['state']) ?> · CEP <?= $escape($cepDoPedido((string) $pedido['address']['postal_code'])) ?>
+			</p>
+
+			<?php if (($pedido['tracking_code'] ?? '') !== ''): ?>
+				<p class="order__tracking">Rastreio: <strong><?= $escape((string) $pedido['tracking_code']) ?></strong></p>
+			<?php endif; ?>
+		</div>
 
 		<dl class="order__totals">
 			<div class="order__total-row">
@@ -66,4 +78,14 @@ $cepDoPedido = static function (string $cep): string {
 			</div>
 		</dl>
 	</footer>
+
+	<?php if ((string) $pedido['status'] === 'aguardando_pagamento'): ?>
+		<form class="order__cancel" method="post" action="/conta/compras/cancelar">
+			<?= Csrf::field() ?>
+			<input type="hidden" name="number" value="<?= $escape((string) $pedido['number']) ?>">
+
+			<button class="order__cancel-button" type="submit">Cancelar pedido</button>
+			<span class="order__cancel-hint">Enquanto o pagamento não sai, cancelar devolve as peças ao estoque.</span>
+		</form>
+	<?php endif; ?>
 </li>

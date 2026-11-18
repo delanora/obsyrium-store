@@ -10,6 +10,7 @@ use App\Repositories\UserRepository;
 use App\Services\AccountService;
 use App\Services\CartService;
 use App\Services\OrderService;
+use App\Services\ShippingService;
 use App\Support\Csrf;
 use App\Support\Price;
 use App\Support\Session;
@@ -40,8 +41,11 @@ final class CheckoutController
             return;
         }
 
-        $pedido = (new OrderService(Connection::get()))
-            ->place((int) Session::userId(), (int) ($_POST['address_id'] ?? 0));
+        $pedido = (new OrderService(Connection::get()))->place(
+            (int) Session::userId(),
+            (int) ($_POST['address_id'] ?? 0),
+            (string) ($_POST['shipping'] ?? '')
+        );
 
         if (isset($pedido['error'])) {
             Session::flash('error', $pedido['error']);
@@ -127,13 +131,31 @@ final class CheckoutController
         http_response_code(200);
         header('Content-Type: text/html; charset=UTF-8');
 
+        $enderecoId = $this->enderecoEscolhido($enderecos);
+        $servicoFrete = new ShippingService(Connection::get());
+
+        // O frete depende do estado do endereço escolhido: cada endereço leva
+        // as próprias opções, e o formulário troca o total ao trocar a escolha.
+        $checkoutFrete = [];
+        $checkoutEntrega = '';
+
+        foreach ($enderecos as $endereco) {
+            $opcoes = $servicoFrete->optionsFor((string) $endereco['state'], $totalCentavos);
+            $checkoutFrete[(int) $endereco['id']] = $opcoes;
+
+            if ((int) $endereco['id'] === $enderecoId) {
+                $checkoutEntrega = (string) ($opcoes[0]['key'] ?? '');
+            }
+        }
+
         $basePath = dirname(__DIR__, 2);
         $title = self::TITLE;
         $checkoutItens = $itens;
         $checkoutEnderecos = $enderecos;
-        $checkoutEnderecoId = $this->enderecoEscolhido($enderecos);
+        $checkoutEnderecoId = $enderecoId;
         $checkoutPecas = $pecas;
         $checkoutTotal = Price::format($totalCentavos);
+        $checkoutSubtotalCents = $totalCentavos;
         $content = $basePath . '/resources/views/checkout/index.php';
 
         $metaRobots = 'noindex, follow';
