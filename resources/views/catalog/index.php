@@ -213,13 +213,7 @@ if ($resultado['paginas'] <= 7) {
 
 				<h1 class="catalog__title"><?= $escape((string) $categoriaPagina['name']) ?></h1>
 				<p class="catalog__lead">
-					<?php if ($categoriaPagina['parent'] !== null): ?>
-						Camisetas de <?= $escape((string) $categoriaPagina['name']) ?> dentro de <?= $escape((string) $categoriaPagina['parent']['name']) ?>,
-						em lotes pequenos e com estoque real. Quando um tamanho acaba, ele sai do ar.
-					<?php else: ?>
-						Camisetas de <?= $escape((string) $categoriaPagina['name']) ?>, em lotes pequenos e com estoque real.
-						Quando um tamanho acaba, ele sai do ar até a próxima remessa.
-					<?php endif; ?>
+					Camisetas de <?= $escape((string) $categoriaPagina['name']) ?> preparadas para vc utilizar com o maior conforto e estilo possível
 				</p>
 			<?php elseif ($estado['q'] !== ''): ?>
 				<h1 class="catalog__title">Busca</h1>
