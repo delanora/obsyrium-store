@@ -24,7 +24,7 @@ final class HomeHeroService
     /** Quantas fotos o topo aceita de uma vez. */
     public const MAX_SLIDES = 6;
 
-    public const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    public const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
     public const UPLOAD_PATH = '/uploads/hero';
 

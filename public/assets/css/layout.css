@@ -410,7 +410,7 @@ html {
     position: relative;
     display: grid;
     place-items: center;
-    min-height: clamp(20rem, 52vw, 32rem);
+    min-height: clamp(22rem, 52vw, 34rem);
     padding-block: var(--space-9);
     overflow: hidden;
     scroll-snap-align: start;
@@ -429,7 +429,7 @@ html {
 /* Topo com foto: a imagem cobre o slide e, quando há texto, um véu escuro
    garante a leitura sobre qualquer estampa. Sem texto, a foto aparece limpa. */
 .hero__slide.hero__slide--foto {
-    min-height: clamp(18rem, 52vw, 32rem);
+    min-height: clamp(22rem, 58vw, 42rem);
 }
 
 .hero__slide--foto::before {

@@ -293,6 +293,111 @@
 		});
 	});
 
+	// Topo da loja: cada foto é um card e abre uma janela com a prévia do topo
+	// no alto. A prévia acompanha os campos enquanto o administrador digita, e
+	// fechar sem salvar devolve os campos ao que está gravado.
+	cada(document.querySelectorAll('[data-hero-dialog]'), function (janela) {
+		var id = janela.getAttribute('data-hero-dialog');
+		var card = document.querySelector('[data-hero-open="' + id + '"]');
+
+		if (!card || typeof janela.showModal !== 'function') {
+			return;
+		}
+
+		var campo = function (nome) {
+			return janela.querySelector('[name="' + nome + '"]');
+		};
+
+		var valor = function (nome) {
+			var entrada = campo(nome);
+
+			return entrada ? entrada.value.trim() : '';
+		};
+
+		var previa = {
+			miolo: janela.querySelector('[data-preview-inner]'),
+			veu: janela.querySelector('[data-preview-shade]'),
+			selo: janela.querySelector('[data-preview-hidden]'),
+			sobrancelha: janela.querySelector('[data-preview-eyebrow]'),
+			titulo: janela.querySelector('[data-preview-title]'),
+			texto: janela.querySelector('[data-preview-text]'),
+			botao: janela.querySelector('[data-preview-button]')
+		};
+
+		var sincronizar = function () {
+			if (!previa.miolo) {
+				return;
+			}
+
+			var sobrancelha = valor('eyebrow');
+			var titulo = valor('title');
+			var texto = valor('text');
+			var rotulo = valor('button_label');
+			var link = valor('button_href');
+			var escondida = campo('is_active') ? !campo('is_active').checked : false;
+			var temTexto = sobrancelha !== '' || titulo !== '' || texto !== '' || rotulo !== '';
+
+			previa.veu.hidden = !temTexto;
+			previa.miolo.hidden = !temTexto;
+			previa.sobrancelha.textContent = sobrancelha;
+			previa.sobrancelha.hidden = sobrancelha === '';
+			previa.titulo.textContent = titulo;
+			previa.titulo.hidden = titulo === '';
+			previa.texto.textContent = texto;
+			previa.texto.hidden = texto === '';
+			previa.botao.textContent = rotulo;
+			previa.botao.hidden = rotulo === '' || link === '';
+			previa.selo.hidden = !escondida;
+		};
+
+		card.addEventListener('click', function () {
+			var formulario = janela.querySelector('[data-hero-form]');
+
+			// Reabrir sempre parte do que está gravado: o que foi digitado e não
+			// enviado não fica pela metade na prévia.
+			if (formulario) {
+				formulario.reset();
+			}
+
+			sincronizar();
+			janela.showModal();
+
+			var primeiro = campo('eyebrow');
+
+			if (primeiro) {
+				primeiro.focus();
+			}
+		});
+
+		cada(janela.querySelectorAll('[data-hero-close]'), function (botao) {
+			botao.addEventListener('click', function () {
+				janela.close();
+			});
+		});
+
+		janela.addEventListener('input', sincronizar);
+		janela.addEventListener('change', sincronizar);
+
+		// Clique no fundo escuro fecha; Esc já é do próprio <dialog>.
+		janela.addEventListener('click', function (evento) {
+			if (evento.target === janela) {
+				janela.close();
+			}
+		});
+
+		// Fechar sem salvar também devolve os campos ao que está gravado, nos
+		// navegadores que disparam o evento. Abrir já reseta de qualquer forma.
+		janela.addEventListener('close', function () {
+			var formulario = janela.querySelector('[data-hero-form]');
+
+			if (formulario) {
+				formulario.reset();
+			}
+
+			sincronizar();
+		});
+	});
+
 	// Ações destrutivas que pedem confirmação. Sem JavaScript o formulário já
 	// envia; aqui só evita a lixeira e a exclusão por engano.
 	cada(document.querySelectorAll('form[data-confirm]'), function (formulario) {

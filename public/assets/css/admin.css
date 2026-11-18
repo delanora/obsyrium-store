@@ -2286,52 +2286,241 @@ a.admin-message__meta:hover {
     gap: var(--space-2);
     margin-bottom: var(--space-2);
 }
-
 /* ============ Página inicial ============ */
 
-/* Cada foto do topo é um bloco: imagem à esquerda e textos à direita. */
-.admin-hero__list {
+/* Cada foto do topo é um card; clicar abre a janela de edição com a prévia do
+   topo no alto. */
+.admin-hero__hint {
+    margin: 0 0 var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.admin-hero__cards {
     display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
     gap: var(--space-4);
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-.admin-hero__item {
+.admin-hero__card {
     display: grid;
-    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
-    gap: var(--space-4);
-    align-items: start;
-    padding: var(--space-4);
+    width: 100%;
+    padding: 0;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background-color: var(--color-surface);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background-color: var(--color-bg-alt);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        border-color var(--duration-fast) var(--ease-standard),
+        transform var(--duration-fast) var(--ease-standard);
 }
 
-.admin-hero__photo {
-    display: grid;
-    gap: var(--space-2);
-    margin: 0;
+.admin-hero__card:hover,
+.admin-hero__card:focus-visible {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
 }
 
-.admin-hero__photo img {
+.admin-hero__card img {
+    display: block;
     width: 100%;
     height: auto;
     aspect-ratio: 16 / 9;
     object-fit: cover;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background-color: var(--color-bg);
 }
 
-.admin-hero__photo form {
-    justify-self: start;
+.admin-hero__card-body {
+    display: grid;
+    gap: 0.25rem;
+    padding: var(--space-3);
+}
+
+.admin-hero__card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.admin-hero__card-title {
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--font-size-sm);
+    line-height: 1.35;
+}
+
+.admin-hero__card-flag {
+    padding: 0.1rem 0.45rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-accent);
+    font-size: 0.65rem;
+}
+
+/* Janela de edição: prévia no alto, campos abaixo. */
+.admin-hero__dialog {
+    width: min(48rem, calc(100vw - 2rem));
+    max-height: calc(100vh - 2rem);
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    overflow-y: auto;
+}
+
+.admin-hero__dialog::backdrop {
+    background-color: rgb(10 8 6 / 78%);
+}
+
+.admin-hero__dialog-head {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-4) var(--space-2);
+}
+
+.admin-hero__dialog-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--font-size-base);
+    letter-spacing: var(--letter-spacing-display);
+    text-transform: uppercase;
+}
+
+.admin-hero__close {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: transparent;
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.admin-hero__close:hover,
+.admin-hero__close:focus-visible {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.admin-hero__dialog-hint {
+    margin: 0 var(--space-4) var(--space-2);
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+/* Prévia do topo, na mesma proporção e com o mesmo véu da loja. */
+.admin-preview {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: clamp(14rem, 28vw, 20rem);
+    margin: 0 var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background-color: var(--color-bg-alt);
+    text-align: center;
+}
+
+.admin-preview__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.admin-preview__shade {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(to top, rgb(10 8 6 / 80%), rgb(10 8 6 / 20%) 55%, rgb(10 8 6 / 45%));
+}
+
+.admin-preview__inner {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    max-width: 34rem;
+    padding: var(--space-5) var(--space-4);
+}
+
+.admin-preview__eyebrow {
+    margin: 0;
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.admin-preview__title {
+    margin: 0;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: clamp(1.15rem, 2.6vw, 1.75rem);
+    line-height: 1.2;
+    text-shadow: 0 2px 24px rgb(0 0 0 / 45%);
+}
+
+.admin-preview__text {
+    margin: 0;
+    max-width: 36ch;
+    color: rgb(255 255 255 / 84%);
+    font-size: var(--font-size-sm);
+    text-shadow: 0 1px 16px rgb(0 0 0 / 45%);
+}
+
+.admin-preview__button {
+    display: inline-flex;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-accent);
+    color: #14100b;
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.admin-preview__flag {
+    position: absolute;
+    inset-block-start: var(--space-3);
+    inset-inline-start: var(--space-3);
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-pill);
+    background-color: rgb(10 8 6 / 85%);
+    color: var(--color-accent);
+    font-size: 0.65rem;
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
 }
 
 .admin-hero__form {
     display: grid;
     gap: var(--space-3);
+    padding: var(--space-4);
 }
 
 .admin-hero__check {
@@ -2352,8 +2541,18 @@ a.admin-message__meta:hover {
     font-size: var(--font-size-xs);
 }
 
-@media (max-width: 60em) {
-    .admin-hero__item {
-        grid-template-columns: minmax(0, 1fr);
+.admin-hero__footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 var(--space-4) var(--space-4);
+}
+
+@media (max-width: 40em) {
+    .admin-hero__cards {
+        grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    }
+
+    .admin-preview {
+        min-height: 12rem;
     }
 }
