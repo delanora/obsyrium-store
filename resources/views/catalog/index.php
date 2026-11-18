@@ -213,7 +213,7 @@ if ($resultado['paginas'] <= 7) {
 
 				<h1 class="catalog__title"><?= $escape((string) $categoriaPagina['name']) ?></h1>
 				<p class="catalog__lead">
-					Camisetas de <?= $escape((string) $categoriaPagina['name']) ?> preparadas para vc utilizar com o maior conforto e estilo possível
+					Camisetas de <?= $escape((string) $categoriaPagina['name']) ?> preparadas para você utilizar com o maior conforto e estilo possível.
 				</p>
 			<?php elseif ($estado['q'] !== ''): ?>
 				<h1 class="catalog__title">Busca</h1>
