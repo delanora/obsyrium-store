@@ -68,7 +68,7 @@ $total = count($adminHero);
 	<?php if ($adminHero === []): ?>
 		<p class="admin-empty">Nenhuma foto no topo ainda. A loja mostra o fundo padrão até a primeira foto.</p>
 	<?php else: ?>
-		<p class="admin-hero__hint">Clique numa foto para editar o título, o texto e o botão. A prévia do topo aparece no alto da janela.</p>
+		<p class="admin-hero__hint">Clique numa foto para editar o título, o texto e o botão. Use as setas para mudar a ordem — a primeira foto é a que abre a página.</p>
 
 		<ol class="admin-hero__cards">
 			<?php foreach ($adminHero as $indice => $slide): ?>
@@ -77,20 +77,34 @@ $total = count($adminHero);
 				$resumo = $slide['eyebrow'] !== '' ? $slide['eyebrow'] : ($slide['text'] !== '' ? $slide['text'] : 'Sem texto sobre a foto');
 				?>
 				<li>
-					<button class="admin-hero__card" type="button" data-hero-open="<?= $slide['id'] ?>" aria-haspopup="dialog">
-						<img src="<?= $escape($slide['image']) ?>" alt="" width="320" height="180" loading="lazy">
+					<div class="admin-hero__card">
+						<button class="admin-hero__open" type="button" data-hero-open="<?= $slide['id'] ?>" aria-haspopup="dialog">
+							<img src="<?= $escape($slide['image']) ?>" alt="" width="320" height="180" loading="lazy">
 
-						<span class="admin-hero__card-body">
-							<span class="admin-hero__card-meta">
-								Foto <?= $indice + 1 ?>
-								<?php if (!$slide['is_active']): ?>
-									<span class="admin-hero__card-flag">Escondida</span>
-								<?php endif; ?>
+							<span class="admin-hero__card-body">
+								<span class="admin-hero__card-meta">
+									Foto <?= $indice + 1 ?>
+									<?php if (!$slide['is_active']): ?>
+										<span class="admin-hero__card-flag">Escondida</span>
+									<?php endif; ?>
+								</span>
+								<span class="admin-hero__card-title"><?= $escape($titulo) ?></span>
+								<span class="admin-hero__card-meta"><?= $escape($resumo) ?></span>
 							</span>
-							<span class="admin-hero__card-title"><?= $escape($titulo) ?></span>
-							<span class="admin-hero__card-meta"><?= $escape($resumo) ?></span>
-						</span>
-					</button>
+						</button>
+
+						<div class="admin-hero__move">
+							<form action="/admin/pagina-inicial/<?= $slide['id'] ?>/subir" method="post">
+								<?= Csrf::field() ?>
+								<button class="admin-hero__arrow" type="submit" aria-label="Subir a foto <?= $indice + 1 ?>" title="Subir"<?= $indice === 0 ? ' disabled' : '' ?>>↑</button>
+							</form>
+
+							<form action="/admin/pagina-inicial/<?= $slide['id'] ?>/descer" method="post">
+								<?= Csrf::field() ?>
+								<button class="admin-hero__arrow" type="submit" aria-label="Descer a foto <?= $indice + 1 ?>" title="Descer"<?= $indice === $total - 1 ? ' disabled' : '' ?>>↓</button>
+							</form>
+						</div>
+					</div>
 
 					<?php
 					$temTexto = $slide['eyebrow'] !== '' || $slide['title'] !== '' || $slide['text'] !== '' || $slide['button_label'] !== '';

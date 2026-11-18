@@ -16,8 +16,9 @@ use PDO;
  *
  * As fotos ficam em `public/uploads/hero`, no mesmo esquema das fotos de
  * produto: nome aleatório, tipo conferido pelo conteúdo e arquivo apagado
- * junto com a linha. A ordem é a coluna `position`, sempre a próxima livre, e
- * a primeira foto ativa é a que abre a página.
+ * junto com a linha. A ordem é a coluna `position` e a primeira foto ativa é a
+ * que abre a página; o painel sobe e desce cada foto, e a ordem é renumerada
+ * de 0 a n-1 a cada troca.
  */
 final class HomeHeroService
 {
@@ -239,6 +240,61 @@ final class HomeHeroService
             ':active' => $ativo ? 1 : 0,
             ':id' => $id,
         ]);
+
+        return null;
+    }
+
+    /**
+     * Sobe (-1) ou desce (+1) a foto na ordem do topo.
+     *
+     * A ordem é a coluna `position`, do menor para o maior: a primeira foto é a
+     * que abre a página. Depois da troca as posições são renumeradas de 0 a n-1,
+     * o que também conserta buracos e repetições deixados por exclusões.
+     *
+     * @return string|null mensagem de erro, ou null quando moveu (ou já estava no fim)
+     */
+    public function move(int $id, int $direction): ?string
+    {
+        if ($direction !== -1 && $direction !== 1) {
+            return 'Direção inválida para mover a foto.';
+        }
+
+        $slides = $this->all();
+        $atual = null;
+
+        foreach ($slides as $indice => $slide) {
+            if ($slide['id'] === $id) {
+                $atual = $indice;
+            }
+        }
+
+        if ($atual === null) {
+            return 'Foto não encontrada no topo da loja.';
+        }
+
+        $alvo = $atual + $direction;
+
+        if ($alvo < 0 || $alvo >= count($slides)) {
+            return null;
+        }
+
+        [$slides[$atual], $slides[$alvo]] = [$slides[$alvo], $slides[$atual]];
+
+        $this->pdo->beginTransaction();
+
+        try {
+            $atualizar = $this->pdo->prepare('UPDATE hero_slides SET position = :position WHERE id = :id');
+
+            foreach ($slides as $posicao => $slide) {
+                $atualizar->execute([':position' => $posicao, ':id' => $slide['id']]);
+            }
+
+            $this->pdo->commit();
+        } catch (\Throwable $erro) {
+            $this->pdo->rollBack();
+
+            throw $erro;
+        }
 
         return null;
     }

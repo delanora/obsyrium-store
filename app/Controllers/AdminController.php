@@ -585,6 +585,26 @@ final class AdminController
     }
 
     /**
+     * Sobe a foto uma posição na ordem do topo.
+     *
+     * @param array<string, string> $params
+     */
+    public function moveHeroUp(array $params): void
+    {
+        $this->moveHero($params, -1);
+    }
+
+    /**
+     * Desce a foto uma posição na ordem do topo.
+     *
+     * @param array<string, string> $params
+     */
+    public function moveHeroDown(array $params): void
+    {
+        $this->moveHero($params, 1);
+    }
+
+    /**
      * Editor do produto. É a tela do item da loja, com todos os campos
      * editáveis e as fotos sendo enviadas por ela.
      *
@@ -1009,6 +1029,24 @@ final class AdminController
         $content = $basePath . '/resources/views/admin/' . $view . '.php';
 
         require $basePath . '/resources/views/layouts/admin.php';
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    private function moveHero(array $params, int $direction): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $erro = (new HomeHeroService(Connection::get()))->move((int) ($params['id'] ?? 0), $direction);
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Ordem das fotos do topo atualizada.');
+
+        $this->redirect('/admin/pagina-inicial');
     }
 
     private function csrfOk(): bool

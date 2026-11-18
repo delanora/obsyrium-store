@@ -59,7 +59,7 @@ final class ProductAdminService
         'image/webp' => 'webp',
     ];
 
-    private const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    private const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
     public function __construct(private readonly PDO $pdo)
     {
@@ -468,7 +468,7 @@ final class ProductAdminService
     }
 
     /**
-     * Limite de tamanho de cada foto, em texto ("2 MB").
+     * Limite de tamanho de cada foto, em texto ("12 MB").
      */
     public function photoLimitLabel(): string
     {
