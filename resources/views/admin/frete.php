@@ -142,6 +142,11 @@ $melhorEnvioLigado = $modo === 'melhorenvio';
 			Client ID e Client Secret. Depois clique em <strong>Conectar</strong> e autorize a conta.
 			O token dura 30 dias e é renovado sozinho; sem conexão, o checkout usa a tabela por estado.
 		</p>
+		<p class="admin-note">
+			No aplicativo, o endereço de retorno precisa ser <strong>idêntico</strong> ao mostrado no fim deste bloco
+			(ele sai do <code>APP_URL</code>, o domínio oficial da loja): se divergir — outro domínio, IP da rede ou http no lugar de https —
+			o Melhor Envio recusa a autorização. As credenciais também têm de ser do mesmo ambiente do aplicativo marcado abaixo.
+		</p>
 
 		<div class="admin-frete__regras">
 			<div class="field">
@@ -184,7 +189,7 @@ $melhorEnvioLigado = $modo === 'melhorenvio';
 
 		<label class="admin-check">
 			<input type="checkbox" name="melhorenvio_sandbox" value="1"<?= $sandbox ? ' checked' : '' ?>>
-			<span>Usar o ambiente de testes (sandbox) do Melhor Envio</span>
+			<span>Usar o ambiente de testes (sandbox) do Melhor Envio — o Client ID e o segredo precisam ser de um aplicativo criado no sandbox, não da produção</span>
 		</label>
 
 		<div class="admin-frete__conexao-bloco">

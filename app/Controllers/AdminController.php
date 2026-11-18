@@ -492,6 +492,16 @@ final class AdminController
     {
         $this->admin();
 
+        // O Melhor Envio só devolve o navegador para o endereço cadastrado no
+        // aplicativo, que é o `APP_URL` — o domínio oficial da loja. Começar a
+        // conexão por outro endereço (o IP da rede, por exemplo) faria a volta
+        // cair em outro host, sem a sessão do painel, e um `redirect_uri`
+        // diferente do cadastrado é recusado pelo Melhor Envio.
+        if (!$this->onOfficialUrl()) {
+            header('Location: ' . $this->melhorEnvioConnectUrl(), true, 303);
+            exit;
+        }
+
         $pdo = Connection::get();
         $servico = new MelhorEnvioService($pdo);
         $config = (new ShippingService($pdo))->settings();
@@ -575,6 +585,30 @@ final class AdminController
     private function melhorEnvioRedirect(): string
     {
         return rtrim((string) Env::get('APP_URL', ''), '/') . '/admin/frete/melhor-envio/callback';
+    }
+
+    private function melhorEnvioConnectUrl(): string
+    {
+        return rtrim((string) Env::get('APP_URL', ''), '/') . '/admin/frete/melhor-envio/conectar';
+    }
+
+    /**
+     * O painel está aberto no endereço do `APP_URL`? A sessão (e o `state` da
+     * autorização) vale por host, e o retorno do Melhor Envio cai sempre no
+     * `APP_URL`; por isso a conexão só começa por ele.
+     */
+    private function onOfficialUrl(): bool
+    {
+        $oficial = parse_url((string) Env::get('APP_URL', ''), PHP_URL_HOST);
+
+        if (!is_string($oficial) || $oficial === '') {
+            return true;
+        }
+
+        $atual = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        $atual = preg_replace('/:\d+$/', '', $atual) ?? $atual;
+
+        return strcasecmp($atual, $oficial) === 0;
     }
 
     /**
