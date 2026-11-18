@@ -141,8 +141,10 @@
     border-color: rgb(201 160 99 / 22%);
 }
 
-.auth-gate__card .auth__form {
-    margin-top: auto;
+/* O card de entrar é mais baixo que o de cadastro: o conteúdo fica centrado
+   na altura do card, sem buraco no meio entre o social e o formulário. */
+.auth-gate__card--login {
+    justify-content: center;
 }
 
 .auth-gate__card-title {
@@ -289,24 +291,6 @@
     min-height: var(--target-min);
 }
 
-/* "Esqueci minha senha" logo abaixo do botão, centralizado. */
-.auth-gate__forgot {
-    margin: 0;
-    color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
-    text-align: center;
-}
-
-.auth-gate__forgot a {
-    color: var(--color-accent);
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: border-color var(--duration-fast) var(--ease-standard);
-}
-
-.auth-gate__forgot a:hover {
-    border-bottom-color: currentColor;
-}
 
 /* Abaixo de 900px os cards empilham, centrados e com no máximo 480px. */
 @media (max-width: 56.25em) {

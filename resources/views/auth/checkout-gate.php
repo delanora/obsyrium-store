@@ -54,8 +54,6 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 					<button class="button auth__submit" type="submit">Entrar e continuar</button>
 				</form>
-
-				<p class="auth-gate__forgot"><a href="/contato">Esqueci minha senha</a></p>
 			</article>
 
 			<article class="auth__card auth-gate__card auth-gate__card--register">
