@@ -152,6 +152,23 @@
     outline-offset: var(--focus-ring-offset);
 }
 
+/* Sugestões no fim da página: outras cores da estampa e produtos da mesma
+   categoria, no mesmo card da vitrine. */
+.product-related {
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--color-border);
+}
+
+.product-related__title {
+    margin: 0 0 var(--space-5);
+    font-size: var(--font-size-lg);
+}
+
+.product-related__grid {
+    margin: 0;
+}
+
 /* Guia de medidas: link discreto abaixo do seletor e a tabela numa janela. */
 .product-info__guide-line {
     margin: calc(var(--space-2) * -1) 0 0;

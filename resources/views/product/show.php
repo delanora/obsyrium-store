@@ -181,5 +181,30 @@ $principal = $product['images'][0];
 				<?php endif; ?>
 			</div>
 		</div>
+
+		<?php
+		// O card da vitrine espera $product; guarda o produto aberto e devolve
+		// cada sugestão no lugar dele só enquanto o partial é desenhado.
+		$produtoAberto = $product;
+		$sugestoesDaPagina = [
+			['titulo' => 'Outras cores desta estampa', 'id' => 'cores-da-estampa', 'itens' => $produtoAberto['colorProducts']],
+			['titulo' => 'Você também pode gostar', 'id' => 'produtos-relacionados', 'itens' => $produtoAberto['related']],
+		];
+		?>
+
+		<?php foreach ($sugestoesDaPagina as $sugestao): ?>
+			<?php if ($sugestao['itens'] === []) { continue; } ?>
+			<section class="product-related" aria-labelledby="<?= $sugestao['id'] ?>">
+				<h2 class="section__title product-related__title" id="<?= $sugestao['id'] ?>"><?= $escape($sugestao['titulo']) ?></h2>
+
+				<ul class="product-grid product-related__grid">
+					<?php foreach ($sugestao['itens'] as $product): ?>
+						<li data-reveal>
+							<?php require dirname(__DIR__) . '/partials/product-card.php'; ?>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			</section>
+		<?php endforeach; ?>
 	</div>
 </section>

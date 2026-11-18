@@ -9,6 +9,7 @@ use App\Repositories\ProductRepository;
 use App\Services\SizeGuideService;
 use App\Support\Navegacao;
 use App\Support\Price;
+use App\Support\ProductCard;
 
 final class ProductController
 {
@@ -84,6 +85,10 @@ final class ProductController
             ];
         }
 
+        // Sugestões para o fim da página: outras cores da mesma estampa e o
+        // que está na mesma categoria, sem repetir o produto aberto.
+        $sugestoes = $repository->related($id, (int) $linha['category_id'], $nome, $cor);
+
         $product = [
             'name' => $nome,
             'slug' => (string) $linha['slug'],
@@ -101,6 +106,14 @@ final class ProductController
             'soldOut' => $estoqueTotal === 0,
             'stock' => $this->stock($estoqueTotal),
             'voltar' => $voltarDoProduto,
+            'colorProducts' => array_map(
+                static fn (array $item): array => ProductCard::fromRow($item),
+                $sugestoes['colors']
+            ),
+            'related' => array_map(
+                static fn (array $item): array => ProductCard::fromRow($item),
+                $sugestoes['category']
+            ),
         ];
 
         // Guia de medidas só entra na página quando a loja já mediu alguma peça.
