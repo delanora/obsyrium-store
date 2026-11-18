@@ -193,8 +193,9 @@
     }
 }
 
-/* Inputs iguais: 44px de altura, mesmo padding, borda e raio. */
-.auth--gate .field__input {
+/* Inputs iguais em todas as telas de conta: 44px de altura, mesmo padding,
+   borda e raio. Vale para /login, /cadastro e a porta do checkout. */
+.auth .field__input {
     height: var(--target-min);
     min-height: var(--target-min);
     padding: 0 var(--space-3);
@@ -207,20 +208,20 @@
         outline-color var(--duration-fast) var(--ease-standard);
 }
 
-.auth--gate .field__input::placeholder {
+.auth .field__input::placeholder {
     color: var(--color-text-subtle);
     opacity: 1;
 }
 
 @media (hover: hover) {
-    .auth--gate .field__input:hover {
+    .auth .field__input:hover {
         border-color: var(--color-text-subtle);
     }
 }
 
 /* Foco com borda dourada sutil, sem brilho forte. */
-.auth--gate .field__input:focus,
-.auth--gate .field__input:focus-visible {
+.auth .field__input:focus,
+.auth .field__input:focus-visible {
     border-color: var(--color-accent);
     outline: 2px solid rgb(201 160 99 / 26%);
     outline-offset: 0;
@@ -260,15 +261,21 @@
 }
 
 /* Social: dois botões em pilha, mesma altura, texto em uma linha. */
-.auth--gate .auth__social {
+/* Mesmo padrão em todas as telas: um botão por linha, 44px, texto em uma
+   linha e foco/hover com o dourado do site. */
+.auth .auth__social {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-2);
+}
+
+.auth--gate .auth__social {
     margin-bottom: 0;
 }
 
-.auth--gate .auth__social-button {
+.auth .auth__social-button {
     width: 100%;
     height: var(--target-min);
+    min-height: var(--target-min);
     padding: 0 var(--space-4);
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-sm);
@@ -279,8 +286,14 @@
         color var(--duration-fast) var(--ease-standard);
 }
 
+.auth .auth__social-button:focus-visible {
+    border-color: var(--color-accent);
+    outline: 2px solid rgb(201 160 99 / 26%);
+    outline-offset: 2px;
+}
+
 @media (hover: hover) {
-    .auth--gate .auth__social-button:not(:disabled):hover {
+    .auth .auth__social-button:not(:disabled):hover {
         border-color: var(--color-accent);
         color: var(--color-accent);
     }

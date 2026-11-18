@@ -29,7 +29,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 				<div class="field">
 					<label class="field__label" for="name">Nome completo</label>
-					<input class="field__input" id="name" name="name" type="text" autocomplete="name" required value="<?= $valor('name') ?>">
+					<input class="field__input" id="name" name="name" type="text" autocomplete="name" placeholder="Nome e sobrenome" required value="<?= $valor('name') ?>">
 					<?php if (isset($errors['name'])): ?>
 						<p class="field__error"><?= $escape($errors['name']) ?></p>
 					<?php endif; ?>
@@ -53,7 +53,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 				<div class="field">
 					<label class="field__label" for="email">E-mail</label>
-					<input class="field__input" id="email" name="email" type="email" autocomplete="email" required value="<?= $valor('email') ?>">
+					<input class="field__input" id="email" name="email" type="email" autocomplete="email" placeholder="seuemail@exemplo.com" required value="<?= $valor('email') ?>">
 					<?php if (isset($errors['email'])): ?>
 						<p class="field__error"><?= $escape($errors['email']) ?></p>
 					<?php endif; ?>
@@ -61,7 +61,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 				<div class="field">
 					<label class="field__label" for="password">Senha</label>
-					<input class="field__input" id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+					<input class="field__input" id="password" name="password" type="password" autocomplete="new-password" placeholder="Sua senha" minlength="8" required>
 					<?php if (isset($errors['password'])): ?>
 						<p class="field__error"><?= $escape($errors['password']) ?></p>
 					<?php else: ?>
@@ -71,7 +71,7 @@ $valor = static fn (string $campo): string => $escape((string) ($old[$campo] ?? 
 
 				<div class="field">
 					<label class="field__label" for="password_confirmation">Repita a senha</label>
-					<input class="field__input" id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required>
+					<input class="field__input" id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" placeholder="Repita a senha" minlength="8" required>
 					<?php if (isset($errors['password_confirmation'])): ?>
 						<p class="field__error"><?= $escape($errors['password_confirmation']) ?></p>
 					<?php endif; ?>
