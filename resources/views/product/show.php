@@ -36,6 +36,7 @@ $principal = $product['images'][0];
 				<figure class="product-gallery__main">
 					<img
 						class="product-gallery__image"
+						data-gallery-main
 						src="<?= $escape($principal['src']) ?>"
 						alt="<?= $escape($principal['alt']) ?>"
 						width="600"
@@ -48,9 +49,18 @@ $principal = $product['images'][0];
 
 				<?php if (count($product['images']) > 1): ?>
 					<ul class="product-gallery__thumbs">
-						<?php foreach ($product['images'] as $imagem): ?>
+						<?php foreach ($product['images'] as $indice => $imagem): ?>
 							<li>
-								<img src="<?= $escape($imagem['src']) ?>" alt="<?= $escape($imagem['alt']) ?>" width="64" height="80" loading="lazy">
+								<button
+									class="product-gallery__thumb"
+									type="button"
+									data-gallery-src="<?= $escape($imagem['src']) ?>"
+									data-gallery-alt="<?= $escape($imagem['alt']) ?>"
+									aria-pressed="<?= $indice === 0 ? 'true' : 'false' ?>"
+									aria-label="Ver a foto <?= $indice + 1 ?>: <?= $escape($imagem['alt']) ?>"
+								>
+									<img src="<?= $escape($imagem['src']) ?>" alt="" width="64" height="80" loading="lazy">
+								</button>
 							</li>
 						<?php endforeach; ?>
 					</ul>

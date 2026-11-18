@@ -459,6 +459,7 @@ Rota `GET /produto/{slug}`, atendida por `App\Controllers\ProductController::sho
 - Os dados vêm de `App\Repositories\ProductRepository`: `findBySlug()` (produto + categoria), `images()` (galeria na ordem de `position`) e `variantsWithStock()` (tamanhos com a quantidade de cada um, de PP a XG).
 - A view `resources/views/product/show.php` apenas apresenta: o controller resolve preço, valor no Pix, parcelas, desconto e o estado do estoque (`in`, `low`, `out`).
 - Tamanho sem estoque é renderizado com `disabled`, e a folha de estilo risca a opção por `.size-option__input:disabled + .size-option`. É o mesmo componente `.size-picker` usado na home.
+- A galeria mostra a primeira foto de `position` e, quando há mais de uma, uma lista de miniaturas. Cada miniatura é um `<button>` com `data-gallery-src`/`data-gallery-alt`; o `site.js` troca a foto grande (e o `alt`) no clique ou pelo teclado, marcando a escolhida com `aria-pressed="true"`. Sem JavaScript a galeria fica na primeira foto.
 - O estilo fica em `public/assets/css/product.css`, carregado junto das demais folhas no layout.
 - O botão de compra segue desabilitado até o carrinho existir; a dica abaixo dele informa isso ao visitante.
 - Os cards da vitrine (`HomeController::toCard`) apontam para `/produto/{slug}`.

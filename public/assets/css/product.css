@@ -85,13 +85,36 @@
     list-style: none;
 }
 
-.product-gallery__thumbs img {
+.product-gallery__thumb {
+    display: block;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: none;
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.product-gallery__thumb img {
     display: block;
     width: 4rem;
     height: 5rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
+    border-radius: calc(var(--radius-sm) - 1px);
     object-fit: cover;
+}
+
+.product-gallery__thumb:hover {
+    border-color: var(--color-accent);
+}
+
+.product-gallery__thumb[aria-pressed='true'] {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.product-gallery__thumb:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
 }
 
 /* ---------- Informações ---------- */

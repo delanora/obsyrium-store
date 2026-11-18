@@ -991,6 +991,29 @@
         });
     });
 
+    // Galeria do produto: cada miniatura é um botão que troca a foto grande.
+    // A miniatura da foto em exibição fica marcada com aria-pressed, e o foco
+    // do teclado cai no próprio botão, então Enter e espaço funcionam sozinhos.
+    Array.prototype.forEach.call(document.querySelectorAll('.product-gallery'), function (galeria) {
+        var principal = galeria.querySelector('[data-gallery-main]');
+        var miniaturas = galeria.querySelectorAll('[data-gallery-src]');
+
+        if (!principal || miniaturas.length < 2) {
+            return;
+        }
+
+        Array.prototype.forEach.call(miniaturas, function (miniatura) {
+            miniatura.addEventListener('click', function () {
+                principal.src = miniatura.getAttribute('data-gallery-src');
+                principal.alt = miniatura.getAttribute('data-gallery-alt');
+
+                Array.prototype.forEach.call(miniaturas, function (outra) {
+                    outra.setAttribute('aria-pressed', outra === miniatura ? 'true' : 'false');
+                });
+            });
+        });
+    });
+
     // Marca para o script inline que o comportamento carregou.
     window.__obsyriumReady = true;
 })();
