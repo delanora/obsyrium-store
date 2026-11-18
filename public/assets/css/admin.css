@@ -1823,6 +1823,127 @@
     letter-spacing: var(--letter-spacing-wide);
 }
 
+/* Editor da categoria aberta: nome, categoria principal, visibilidade, ordem
+   e exclusão. */
+.admin-cats__editar {
+    display: grid;
+    gap: var(--space-3);
+    margin-block: var(--space-4);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.admin-cats__editar-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.admin-cats__editar-head .admin-product__subtitle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    margin: 0;
+}
+
+.admin-cats__slug {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text-subtle);
+    font-family: var(--font-display);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+}
+
+.admin-cats__slug strong {
+    color: var(--color-accent);
+    font-weight: 500;
+}
+
+.admin-cats__off {
+    padding: 0.1rem 0.45rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-subtle);
+    font-family: var(--font-body);
+    font-size: 0.6rem;
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.admin-tab--off {
+    opacity: 0.62;
+}
+
+.admin-cats__ordem {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.admin-cats__arrow {
+    display: grid;
+    place-items: center;
+    width: 2.15rem;
+    height: 2.15rem;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: transparent;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.admin-cats__arrow:hover:not(:disabled),
+.admin-cats__arrow:focus-visible {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.admin-cats__arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.admin-cats__formulario {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.admin-cats__hint {
+    align-self: end;
+    max-width: 28rem;
+    margin: 0;
+}
+
+.admin-cats__salvar {
+    margin: 0;
+}
+
+.admin-cats__salvar .button {
+    min-height: 2.5rem;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-xs);
+}
+
+.admin-cats__apagar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+
+.admin-cats__apagar .field__hint {
+    margin: 0;
+}
+
 .admin-table--cats {
     font-size: 0.85rem;
 }

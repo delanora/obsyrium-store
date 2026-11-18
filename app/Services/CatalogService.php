@@ -250,7 +250,7 @@ final class CatalogService
     public function categories(): array
     {
         $categorias = $this->pdo->query(
-            'SELECT id, name, slug, parent_id FROM categories ORDER BY position, name'
+            'SELECT id, name, slug, parent_id FROM categories WHERE is_active = 1 ORDER BY position, name'
         )->fetchAll();
 
         $contagens = [];
@@ -262,7 +262,8 @@ final class CatalogService
                        INNER JOIN products p ON p.id = pc.product_id AND p.is_active = 1
                       WHERE pc.category_id = c.id
                          OR pc.category_id IN (SELECT f.id FROM categories f WHERE f.parent_id = c.id)) AS total
-               FROM categories c'
+               FROM categories c
+              WHERE c.is_active = 1'
         )->fetchAll() as $linha) {
             $contagens[(int) $linha['id']] = (int) $linha['total'];
         }
@@ -532,7 +533,9 @@ final class CatalogService
             return null;
         }
 
-        $consulta = $this->pdo->prepare('SELECT id, name, slug, parent_id FROM categories WHERE slug = :slug LIMIT 1');
+        $consulta = $this->pdo->prepare(
+            'SELECT id, name, slug, parent_id FROM categories WHERE slug = :slug AND is_active = 1 LIMIT 1'
+        );
         $consulta->bindValue(':slug', $slug);
         $consulta->execute();
 

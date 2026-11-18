@@ -335,6 +335,53 @@ final class AdminController
     }
 
     /**
+     * Edita nome, categoria principal e visibilidade de uma categoria.
+     *
+     * @param array<string, string> $params
+     */
+    public function updateCategory(array $params): void
+    {
+        $admin = $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $resultado = (new CategoryService(Connection::get()))->update($id, $_POST);
+
+        if ($resultado['errors'] !== []) {
+            $this->renderCategories($admin, $resultado['errors'], [], $id, $resultado['values']);
+
+            return;
+        }
+
+        Session::flash('success', sprintf('Categoria \"%s\" salva.', (string) ($resultado['values']['name'] ?? '')));
+
+        $this->redirect($this->categoryUrl($id));
+    }
+
+    /**
+     * Sobe a categoria uma posição entre as irmãs.
+     *
+     * @param array<string, string> $params
+     */
+    public function moveCategoryUp(array $params): void
+    {
+        $this->moveCategory($params, -1);
+    }
+
+    /**
+     * Desce a categoria uma posição entre as irmãs.
+     *
+     * @param array<string, string> $params
+     */
+    public function moveCategoryDown(array $params): void
+    {
+        $this->moveCategory($params, 1);
+    }
+
+    /**
      * Apaga uma categoria que não tenha subcategoria nem produto ligado.
      */
     public function deleteCategory(): void
@@ -351,6 +398,35 @@ final class AdminController
         Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Categoria apagada.');
 
         $this->redirect($this->categoryBackUrl((string) ($_POST['voltar_para'] ?? '')));
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    private function moveCategory(array $params, int $direction): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $erro = (new CategoryService(Connection::get()))->move($id, $direction);
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Ordem das categorias atualizada.');
+
+        $this->redirect($this->categoryUrl($id));
+    }
+
+    /**
+     * Aba da categoria depois de uma ação.
+     */
+    private function categoryUrl(int $id): string
+    {
+        return $id > 0
+            ? '/admin/categorias?' . http_build_query(['categoria' => $id])
+            : '/admin/categorias';
     }
 
     /**
@@ -882,11 +958,17 @@ final class AdminController
      * @param list<string> $erros
      * @param array<string, string> $valores
      */
-    private function renderCategories(array $admin, array $erros = [], array $valores = []): void
-    {
+    private function renderCategories(
+        array $admin,
+        array $erros = [],
+        array $valores = [],
+        ?int $selecionar = null,
+        array $valoresEdicao = []
+    ): void {
         $servico = new CategoryService(Connection::get());
         $arvore = $servico->tree();
-        $escolhida = $this->categoriaSelecionada($arvore, (int) ($_GET['categoria'] ?? 0));
+        $id = $selecionar ?? (int) ($_GET['categoria'] ?? 0);
+        $escolhida = $this->categoriaSelecionada($arvore, $id);
 
         $this->render('categorias', 'Categorias — Administração Obsyrium', $admin, 'categorias', [
             'arvore' => $arvore,
@@ -895,6 +977,7 @@ final class AdminController
             'categoriaRaiz' => $escolhida['raiz'],
             'erros' => $erros,
             'valores' => $valores,
+            'valoresEdicao' => $valoresEdicao,
         ]);
     }
 
