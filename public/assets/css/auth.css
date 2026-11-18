@@ -114,7 +114,7 @@
 .auth-gate__cards {
     display: grid;
     gap: var(--space-6); /* 32px entre os cards */
-    align-items: stretch;
+    align-items: start;
     justify-items: stretch;
 }
 
@@ -141,10 +141,11 @@
     border-color: rgb(201 160 99 / 22%);
 }
 
-/* O card de entrar é mais baixo que o de cadastro: o conteúdo fica centrado
-   na altura do card, sem buraco no meio entre o social e o formulário. */
+/* O card de entrar tem menos conteúdo: fica na altura natural, alinhado ao
+   topo do card de cadastro, em vez de esticar e sobrar área vazia. */
 .auth-gate__card--login {
-    justify-content: center;
+    align-self: start;
+    justify-content: start;
 }
 
 .auth-gate__card-title {
