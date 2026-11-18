@@ -25,6 +25,8 @@ final class ProductAdminService
 {
     public const MAX_IMAGES = 8;
 
+    public const MAX_ALT = 160;
+
     /**
      * Tamanhos que o cadastro oferece.
      */
@@ -403,6 +405,146 @@ final class ProductAdminService
         }
 
         return ['path' => $caminho];
+    }
+
+    /**
+     * Envia várias fotos de uma vez, uma por arquivo.
+     *
+     * O `<input multiple>` chega em `$_FILES` como listas paralelas (nome,
+     * tipo, temporário, erro e tamanho); cada arquivo passa pelo mesmo `upload()`
+     * do envio de uma foto. Um arquivo recusado não impede os outros: os erros
+     * voltam juntos para o painel avisar.
+     *
+     * @param array<string, mixed> $arquivos entrada de $_FILES
+     *
+     * @return array{uploaded: int, errors: list<string>}
+     */
+    public function uploadMany(int $productId, array $arquivos): array
+    {
+        $nomes = $arquivos['name'] ?? null;
+
+        if (!is_array($nomes)) {
+            $unico = $this->upload($productId, $arquivos);
+
+            return isset($unico['error'])
+                ? ['uploaded' => 0, 'errors' => [$unico['error']]]
+                : ['uploaded' => 1, 'errors' => []];
+        }
+
+        $enviadas = 0;
+        $erros = [];
+
+        foreach (array_keys($nomes) as $indice) {
+            $erro = (int) ($arquivos['error'][$indice] ?? UPLOAD_ERR_NO_FILE);
+
+            if ($erro === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+
+            $resultado = $this->upload($productId, [
+                'name' => (string) ($arquivos['name'][$indice] ?? ''),
+                'type' => (string) ($arquivos['type'][$indice] ?? ''),
+                'tmp_name' => (string) ($arquivos['tmp_name'][$indice] ?? ''),
+                'error' => $erro,
+                'size' => (int) ($arquivos['size'][$indice] ?? 0),
+            ]);
+
+            if (isset($resultado['error'])) {
+                $erros[] = $resultado['error'];
+
+                continue;
+            }
+
+            $enviadas++;
+        }
+
+        return ['uploaded' => $enviadas, 'errors' => $erros];
+    }
+
+    /**
+     * Salva a descrição (texto alternativo) de uma foto do produto.
+     *
+     * @return string|null mensagem de erro, ou null quando salvou
+     */
+    public function updateAlt(int $productId, int $imageId, string $alt): ?string
+    {
+        $alt = trim($alt);
+
+        if (mb_strlen($alt) > self::MAX_ALT) {
+            return sprintf('Descrição da foto: use até %d caracteres.', self::MAX_ALT);
+        }
+
+        $consulta = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM product_images WHERE id = :image AND product_id = :product'
+        );
+        $consulta->execute([':image' => $imageId, ':product' => $productId]);
+
+        if ((int) $consulta->fetchColumn() === 0) {
+            return 'Foto não encontrada.';
+        }
+
+        $this->pdo->prepare('UPDATE product_images SET alt = :alt WHERE id = :image AND product_id = :product')
+            ->execute([':alt' => $alt, ':image' => $imageId, ':product' => $productId]);
+
+        return null;
+    }
+
+    /**
+     * Sobe (-1) ou desce (+1) a foto na ordem do produto.
+     *
+     * A primeira foto é a que aparece na vitrine e na página do item. Depois da
+     * troca as posições são renumeradas de 0 a n-1.
+     *
+     * @return string|null mensagem de erro, ou null quando moveu (ou já estava no fim)
+     */
+    public function moveImage(int $productId, int $imageId, int $direction): ?string
+    {
+        if ($direction !== -1 && $direction !== 1) {
+            return 'Direção inválida para mover a foto.';
+        }
+
+        $consulta = $this->pdo->prepare(
+            'SELECT id FROM product_images WHERE product_id = :id ORDER BY position, id'
+        );
+        $consulta->bindValue(':id', $productId, PDO::PARAM_INT);
+        $consulta->execute();
+
+        $ids = array_map('intval', $consulta->fetchAll(PDO::FETCH_COLUMN));
+        $atual = array_search($imageId, $ids, true);
+
+        if ($atual === false) {
+            return 'Foto não encontrada.';
+        }
+
+        $alvo = $atual + $direction;
+
+        if ($alvo < 0 || $alvo >= count($ids)) {
+            return null;
+        }
+
+        [$ids[$atual], $ids[$alvo]] = [$ids[$alvo], $ids[$atual]];
+
+        $this->pdo->beginTransaction();
+
+        try {
+            $atualizar = $this->pdo->prepare(
+                'UPDATE product_images SET position = :position WHERE id = :image AND product_id = :product'
+            );
+
+            foreach ($ids as $posicao => $id) {
+                $atualizar->execute([':position' => $posicao, ':image' => $id, ':product' => $productId]);
+            }
+
+            $this->pdo->commit();
+        } catch (Throwable $erro) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $erro;
+        }
+
+        return null;
     }
 
     /**
@@ -798,7 +940,7 @@ final class ProductAdminService
     private function images(int $productId): array
     {
         $consulta = $this->pdo->prepare(
-            'SELECT id, path, alt FROM product_images WHERE product_id = :id ORDER BY position, id'
+            'SELECT id, path, alt, position FROM product_images WHERE product_id = :id ORDER BY position, id'
         );
         $consulta->bindValue(':id', $productId, PDO::PARAM_INT);
         $consulta->execute();
@@ -808,6 +950,7 @@ final class ProductAdminService
                 'id' => (int) $linha['id'],
                 'path' => (string) $linha['path'],
                 'alt' => (string) $linha['alt'],
+                'position' => (int) $linha['position'],
             ],
             $consulta->fetchAll()
         );

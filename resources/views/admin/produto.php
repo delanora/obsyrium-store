@@ -165,30 +165,70 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 					<figcaption class="admin-product__caption">Foto principal</figcaption>
 				</figure>
 
-				<ul class="admin-photos">
-					<?php foreach ($adminProduto['images'] as $indice => $foto): ?>
-						<li class="admin-photos__item">
-							<img src="<?= $escape((string) $foto['path']) ?>" alt="<?= $escape((string) $foto['alt']) ?>" width="80" height="100" loading="lazy">
+				<?php $totalFotos = count($adminProduto['images']); ?>
 
-							<form method="post" action="<?= $escape($urlDoProduto . '/foto/remover') ?>">
+				<p class="field__hint">A primeira foto é a principal. As setas mudam a ordem e a descrição é lida por quem usa leitor de tela (e aparece na busca de imagens).</p>
+
+				<ol class="admin-photos">
+					<?php foreach ($adminProduto['images'] as $indice => $foto): ?>
+						<?php $campoAlt = 'foto-alt-' . (int) $foto['id']; ?>
+						<li class="admin-photos__item">
+							<img src="<?= $escape((string) $foto['path']) ?>" alt="<?= $escape((string) $foto['alt']) ?>" width="160" height="200" loading="lazy">
+
+							<span class="admin-photos__label">
+								<?= $indice === 0 ? 'Foto principal' : 'Foto ' . ($indice + 1) ?>
+							</span>
+
+							<div class="admin-photos__tools">
+								<form method="post" action="<?= $escape($urlDoProduto . '/foto/' . (int) $foto['id'] . '/subir') ?>">
+									<?= Csrf::field() ?>
+									<?php foreach ($adminVoltar as $campo => $info): ?>
+										<input type="hidden" name="<?= $escape((string) $campo) ?>" value="<?= $escape((string) $info) ?>">
+									<?php endforeach; ?>
+
+									<button class="admin-photos__arrow" type="submit" aria-label="Subir a foto <?= $indice + 1 ?>" title="Subir"<?= $indice === 0 ? ' disabled' : '' ?>>↑</button>
+								</form>
+
+								<form method="post" action="<?= $escape($urlDoProduto . '/foto/' . (int) $foto['id'] . '/descer') ?>">
+									<?= Csrf::field() ?>
+									<?php foreach ($adminVoltar as $campo => $info): ?>
+										<input type="hidden" name="<?= $escape((string) $campo) ?>" value="<?= $escape((string) $info) ?>">
+									<?php endforeach; ?>
+
+									<button class="admin-photos__arrow" type="submit" aria-label="Descer a foto <?= $indice + 1 ?>" title="Descer"<?= $indice === $totalFotos - 1 ? ' disabled' : '' ?>>↓</button>
+								</form>
+
+								<form method="post" action="<?= $escape($urlDoProduto . '/foto/remover') ?>">
+									<?= Csrf::field() ?>
+									<input type="hidden" name="image_id" value="<?= (int) $foto['id'] ?>">
+									<?php foreach ($adminVoltar as $campo => $info): ?>
+										<input type="hidden" name="<?= $escape((string) $campo) ?>" value="<?= $escape((string) $info) ?>">
+									<?php endforeach; ?>
+
+									<button
+										class="admin-icon-button admin-icon-button--danger"
+										type="submit"
+										aria-label="<?= $indice === 0 ? 'Apagar a foto principal' : 'Apagar esta foto' ?>"
+										title="Apagar foto"
+									>
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9.5 7V5h5v2"/><path d="M6.5 7l1 13h9l1-13"/><path d="M10.5 11v5.5"/><path d="M13.5 11v5.5"/></svg>
+									</button>
+								</form>
+							</div>
+
+							<form class="admin-photos__alt" method="post" action="<?= $escape($urlDoProduto . '/foto/' . (int) $foto['id']) ?>">
 								<?= Csrf::field() ?>
-								<input type="hidden" name="image_id" value="<?= (int) $foto['id'] ?>">
 								<?php foreach ($adminVoltar as $campo => $info): ?>
 									<input type="hidden" name="<?= $escape((string) $campo) ?>" value="<?= $escape((string) $info) ?>">
 								<?php endforeach; ?>
 
-								<button
-									class="admin-icon-button admin-icon-button--danger"
-									type="submit"
-									aria-label="<?= $indice === 0 ? 'Apagar a foto principal' : 'Apagar esta foto' ?>"
-									title="Apagar foto"
-								>
-									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9.5 7V5h5v2"/><path d="M6.5 7l1 13h9l1-13"/><path d="M10.5 11v5.5"/><path d="M13.5 11v5.5"/></svg>
-								</button>
+								<label class="field__label" for="<?= $escape($campoAlt) ?>">Descrição</label>
+								<input class="field__input" id="<?= $escape($campoAlt) ?>" name="alt" type="text" maxlength="160" value="<?= $escape((string) $foto['alt']) ?>">
+								<button class="admin-link-button" type="submit">Salvar descrição</button>
 							</form>
 						</li>
 					<?php endforeach; ?>
-				</ul>
+				</ol>
 			<?php endif; ?>
 
 			<form class="admin-upload" method="post" action="<?= $escape($urlDoProduto . '/foto') ?>" enctype="multipart/form-data">
@@ -197,18 +237,19 @@ $raizMarcada = static function (int $raiz) use ($marcadas, $subs): bool {
 					<input type="hidden" name="<?= $escape((string) $campo) ?>" value="<?= $escape((string) $info) ?>">
 				<?php endforeach; ?>
 
-				<label class="field__label" for="foto">Enviar foto</label>
+				<label class="field__label" for="foto">Enviar fotos</label>
 				<input
 					class="admin-upload__input"
 					id="foto"
-					name="imagem"
+					name="imagens[]"
 					type="file"
 					accept="image/jpeg,image/png,image/webp"
+					multiple
 					required
 				>
 				<p class="field__hint">
-					Arraste a foto para cá ou escolha o arquivo.
-					JPG, PNG ou WebP, até <?= $escape($adminLimiteFotos) ?>, no máximo <?= (int) $adminMaxFotos ?> fotos.
+					Arraste as fotos para cá ou escolha os arquivos — pode enviar várias de uma vez.
+					JPG, PNG ou WebP, até <?= $escape($adminLimiteFotos) ?>, no máximo <?= (int) $adminMaxFotos ?> fotos por produto.
 					A primeira da lista é a que aparece na vitrine.
 				</p>
 				<button class="button" type="submit">Enviar foto</button>

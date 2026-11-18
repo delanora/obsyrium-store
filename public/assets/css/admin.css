@@ -1280,9 +1280,10 @@
     margin-top: var(--space-4);
 }
 
+/* Cada foto é um card: miniatura, ordem, apagar e a descrição editável. */
 .admin-photos {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
     gap: var(--space-3);
     margin: 0;
     padding: 0;
@@ -1291,28 +1292,88 @@
 
 .admin-photos__item {
     position: relative;
-    width: 5rem;
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
 }
 
 .admin-photos__item img {
     display: block;
     width: 100%;
     height: auto;
-    border: 1px solid var(--color-border);
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
     border-radius: var(--radius-sm);
     background-color: var(--color-bg);
 }
 
-.admin-photos__item form {
-    position: absolute;
-    inset-block-start: -0.4rem;
-    inset-inline-end: -0.4rem;
+.admin-photos__label {
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
 }
 
-.admin-photos__item .admin-icon-button {
-    width: 1.75rem;
-    height: 1.75rem;
-    background-color: var(--color-surface);
+.admin-photos__tools {
+    position: absolute;
+    inset-block-start: var(--space-3);
+    inset-inline-end: var(--space-3);
+    display: flex;
+    gap: 0.25rem;
+}
+
+.admin-photos__arrow {
+    display: grid;
+    place-items: center;
+    width: 1.85rem;
+    height: 1.85rem;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: rgb(10 8 6 / 82%);
+    color: var(--color-text);
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.admin-photos__arrow:hover:not(:disabled),
+.admin-photos__arrow:focus-visible {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.admin-photos__arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.admin-photos__tools .admin-icon-button {
+    width: 1.85rem;
+    height: 1.85rem;
+    background-color: rgb(10 8 6 / 82%);
+}
+
+.admin-photos__alt {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.admin-photos__alt .field__label {
+    font-size: 0.65rem;
+}
+
+.admin-photos__alt .field__input {
+    padding-block: var(--space-1);
+    font-size: var(--font-size-sm);
+}
+
+.admin-photos__alt .admin-link-button {
+    justify-self: start;
 }
 
 .admin-upload {

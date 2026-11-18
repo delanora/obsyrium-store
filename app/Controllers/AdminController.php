@@ -277,35 +277,9 @@ final class AdminController
             return [0, []];
         }
 
-        $servico = $this->products();
-        $enviadas = 0;
-        $falhas = [];
+        $resultado = $this->products()->uploadMany($id, $arquivos);
 
-        foreach (array_keys($arquivos['name']) as $indice) {
-            $erro = (int) ($arquivos['error'][$indice] ?? UPLOAD_ERR_NO_FILE);
-
-            if ($erro === UPLOAD_ERR_NO_FILE) {
-                continue;
-            }
-
-            $resultado = $servico->upload($id, [
-                'name' => (string) ($arquivos['name'][$indice] ?? ''),
-                'type' => (string) ($arquivos['type'][$indice] ?? ''),
-                'tmp_name' => (string) ($arquivos['tmp_name'][$indice] ?? ''),
-                'error' => $erro,
-                'size' => (int) ($arquivos['size'][$indice] ?? 0),
-            ]);
-
-            if (isset($resultado['error'])) {
-                $falhas[] = $resultado['error'];
-
-                continue;
-            }
-
-            $enviadas++;
-        }
-
-        return [$enviadas, $falhas];
+        return [$resultado['uploaded'], $resultado['errors']];
     }
 
     public function categories(): void
@@ -730,15 +704,101 @@ final class AdminController
         }
 
         $id = (int) ($params['id'] ?? 0);
-        $arquivo = isset($_FILES['imagem']) && is_array($_FILES['imagem']) ? $_FILES['imagem'] : [];
-        $resultado = (new ProductAdminService(Connection::get()))->upload($id, $arquivo);
-
-        Session::flash(
-            isset($resultado['error']) ? 'error' : 'success',
-            $resultado['error'] ?? 'Foto enviada. Ela já aparece na página do produto.'
+        $arquivos = $_FILES['imagens'] ?? ($_FILES['imagem'] ?? []);
+        $resultado = (new ProductAdminService(Connection::get()))->uploadMany(
+            $id,
+            is_array($arquivos) ? $arquivos : []
         );
 
+        $this->flashFotos($resultado['uploaded'], $resultado['errors']);
+
         $this->redirect($this->productUrl($id, $_POST));
+    }
+
+    /**
+     * Salva a descrição (texto alternativo) de uma foto do produto.
+     *
+     * @param array<string, string> $params
+     */
+    public function updatePhoto(array $params): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $erro = (new ProductAdminService(Connection::get()))->updateAlt(
+            $id,
+            (int) ($params['image'] ?? 0),
+            (string) ($_POST['alt'] ?? '')
+        );
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Descrição da foto salva.');
+
+        $this->redirect($this->productUrl($id, $_POST));
+    }
+
+    /**
+     * Sobe a foto uma posição na ordem do produto.
+     *
+     * @param array<string, string> $params
+     */
+    public function movePhotoUp(array $params): void
+    {
+        $this->movePhoto($params, -1);
+    }
+
+    /**
+     * Desce a foto uma posição na ordem do produto.
+     *
+     * @param array<string, string> $params
+     */
+    public function movePhotoDown(array $params): void
+    {
+        $this->movePhoto($params, 1);
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    private function movePhoto(array $params, int $direction): void
+    {
+        $this->admin();
+
+        if (!$this->csrfOk()) {
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $erro = (new ProductAdminService(Connection::get()))->moveImage(
+            $id,
+            (int) ($params['image'] ?? 0),
+            $direction
+        );
+
+        Session::flash($erro === null ? 'success' : 'error', $erro ?? 'Ordem das fotos atualizada.');
+
+        $this->redirect($this->productUrl($id, $_POST));
+    }
+
+    /**
+     * @param list<string> $falhas
+     */
+    private function flashFotos(int $enviadas, array $falhas): void
+    {
+        if ($falhas !== []) {
+            Session::flash('error', $enviadas > 0
+                ? sprintf('%d foto%s enviada%s, mas: %s', $enviadas, $enviadas === 1 ? '' : 's', $enviadas === 1 ? '' : 's', implode(' ', $falhas))
+                : implode(' ', $falhas));
+
+            return;
+        }
+
+        Session::flash('success', $enviadas === 1
+            ? 'Foto enviada. Ela já aparece na página do produto.'
+            : sprintf('%d fotos enviadas. Elas já aparecem na página do produto.', $enviadas));
     }
 
     /**

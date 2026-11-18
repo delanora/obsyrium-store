@@ -103,6 +103,9 @@ return static function (Router $router): void {
     $router->post('/admin/estoque/produto/{id}/saldo', [AdminController::class, 'saveProductStock']);
     $router->post('/admin/estoque/produto/{id}/foto', [AdminController::class, 'uploadPhoto']);
     $router->post('/admin/estoque/produto/{id}/foto/remover', [AdminController::class, 'removePhoto']);
+    $router->post('/admin/estoque/produto/{id}/foto/{image}/subir', [AdminController::class, 'movePhotoUp']);
+    $router->post('/admin/estoque/produto/{id}/foto/{image}/descer', [AdminController::class, 'movePhotoDown']);
+    $router->post('/admin/estoque/produto/{id}/foto/{image}', [AdminController::class, 'updatePhoto']);
     $router->post('/admin/estoque/novo/cor/apagar', [AdminController::class, 'deleteColor']);
     $router->post('/admin/estoque/produto/{id}/cor/apagar', [AdminController::class, 'deleteColor']);
 };
